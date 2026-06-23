@@ -2079,10 +2079,15 @@ function renderOrder() {
             <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
               ${getStockBadgeHtml(item.id)}
               <button class="note-tmpl-btn" onclick="toggleNoteRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${item.note?'✏ '+item.note.slice(0,18)+(item.note.length>18?'…':''):u('add_note')}</button>
+              ${item.endCustomer?'<span style="font-size:8.5px;background:#EDE9FE;color:#5B21B6;padding:1px 5px;border-radius:8px;font-weight:600;">👤 '+item.endCustomer+'</span>':''}
             </div>
             <div id="note-row-${idx}" style="display:none;margin-top:4px;">
               <input class="note-inp" type="text" value="${item.note||''}" placeholder="${u('note_placeholder')}" data-idx="${idx}" oninput="liveNote(this)" style="margin-bottom:3px;">
               <div class="note-templates">${getNoteTemplateHtml(idx)}</div>
+              <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+                <span style="font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Son Alıcı:</span>
+                <input class="note-inp" type="text" value="${item.endCustomer||''}" placeholder="Müşteri adı (opsiyonel)" data-idx="${idx}" oninput="liveEndCustomer(this)" style="margin-bottom:0;">
+              </div>
             </div>
           </div>
         </div>
@@ -2433,7 +2438,7 @@ function showSummary() {
     rows+=`<tr>
       <td>${i+1}</td>
       <td style="width:52px;text-align:center;padding:3px;">${sumImg}</td>
-      <td><strong>${item.name}</strong>${item.note?'<br><span style="font-size:9px;color:#888;font-style:italic;">'+item.note+'</span>':''}</td>
+      <td><strong>${item.name}</strong>${item.note?'<br><span style="font-size:9px;color:#888;font-style:italic;">'+item.note+'</span>':''}${item.endCustomer?'<br><span style="font-size:9px;font-weight:700;color:#5B21B6;">👤 '+item.endCustomer+'</span>':''}</td>
       <td class="r">${item.qty}</td>
       <td class="r">${sym}${item.listPrice.toFixed(2)}</td>
       <td class="r">${disc>0.05?'-'+disc.toFixed(1)+'%':'—'}</td>
@@ -2698,11 +2703,12 @@ function showPrint() {
       : '<div style="width:60px;height:48px;background:#F3F4F6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 3px;">📦</div>';
     const stLine = (()=>{ const sd=getStock(); const sv=sd[item.id]||'In Stock'; if(sv!=='In Stock') return '<div style="font-size:7.5px;font-weight:700;color:#B45309;margin-top:1px;">⏱ '+sv+'</div>'; return ''; })();
     const noteLine = item.note ? '<div style="font-size:8px;color:#888;margin-top:2px;font-style:italic;">'+item.note+'</div>' : '';
+    const endCustLine = item.endCustomer ? '<div style="font-size:8px;font-weight:700;color:#5B21B6;margin-top:2px;">👤 '+item.endCustomer+'</div>' : '';
     const bundleLine = item.bundled ? '<span style="font-size:7px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:2px;font-weight:700;">SET</span>' : '';
     rows+=`<tr>
       <td class="pf-c" style="color:#999;width:22px;">${i+1}</td>
       <td style="width:72px;text-align:center;padding:4px;">${pfImg}<div style="font-size:7px;color:#888;text-align:center;">${bundleLine}</div></td>
-      <td><div style="font-weight:600;font-size:10px;line-height:1.3;">${item.name}</div>${noteLine}${stLine}</td><td class="pf-c">${item.qty}</td><td class="pf-r pf-list">${sym}${item.listPrice.toFixed(2)}</td><td class="pf-r pf-unit">${sym}${item.unitPrice.toFixed(2)}</td><td class="pf-c">${disc>0.05?`<span class="pf-disc">-${disc.toFixed(1)}%</span>`:'<span style="color:#ccc">—</span>'}</td><td class="pf-r pf-linetot">${sym}${(item.unitPrice*item.qty).toFixed(2)}</td>${cbm>0?`<td class="pf-c" style="color:#888;">${((item.cbm||0)*item.qty).toFixed(2)}</td>`:''}</tr>`;
+      <td><div style="font-weight:600;font-size:10px;line-height:1.3;">${item.name}</div>${noteLine}${endCustLine}${stLine}</td><td class="pf-c">${item.qty}</td><td class="pf-r pf-list">${sym}${item.listPrice.toFixed(2)}</td><td class="pf-r pf-unit">${sym}${item.unitPrice.toFixed(2)}</td><td class="pf-c">${disc>0.05?`<span class="pf-disc">-${disc.toFixed(1)}%</span>`:'<span style="color:#ccc">—</span>'}</td><td class="pf-r pf-linetot">${sym}${(item.unitPrice*item.qty).toFixed(2)}</td>${cbm>0?`<td class="pf-c" style="color:#888;">${((item.cbm||0)*item.qty).toFixed(2)}</td>`:''}</tr>`;
   });
   const cbmCol = cbm>0;
   const pfEl=document.getElementById('proforma-print'); pfEl.setAttribute('dir',isRTL?'rtl':'ltr'); pfEl.style.fontFamily=isRTL?'Arial,sans-serif':'Arial,sans-serif'; pfEl.innerHTML=`
@@ -2768,6 +2774,11 @@ function liveNote(inp) {
   // Update the toggle button label without re-render
   const btn=inp.closest('[id^="note-row-"]')?.previousElementSibling?.querySelector('button[onclick^="toggleNote"]');
   if(btn) btn.textContent = inp.value ? ('✏ '+inp.value.slice(0,18)+(inp.value.length>18?'…':'')) : u('add_note');
+}
+
+function liveEndCustomer(inp) {
+  const idx=parseInt(inp.dataset.idx);
+  orderItems[idx].endCustomer=inp.value;
 }
 
 function toggleNoteRow(idx) {
