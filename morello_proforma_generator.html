@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morello — Proforma Generator</title>
+<style>
+  :root {
+    --bg: #F7F5F2; --surface: #FFFFFF; --surface2: #F0EDE8;
+    --border: #E0D9D0; --accent: #2C2C2C; --gold: #B8935A;
+    --gold-light: #F5ECD9; --text: #1A1A1A; --text-muted: #7A7065;
+    --danger: #C0392B; --success: #2D7A4F; --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
+
+  .header { background: var(--accent); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .header-logo { font-size: 20px; font-weight: 700; letter-spacing: 4px; }
+  .header-logo span { color: var(--gold); }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,.5); letter-spacing: 1px; text-transform: uppercase; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 56px); }
+
+  .catalog-panel { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 8px; }
+  .panel-header h2 { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+
+  .currency-selector { margin-left: auto; display: flex; gap: 2px; background: var(--border); padding: 2px; border-radius: var(--radius); }
+  .currency-btn { padding: 3px 10px; border: none; background: transparent; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: all .15s; }
+  .currency-btn.active { background: var(--accent); color: #fff; }
+
+  .search-box { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .search-box input { width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; background: var(--bg); color: var(--text); outline: none; }
+  .search-box input:focus { border-color: var(--gold); }
+
+  .catalog-tree { flex: 1; overflow-y: auto; padding: 4px 0; }
+
+  .category-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; user-select: none; position: sticky; top: 0; background: var(--surface2); z-index: 10; border-bottom: 1px solid var(--border); }
+  .category-header:hover { background: var(--gold-light); }
+  .category-name { font-weight: 700; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--accent); flex: 1; }
+  .category-count { font-size: 10px; color: var(--text-muted); background: var(--border); padding: 1px 6px; border-radius: 10px; }
+  .caret { font-size: 9px; color: var(--text-muted); transition: transform .2s; }
+  .caret.open { transform: rotate(90deg); }
+
+  .series-header { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 26px; cursor: pointer; user-select: none; border-left: 3px solid transparent; transition: all .1s; }
+  .series-header:hover { background: var(--bg); border-left-color: var(--gold); }
+  .series-name { font-weight: 600; font-size: 12px; color: var(--text); flex: 1; }
+  .series-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 8px; background: var(--gold-light); color: var(--gold); }
+
+  .product-item { display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 36px; cursor: default; border-left: 3px solid transparent; transition: background .1s; }
+  .product-item:hover { background: var(--bg); border-left-color: var(--gold); }
+  .product-item.hidden { display: none; }
+  .product-thumb { width: 32px; height: 26px; object-fit: contain; border-radius: 3px; background: var(--surface2); flex-shrink: 0; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .product-info { flex: 1; min-width: 0; }
+  .product-name { font-size: 11.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .product-price { font-size: 11px; color: var(--gold); font-weight: 600; }
+  .add-btn { width: 22px; height: 22px; background: var(--gold); color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 15px; line-height: 1; flex-shrink: 0; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+  .add-btn:hover { background: var(--accent); transform: scale(1.1); }
+
+  .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+  .tabs { display: flex; border-bottom: 2px solid var(--border); background: var(--surface); padding: 0 20px; }
+  .tab-btn { padding: 11px 18px; border: none; background: transparent; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-content { display: none; flex: 1; overflow-y: auto; padding: 12px 14px; }
+  .tab-content.active { display: flex; flex-direction: column; gap: 14px; }
+
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .setup-card h3 { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .field-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+  .field-row label { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+  .field-row input, .field-row select, .field-row textarea { padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s; font-family: inherit; }
+  .field-row input:focus, .field-row select:focus { border-color: var(--gold); }
+
+  /* DISCOUNT PANEL - simplified */
+  .discount-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .discount-panel h3 { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .discount-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .disc-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .disc-input { width: 70px; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-weight: 700; text-align: center; outline: none; color: var(--accent); }
+  .disc-input:focus { border-color: var(--gold); }
+  .apply-discount-btn { padding: 6px 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-size: 11px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .apply-discount-btn:hover { background: var(--gold); }
+  .reset-prices-btn { padding: 6px 12px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); font-size: 11px; cursor: pointer; transition: all .15s; }
+  .reset-prices-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .disc-note { font-size: 10px; color: var(--text-muted); }
+
+  /* ORDER TABLE */
+  .order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .order-card-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .order-card-header h3 { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+  .order-meta { display: flex; gap: 14px; }
+  .order-stat { font-size: 11px; color: var(--text-muted); }
+  .order-stat strong { color: var(--gold); font-weight: 700; }
+
+  .order-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .order-table th { padding: 5px 8px; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--surface2); white-space: nowrap; }
+  .order-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .order-table tr:last-child td { border-bottom: none; }
+  .order-table tr:hover td { background: var(--bg); }
+
+  .qty-control { display: flex; align-items: center; gap: 2px; }
+  .qty-btn { width: 18px; height: 18px; border: 1px solid var(--border); background: var(--surface2); border-radius: 3px; cursor: pointer; font-size: 12px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: all .1s; }
+  .qty-btn:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+  .qty-input { width: 30px; text-align: center; padding: 2px 2px; border: 1px solid var(--border); border-radius: 3px; font-size: 11px; font-weight: 600; }
+
+  .list-price-cell { color: var(--text-muted); text-decoration: line-through; font-size: 11px; }
+  .unit-price-field { width: 70px; padding: 4px 6px; border: 1.5px solid var(--gold); border-radius: 4px; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--gold-light); text-align: right; outline: none; }
+  .unit-price-field:focus { border-color: #A07840; box-shadow: 0 0 0 2px rgba(184,147,90,.2); background: #fff; }
+  .unit-price-field::-webkit-outer-spin-button, .unit-price-field::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .unit-price-field[type=number] { -moz-appearance: textfield; }
+  .discount-badge { display: inline-block; font-size: 10px; background: #FEF3C7; color: #92400E; padding: 1px 5px; border-radius: 3px; font-weight: 700; white-space: nowrap; }
+  .no-disc { font-size: 10px; color: var(--text-muted); }
+  .total-cell { font-weight: 700; color: var(--accent); }
+  .remove-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 2px 4px; border-radius: 3px; opacity: .5; transition: all .1s; }
+  .remove-btn:hover { opacity: 1; background: #FEE2E2; }
+
+  .empty-order { padding: 40px 24px; text-align: center; color: var(--text-muted); }
+  .empty-order .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* TOTALS BAR */
+  .totals-card { background: var(--accent); color: #fff; border-radius: var(--radius); padding: 14px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .total-item { display: flex; flex-direction: column; gap: 3px; }
+  .total-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.45); }
+  .total-value { font-size: 18px; font-weight: 700; }
+  .total-value.gold { color: var(--gold); font-size: 22px; }
+
+  .btn { padding: 7px 16px; border: none; border-radius: var(--radius); font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-primary { background: var(--gold); color: #fff; }
+  .btn-primary:hover { background: #A07840; }
+  .btn-dark { background: var(--accent); color: #fff; }
+  .btn-dark:hover { background: #000; }
+  .btn-outline { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  .btn-outline:hover { border-color: #fff; }
+
+  /* PRINT OVERLAY */
+  #print-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 9999; overflow: auto; }
+  .print-actions { position: fixed; top: 0; left: 0; right: 0; background: var(--accent); padding: 10px 20px; display: flex; gap: 10px; z-index: 10001; }
+  #proforma-print { padding: 30px 40px; max-width: 860px; margin: 52px auto 40px; background: #fff; }
+
+  /* PROFORMA DOCUMENT STYLES */
+  .pf-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 2px solid #1A1A1A; }
+  .pf-company-name { font-size: 11px; font-weight: 700; color: #1A1A1A; line-height: 1.4; }
+  .pf-company-addr { font-size: 9.5px; color: #666; line-height: 1.5; margin-top: 3px; }
+  .pf-title { font-size: 24px; font-weight: 700; letter-spacing: 2px; color: #1A1A1A; text-align: right; }
+  .pf-title-meta { font-size: 10px; color: #888; text-align: right; margin-top: 3px; line-height: 1.6; }
+
+  .pf-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+  .pf-section-label { font-size: 8.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 7px; border-bottom: 1px solid #E5E5E5; padding-bottom: 4px; }
+  .pf-field-row { display: flex; gap: 6px; font-size: 10px; margin-bottom: 3px; }
+  .pf-field-key { color: #888; font-weight: 600; min-width: 80px; }
+  .pf-field-val { color: #1A1A1A; }
+
+  .pf-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10px; }
+  .pf-table th { background: #1A1A1A; color: #fff; padding: 7px 8px; text-align: left; font-size: 8.5px; letter-spacing: .5px; text-transform: uppercase; }
+  .pf-table th.right { text-align: right; }
+  .pf-table td { padding: 6px 8px; border-bottom: 1px solid #EBEBEB; vertical-align: middle; }
+  .pf-table tr:nth-child(even) td { background: #F8F8F8; }
+  .pf-td-right { text-align: right; }
+  .pf-td-center { text-align: center; }
+  .pf-list-price { color: #999; text-decoration: line-through; font-size: 9px; }
+  .pf-unit-price { font-weight: 700; }
+  .pf-disc-badge { background: #FEF3C7; color: #92400E; font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 2px; }
+  .pf-line-total { font-weight: 700; font-size: 10.5px; }
+
+  .pf-totals { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+  .pf-totals-box { width: 280px; border: 1px solid #E0E0E0; border-radius: 4px; overflow: hidden; font-size: 10.5px; }
+  .pf-total-row { display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid #E0E0E0; }
+  .pf-total-row:last-child { border-bottom: none; background: #1A1A1A; color: #fff; font-weight: 700; font-size: 11.5px; }
+  .pf-total-row.highlight { background: #FFFBEB; }
+
+  .pf-bank { margin-top: 14px; padding: 10px 12px; background: #F5F5F5; border-radius: 4px; }
+  .pf-bank-title { font-size: 8.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 7px; }
+  .pf-bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+  .pf-bank-row { display: flex; gap: 6px; font-size: 9.5px; }
+  .pf-bank-key { color: #888; font-weight: 600; min-width: 110px; }
+
+  .pf-notes { margin-top: 12px; font-size: 8.5px; color: #999; line-height: 1.7; border-top: 1px solid #E0E0E0; padding-top: 8px; }
+  .pf-sig { display: flex; justify-content: space-between; margin-top: 28px; }
+  .pf-sig-box { width: 160px; padding-top: 36px; border-top: 1px solid #1A1A1A; text-align: center; font-size: 8.5px; font-weight: 700; color: #444; letter-spacing: .5px; text-transform: uppercase; }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: #fff; padding: 9px 18px; border-radius: var(--radius); font-size: 12px; font-weight: 600; z-index: 9998; opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .collapsed { display: none; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  @media print { body > *:not(#print-overlay) { display: none !important; } #print-overlay { display: block !important; position: static !important; } .print-actions { display: none !important; } #proforma-print { margin: 0; padding: 20px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">M<span>O</span>RELLO</div>
+    <div class="header-sub">Proforma Generator · Selina Mobilya</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="clearOrder()">🗑 Clear Order</button>
+    <button class="btn btn-primary" onclick="showPrintPreview()">📄 Generate Proforma</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- CATALOG -->
+  <div class="catalog-panel">
+    <div class="panel-header">
+      <h2>🪑 Product Catalogue</h2>
+      <div class="currency-selector">
+        <button class="currency-btn active" onclick="setCurrency('EUR')">EUR</button>
+        <button class="currency-btn" onclick="setCurrency('USD')">USD</button>
+      </div>
+    </div>
+    <div class="search-box">
+      <input type="text" placeholder="Search products… (Roma, sofa, wardrobe…)" id="searchInput" oninput="filterProducts(this.value)">
+    </div>
+    <div class="catalog-tree" id="catalogTree"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('order')">📋 Order Lines</button>
+      <button class="tab-btn" onclick="showTab('setup')">⚙️ Proforma Details</button>
+    </div>
+
+    <!-- ORDER TAB -->
+    <div class="tab-content active" id="tab-order">
+
+      <!-- DISCOUNT PANEL — % only -->
+      <div class="discount-panel">
+        <h3>💰 Global Discount</h3>
+        <div class="discount-controls">
+          <span class="disc-label">Apply discount to all items:</span>
+          <input type="number" class="disc-input" id="discountValue" placeholder="%" min="0" max="100" step="0.5">
+          <span style="font-size:12px;font-weight:700;color:var(--gold);">%</span>
+          <button class="apply-discount-btn" onclick="applyDiscount()">Apply to All</button>
+          <button class="reset-prices-btn" onclick="resetPrices()">↺ Reset to List</button>
+          <span class="disc-note">· Per-line custom prices can be typed directly in the table below</span>
+        </div>
+      </div>
+
+      <!-- ORDER TABLE -->
+      <div class="order-card">
+        <div class="order-card-header">
+          <h3>📦 Order Items</h3>
+          <div class="order-meta">
+            <span class="order-stat">Lines: <strong id="itemCount">0</strong></span>
+            <span class="order-stat">Total: <strong id="headerTotal">0.00</strong></span>
+          </div>
+        </div>
+        <div id="orderTableWrap">
+          <div class="empty-order" id="emptyMsg">
+            <div class="empty-icon">📭</div>
+            <p>Add products from the left panel</p>
+          </div>
+          <table class="order-table" id="orderTable" style="display:none;">
+            <thead>
+              <tr>
+                <th style="width:26px;">#</th>
+                <th style="max-width:160px;">Description</th>
+                <th style="width:72px;">Qty</th>
+                <th style="width:170px;">List → Unit Price</th>
+                <th style="width:58px;">Disc.</th>
+                <th style="width:88px;">Total</th>
+                <th style="width:26px;"></th>
+              </tr>
+            </thead>
+            <tbody id="orderBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TOTALS -->
+      <div class="totals-card">
+        <div class="total-item">
+          <span class="total-label">Grand Total</span>
+          <span class="total-value gold" id="grandTotal">0.00</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.35)" id="currencyLabel">EUR</span>
+        </div>
+        <div class="total-item">
+          <span class="total-label">Deposit 30%</span>
+          <span class="total-value" id="depositAmt">0.00</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.35)">Before loading</span>
+        </div>
+        <div class="total-item">
+          <span class="total-label">Balance 70%</span>
+          <span class="total-value" id="remainingAmt">0.00</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.35)">Before loading</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETUP TAB -->
+    <div class="tab-content" id="tab-setup">
+      <div class="setup-grid">
+        <div class="setup-card">
+          <h3>👤 Buyer Information</h3>
+          <div class="field-row"><label>Company Name</label><input type="text" id="buyerCompany" placeholder="Company Name"></div>
+          <div class="field-row"><label>Contact Person</label><input type="text" id="buyerContact" placeholder="Contact Person"></div>
+          <div class="field-row"><label>Address</label><input type="text" id="buyerAddress" placeholder="Address"></div>
+          <div class="field-row"><label>Country</label><input type="text" id="buyerCountry" placeholder="Country"></div>
+          <div class="field-row"><label>Phone</label><input type="text" id="buyerPhone" placeholder="+XXX XXX XXX"></div>
+          <div class="field-row"><label>Email</label><input type="email" id="buyerEmail" placeholder="email@company.com"></div>
+        </div>
+        <div class="setup-card">
+          <h3>📄 Invoice Details</h3>
+          <div class="field-row"><label>PI Number</label><input type="text" id="piNumber" placeholder="PI-2026-001"></div>
+          <div class="field-row"><label>Currency</label>
+            <select id="pfCurrency">
+              <option value="EUR">EUR — Euro</option>
+              <option value="USD">USD — US Dollar</option>
+            </select>
+          </div>
+          <div class="field-row"><label>Price / Delivery Term</label>
+            <select id="pfPriceTerm">
+              <option value="EXW">EXW — Ex Works</option>
+              <option value="FOB">FOB — Free on Board</option>
+              <option value="CFR">CFR — Cost and Freight</option>
+              <option value="CIF">CIF — Cost, Insurance & Freight</option>
+              <option value="CPT">CPT — Carriage Paid To</option>
+              <option value="CIP">CIP — Carriage & Insurance Paid To</option>
+              <option value="DAP">DAP — Delivered at Place</option>
+              <option value="DDP">DDP — Delivered Duty Paid</option>
+              <option value="FCA">FCA — Free Carrier</option>
+              <option value="FAS">FAS — Free Alongside Ship</option>
+            </select>
+          </div>
+          <div class="field-row"><label>Payment Terms</label>
+            <select id="pfPayment">
+              <option value="%30 ADVANCED PAYMENT %70 BEFORE LOADING">30% Advance / 70% Before Loading</option>
+              <option value="50% ADVANCED PAYMENT 50% BEFORE LOADING">50% Advance / 50% Before Loading</option>
+              <option value="100% ADVANCED PAYMENT">100% Advance Payment</option>
+              <option value="100% LETTER OF CREDIT AT SIGHT">100% Letter of Credit (At Sight)</option>
+              <option value="NET 30 DAYS FROM B/L DATE">Net 30 Days from B/L Date</option>
+              <option value="CUSTOM">Custom…</option>
+            </select>
+          </div>
+          <div class="field-row"><label>Lead Time</label><input type="text" id="pfLeadTime" value="25–30 days after deposit"></div>
+          <div class="field-row"><label>Date</label><input type="date" id="pfDate"></div>
+          <div class="field-row"><label>Validity</label><input type="text" id="pfValidity" value="10 days"></div>
+        </div>
+      </div>
+
+      <div class="setup-card">
+        <h3>🏦 Bank Details</h3>
+        <div class="setup-grid">
+          <div>
+            <div class="field-row"><label>Beneficiary Name</label><input type="text" id="bankBenef" value="SELİNA MOBİLYA ORMAN ÜRN.SAN.TİC.LTD.ŞTİ." readonly></div>
+            <div class="field-row"><label>Select Account</label>
+              <select id="bankSelect" onchange="fillBankDetails(this.value)">
+                <option value="eur">İş Bankası — EUR</option>
+                <option value="usd">Ziraat Bankası — USD</option>
+              </select>
+            </div>
+            <div class="field-row"><label>IBAN / Account No</label><input type="text" id="bankIban"></div>
+          </div>
+          <div>
+            <div class="field-row"><label>Bank Name</label><input type="text" id="bankFullName"></div>
+            <div class="field-row"><label>Bank Address</label><input type="text" id="bankAddress"></div>
+            <div class="field-row"><label>SWIFT Code</label><input type="text" id="bankSwift"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-card" style="background:var(--gold-light); border-color: var(--gold);">
+        <h3>💡 Suggestions for Future Improvements</h3>
+        <div style="font-size:11px; color:var(--text-muted); line-height:1.8; columns: 2; column-gap: 24px;">
+          <div>• <strong>CBM calculator</strong> — enter per-product CBM values once, auto-sums per order</div>
+          <div>• <strong>Container optimizer</strong> — shows how many 20HC / 40HC / 40HQ needed</div>
+          <div>• <strong>Order history</strong> — save/load past proformas from localStorage</div>
+          <div>• <strong>Customer address book</strong> — save buyer profiles, one-click fill</div>
+          <div>• <strong>Multi-language output</strong> — FR / AR proforma for Africa buyers</div>
+          <div>• <strong>Margin tracker</strong> — enter cost price, see GP% per line</div>
+          <div>• <strong>Email draft generator</strong> — auto-compose cover email from order data</div>
+          <div>• <strong>Duplicate / clone order</strong> — copy order, adjust for new buyer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT OVERLAY -->
+<div id="print-overlay">
+  <div class="print-actions">
+    <button class="btn btn-outline" onclick="closePrintPreview()">✕ Close</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 Print / Save PDF</button>
+  </div>
+  <div id="proforma-print"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CATALOG DATA
+// ============================================================
+const CATALOG = {
+  'Bedroom': {
+    icon: '🛏',
+    series: {
+      'ROMA': { badge: 'SET', items: [
+        { id:'ROMA-BED', name:'Roma Bedstead with Storage', eur:335, usd:420, note:'+90 storage' },
+        { id:'ROMA-NIGHT', name:'Roma Nightstand', eur:70, usd:70 },
+        { id:'ROMA-DRESS', name:'Roma Dresser with Mirror', eur:205, usd:220 },
+        { id:'ROMA-POUF', name:'Roma Pouf', eur:50, usd:45 },
+        { id:'ROMA-WARD', name:'Roma Wardrobe', eur:720, usd:810 },
+        { id:'ROMA-BED-SET', name:'Roma Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)', eur:1500, usd:1590, bundled:true },
+      ]},
+      'ISTANBUL': { badge: 'SET', items: [
+        { id:'IST-BED', name:'Istanbul Bedstead 180×200', eur:335, usd:420, note:'+90 storage' },
+        { id:'IST-NIGHT', name:'Istanbul Nightstand', eur:65, usd:70 },
+        { id:'IST-DRESS', name:'Istanbul Dresser with Mirror', eur:195, usd:210 },
+        { id:'IST-POUF', name:'Istanbul Pouf', eur:50, usd:40 },
+        { id:'IST-WARD', name:'Istanbul 5-Door Wardrobe', eur:680, usd:730 },
+        { id:'IST-BED-SET', name:'Istanbul Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)', eur:1440, usd:1500, bundled:true },
+      ]},
+      'ZENA': { badge: 'POP', items: [
+        { id:'ZENA-BED', name:'Zena Bedstead 180×200', eur:300, usd:420, note:'+90 storage' },
+        { id:'ZENA-NIGHT', name:'Zena Nightstand', eur:60, usd:60 },
+        { id:'ZENA-DRESS', name:'Zena Dresser', eur:175, usd:190 },
+        { id:'ZENA-WARD', name:'Zena Wardrobe', eur:640, usd:700 },
+        { id:'ZENA-BED-SET', name:'Zena Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)', eur:1235, usd:1430, bundled:true },
+      ]},
+      'MIRAY': { badge: 'NEW', items: [
+        { id:'MIRAY-BED', name:'Miray Bedstead with Storage', eur:null, usd:420 },
+        { id:'MIRAY-NIGHT', name:'Miray Nightstand', eur:null, usd:60 },
+        { id:'MIRAY-DRESS', name:'Miray Dresser with Mirror', eur:null, usd:180 },
+        { id:'MIRAY-POUF', name:'Miray Pouf', eur:null, usd:40 },
+        { id:'MIRAY-CHEST', name:'Miray Chest of Drawers', eur:null, usd:175 },
+        { id:'MIRAY-W4', name:'Miray 4-Door Wardrobe', eur:null, usd:550 },
+        { id:'MIRAY-W5', name:'Miray 5-Door Wardrobe', eur:null, usd:610 },
+        { id:'MIRAY-W6', name:'Miray 6-Door Wardrobe', eur:null, usd:670 },
+        { id:'MIRAY-BED-SET', name:'Miray Bedroom Set (6-Door Wardrobe+Bedstead+2 Nightstands+Dresser)', eur:null, usd:1390, bundled:true },
+      ]},
+      'BEYZA': { badge: 'USD', items: [
+        { id:'BEYZA-BED', name:'Beyza Bedstead with Storage 180×200', eur:null, usd:420 },
+        { id:'BEYZA-NIGHT', name:'Beyza Nightstand', eur:null, usd:60 },
+        { id:'BEYZA-WARD', name:'Beyza Wardrobe', eur:null, usd:700 },
+        { id:'BEYZA-DRESS', name:'Beyza Dresser with Mirror', eur:null, usd:190 },
+        { id:'BEYZA-POUF', name:'Beyza Pouf', eur:null, usd:40 },
+        { id:'BEYZA-BED-SET', name:'Beyza Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)', eur:null, usd:1430, bundled:true },
+      ]},
+    }
+  },
+  'Dining Room': {
+    icon: '🍽',
+    series: {
+      'ROMA': { badge: 'SET', items: [
+        { id:'ROMA-CONS', name:'Roma Console with Mirror', eur:350, usd:350 },
+        { id:'ROMA-TV', name:'Roma TV Unit', eur:290, usd:290 },
+        { id:'ROMA-TBL', name:'Roma Dining Table (170–205 cm)', eur:345, usd:330 },
+        { id:'ROMA-CHR', name:'Roma Chair', eur:90, usd:90 },
+        { id:'ROMA-COF', name:'Roma Coffee Table', eur:105, usd:100 },
+        { id:'ROMA-DIN-SET', name:'Roma Dining Set (Table+6 Chairs+Console)', eur:1235, usd:1220, bundled:true },
+      ]},
+      'ISTANBUL': { badge: 'SET', items: [
+        { id:'IST-CONS', name:'Istanbul Console with Mirror', eur:350, usd:335 },
+        { id:'IST-TV', name:'Istanbul TV Unit', eur:290, usd:275 },
+        { id:'IST-TBL', name:'Istanbul Dining Table', eur:345, usd:330 },
+        { id:'IST-CHR', name:'Istanbul Chair', eur:90, usd:90 },
+        { id:'IST-COF', name:'Istanbul Coffee Table', eur:105, usd:100 },
+        { id:'IST-DIN-SET', name:'Istanbul Dining Set (Table+6 Chairs+Console)', eur:1235, usd:1205, bundled:true },
+      ]},
+      'ZENA': { badge: 'POP', items: [
+        { id:'ZENA-CONS', name:'Zena Console', eur:305, usd:305 },
+        { id:'ZENA-TV', name:'Zena TV Unit', eur:295, usd:295 },
+        { id:'ZENA-TBL', name:'Zena Dining Table', eur:325, usd:325 },
+        { id:'ZENA-CHR', name:'Zena Chair', eur:70, usd:75 },
+        { id:'ZENA-DIN-SET', name:'Zena Dining Set (Table+6 Chairs+Console)', eur:1050, usd:1080, bundled:true },
+      ]},
+      'MIRAY': { badge: 'USD', items: [
+        { id:'MIRAY-CONS', name:'Miray Console with Mirror', eur:null, usd:305 },
+        { id:'MIRAY-TV', name:'Miray TV Unit', eur:null, usd:295 },
+        { id:'MIRAY-TBL', name:'Miray Dining Table (170–205 cm)', eur:null, usd:325 },
+        { id:'MIRAY-CHR6', name:'Miray Chair (×6)', eur:null, usd:75 },
+        { id:'MIRAY-COF', name:'Miray Coffee Table', eur:null, usd:100 },
+        { id:'MIRAY-DIN-SET', name:'Miray Dining Set (Table+6 Chairs+Console)', eur:null, usd:1080, bundled:true },
+      ]},
+      'BEYZA': { badge: 'USD', items: [
+        { id:'BEYZA-TBL', name:'Beyza Dining Table (170–205 cm)', eur:null, usd:320 },
+        { id:'BEYZA-CHR', name:'Beyza Chair', eur:null, usd:90 },
+        { id:'BEYZA-CONS', name:'Beyza Console with Mirror', eur:null, usd:305 },
+        { id:'BEYZA-TV', name:'Beyza TV Unit', eur:null, usd:250 },
+        { id:'BEYZA-COF', name:'Beyza Coffee Table', eur:null, usd:100 },
+        { id:'BEYZA-DIN-SET', name:'Beyza Dining Set (Table+6 Chairs+Console)', eur:null, usd:1165, bundled:true },
+      ]},
+    }
+  },
+  'Sofa Set': {
+    icon: '🛋',
+    series: {
+      'ROMA': { badge: 'EUR', items: [
+        { id:'ROMA-3S', name:'Roma Three Seater (190 cm)', eur:580, usd:615 },
+        { id:'ROMA-2S', name:'Roma Two Seater (190 cm)', eur:580, usd:615 },
+        { id:'ROMA-BRG', name:'Roma Bergere', eur:205, usd:180 },
+        { id:'ROMA-SF-SET', name:'Roma Sofa Set (2×Three Seater + 2×Bergere)', eur:1570, usd:1590, bundled:true },
+      ]},
+      'ISTANBUL': { badge: 'SET', items: [
+        { id:'IST-3S', name:'Istanbul Three Seater (190 cm)', eur:550, usd:575 },
+        { id:'IST-2S', name:'Istanbul Two Seater (190 cm)', eur:550, usd:575 },
+        { id:'IST-BRG', name:'Istanbul Bergere', eur:205, usd:175 },
+        { id:'IST-CRN', name:'Istanbul Corner Sofa', eur:1080, usd:1020 },
+        { id:'IST-SF-SET', name:'Istanbul Sofa Set (2×Three Seater + 2×Bergere)', eur:1510, usd:1500, bundled:true },
+      ]},
+      'LION': { badge: 'HOT', items: [
+        { id:'LION-3S', name:'Lion Three Seater (190 cm)', eur:580, usd:575 },
+        { id:'LION-2S', name:'Lion Two Seater (190 cm)', eur:580, usd:575 },
+        { id:'LION-BRG', name:'Lion Bergere', eur:205, usd:175 },
+        { id:'LION-CRN', name:'Lion Corner Sofa', eur:1080, usd:1020 },
+        { id:'LION-SF-SET', name:'Lion Sofa Set (2×Three Seater + 2×Bergere)', eur:1570, usd:1500, bundled:true },
+      ]},
+      'MIRAY': { badge: 'SET', items: [
+        { id:'MIRAY-3S', name:'Miray Three Seater (190 cm)', eur:505, usd:480 },
+        { id:'MIRAY-2S', name:'Miray Two Seater (190 cm)', eur:505, usd:480 },
+        { id:'MIRAY-BRG', name:'Miray Bergere', eur:175, usd:165 },
+        { id:'MIRAY-CRN', name:'Miray Corner Sofa', eur:null, usd:860 },
+        { id:'MIRAY-SF-SET', name:'Miray Sofa Set (2×Three Seater + 2×Bergere)', eur:1360, usd:1290, bundled:true },
+      ]},
+      'VERONA': { badge: 'EUR', items: [
+        { id:'VER-3S', name:'Verona Three Seater (190 cm)', eur:580, usd:525 },
+        { id:'VER-2S', name:'Verona Two Seater (190 cm)', eur:580, usd:525 },
+        { id:'VER-BRG', name:'Verona Bergere', eur:205, usd:175 },
+        { id:'VER-SF-SET', name:'Verona Sofa Set (2×Three Seater + 2×Bergere)', eur:1570, usd:1500, bundled:true },
+      ]},
+      'ZENA': { badge: 'POP', items: [
+        { id:'ZENA-3S', name:'Zena Three Seater (190 cm)', eur:450, usd:480 },
+        { id:'ZENA-2S', name:'Zena Two Seater (190 cm)', eur:450, usd:480 },
+        { id:'ZENA-BRG', name:'Zena Bergere', eur:150, usd:165 },
+        { id:'ZENA-SF-SET', name:'Zena Sofa Set (2×Three Seater + 2×Bergere)', eur:1200, usd:1290, bundled:true },
+      ]},
+      'DIVA': { badge: 'USD', items: [
+        { id:'DIVA-3S', name:'Diva Three Seater (190 cm)', eur:null, usd:480 },
+        { id:'DIVA-2S', name:'Diva Two Seater (190 cm)', eur:null, usd:480 },
+        { id:'DIVA-BRG', name:'Diva Bergere', eur:null, usd:165 },
+        { id:'DIVA-SF-SET', name:'Diva Sofa Set (2×Three Seater + 2×Bergere)', eur:null, usd:1290, bundled:true },
+      ]},
+      'LUNA': { badge: 'USD', items: [
+        { id:'LUNA-3S', name:'Luna Three Seater (190 cm)', eur:null, usd:480 },
+        { id:'LUNA-2S', name:'Luna Two Seater (190 cm)', eur:null, usd:480 },
+        { id:'LUNA-BRG', name:'Luna Bergere', eur:null, usd:165 },
+        { id:'LUNA-SF-SET', name:'Luna Sofa Set (2×Three Seater + 2×Bergere)', eur:null, usd:1290, bundled:true },
+      ]},
+      'BEYZA': { badge: 'USD', items: [
+        { id:'BEYZA-3S', name:'Beyza Three Seater (190 cm)', eur:null, usd:480 },
+        { id:'BEYZA-2S', name:'Beyza Two Seater (190 cm)', eur:null, usd:480 },
+        { id:'BEYZA-SGL', name:'Beyza Single Armchair', eur:null, usd:165 },
+        { id:'BEYZA-SF-SET', name:'Beyza Sofa Set (2×Three Seater + 2×Single)', eur:null, usd:1290, bundled:true },
+      ]},
+      'SIDE': { badge: 'USD', items: [
+        { id:'SIDE-3S', name:'Side Three Seater (190 cm)', eur:null, usd:525 },
+        { id:'SIDE-2S', name:'Side Two Seater (190 cm)', eur:null, usd:525 },
+        { id:'SIDE-BRG', name:'Side Bergere', eur:null, usd:175 },
+        { id:'SIDE-SF-SET', name:'Side Sofa Set (2×Three Seater + 2×Bergere)', eur:null, usd:1400, bundled:true },
+      ]},
+      'EFES': { badge: 'USD', items: [
+        { id:'EFES-3S', name:'Efes Three Seater (190 cm)', eur:null, usd:515 },
+        { id:'EFES-2S', name:'Efes Two Seater (190 cm)', eur:null, usd:515 },
+        { id:'EFES-BRG', name:'Efes Bergere', eur:null, usd:165 },
+        { id:'EFES-SF-SET', name:'Efes Sofa Set (2×Three Seater + 2×Bergere)', eur:null, usd:1360, bundled:true },
+      ]},
+    }
+  }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currency = 'EUR';
+let orderItems = [];
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('pfDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('piNumber').value = 'PI-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+  fillBankDetails('eur');
+  buildCatalog();
+});
+
+// ============================================================
+// CATALOG
+// ============================================================
+function buildCatalog() {
+  const tree = document.getElementById('catalogTree');
+  tree.innerHTML = '';
+  Object.entries(CATALOG).forEach(([catName, catData]) => {
+    const catId = catName.replace(/\s+/g,'_');
+    let totalItems = 0;
+    Object.values(catData.series).forEach(s => totalItems += s.items.length);
+
+    const block = document.createElement('div');
+    block.className = 'category-block';
+    block.dataset.cat = catId;
+
+    const header = document.createElement('div');
+    header.className = 'category-header';
+    header.innerHTML = `<span>${catData.icon}</span><span class="category-name">${catName}</span><span class="category-count">${totalItems}</span><span class="caret" id="caret-cat-${catId}">▶</span>`;
+    header.onclick = () => toggleEl(`cat-${catId}`, `caret-cat-${catId}`);
+    block.appendChild(header);
+
+    const catWrap = document.createElement('div');
+    catWrap.id = `cat-${catId}`;
+    catWrap.className = 'collapsed';
+
+    Object.entries(catData.series).forEach(([sName, sData]) => {
+      const sid = catId + '_' + sName.replace(/[\s()]+/g,'_');
+      const sb = document.createElement('div');
+
+      const sh = document.createElement('div');
+      sh.className = 'series-header';
+      sh.innerHTML = `<span class="caret" id="caret-${sid}">▶</span><span class="series-name">${sName}</span><span class="series-badge">${sData.badge}</span>`;
+      sh.onclick = () => toggleEl(`series-${sid}`, `caret-${sid}`);
+      sb.appendChild(sh);
+
+      const pl = document.createElement('div');
+      pl.id = `series-${sid}`;
+      pl.className = 'product-list collapsed';
+
+      sData.items.forEach(item => {
+        const price = getPrice(item);
+        const priceStr = price !== null ? fmt(price) : '—';
+        const pi = document.createElement('div');
+        pi.className = 'product-item';
+        pi.dataset.productId = item.id;
+        pi.dataset.search = (item.name + ' ' + sName + ' ' + catName).toLowerCase();
+        pi.innerHTML = `
+          <div class="product-thumb">${catData.icon}</div>
+          <div class="product-info">
+            <div class="product-name">${item.name}${item.bundled ? ' 📦' : ''}</div>
+            <div class="product-price">${priceStr}${price===null ? ' <span style="font-size:9px;color:var(--text-muted)">(other currency)</span>':''}</div>
+          </div>
+          <button class="add-btn" onclick="addToOrder('${item.id}')" title="Add to proforma">+</button>
+        `;
+        pl.appendChild(pi);
+      });
+
+      sb.appendChild(pl);
+      catWrap.appendChild(sb);
+    });
+
+    block.appendChild(catWrap);
+    tree.appendChild(block);
+  });
+}
+
+function toggleEl(contentId, caretId) {
+  const el = document.getElementById(contentId);
+  const caret = document.getElementById(caretId);
+  const open = !el.classList.contains('collapsed');
+  el.classList.toggle('collapsed', open);
+  caret.classList.toggle('open', !open);
+}
+
+function filterProducts(q) {
+  q = q.toLowerCase().trim();
+  document.querySelectorAll('.product-item').forEach(item => {
+    const match = !q || item.dataset.search.includes(q);
+    item.classList.toggle('hidden', !match);
+    if (match && q) {
+      const pl = item.closest('.product-list');
+      const sb = pl?.closest('.series-block')?.querySelector('.series-header .caret');
+      if (pl?.classList.contains('collapsed')) { pl.classList.remove('collapsed'); if(sb)sb.classList.add('open'); }
+      const catEl = item.closest('[data-cat]');
+      if (catEl) {
+        const cw = document.getElementById('cat-' + catEl.dataset.cat);
+        const cc = document.getElementById('caret-cat-' + catEl.dataset.cat);
+        if (cw?.classList.contains('collapsed')) { cw.classList.remove('collapsed'); if(cc)cc.classList.add('open'); }
+      }
+    }
+  });
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function getPrice(item) {
+  return currency === 'EUR' ? (item.eur !== null && item.eur !== undefined ? item.eur : null)
+                            : (item.usd !== null && item.usd !== undefined ? item.usd : null);
+}
+
+function fmt(n, cur) {
+  const c = cur || currency;
+  const sym = c === 'EUR' ? '€' : '$';
+  return sym + parseFloat(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function findItem(id) {
+  for (const [cat, catData] of Object.entries(CATALOG)) {
+    for (const [sName, sData] of Object.entries(catData.series)) {
+      const item = sData.items.find(i => i.id === id);
+      if (item) return item;
+    }
+  }
+  return null;
+}
+
+// ============================================================
+// ORDER
+// ============================================================
+function addToOrder(itemId) {
+  const item = findItem(itemId);
+  if (!item) return;
+  const existing = orderItems.find(o => o.id === itemId);
+  if (existing) { existing.qty++; renderOrder(); showToast(`+1 → ${item.name.split(' ').slice(0,3).join(' ')}`); return; }
+  const listPrice = getPrice(item) ?? (currency==='EUR' ? item.usd : item.eur);
+  if (listPrice === null || listPrice === undefined) { showToast('No price available in this currency'); return; }
+  orderItems.push({ id: itemId, name: item.name, listPrice, unitPrice: listPrice, qty: 1, bundled: item.bundled || false });
+  renderOrder();
+  showToast(`✓ Added: ${item.name.split(' ').slice(0,4).join(' ')}`);
+}
+
+function renderOrder() {
+  const tbody = document.getElementById('orderBody');
+  const table = document.getElementById('orderTable');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const sym = currency === 'EUR' ? '€' : '$';
+
+  if (orderItems.length === 0) {
+    table.style.display = 'none'; emptyMsg.style.display = ''; updateTotals(); return;
+  }
+  table.style.display = ''; emptyMsg.style.display = 'none';
+  tbody.innerHTML = '';
+
+  orderItems.forEach((item, idx) => {
+    const discPct = item.listPrice > 0 ? ((1 - item.unitPrice / item.listPrice) * 100) : 0;
+    const lineTotal = item.unitPrice * item.qty;
+    const discStr = discPct > 0.05
+      ? `<span class="discount-badge">-${discPct.toFixed(1)}%</span>`
+      : `<span class="no-disc">—</span>`;
+
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    tr.innerHTML = `
+      <td style="color:var(--text-muted);font-size:11px;width:24px;">${idx+1}</td>
+      <td style="max-width:160px;">
+        <div style="font-weight:600;font-size:11.5px;line-height:1.3;word-break:break-word;">${item.name}</div>
+        ${item.bundled ? '<div style="font-size:9px;color:var(--gold);">📦 Bundle</div>' : ''}
+      </td>
+      <td>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+          <input class="qty-input" type="number" value="${item.qty}" min="1" onchange="setQty(${idx},this.value)">
+          <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;">
+          <span style="font-size:9.5px;color:var(--text-muted);text-decoration:line-through;white-space:nowrap;">${sym}${item.listPrice.toFixed(2)}</span>
+          <span style="font-size:9px;color:var(--text-muted);">→</span>
+          <input class="unit-price-field" type="number" value="${item.unitPrice.toFixed(2)}" step="0.01" min="0"
+            data-idx="${idx}" oninput="liveUnitPrice(this)">
+        </div>
+      </td>
+      <td class="disc-cell-${idx}">${discStr}</td>
+      <td class="total-cell-${idx} total-cell">${sym}${lineTotal.toFixed(2)}</td>
+      <td><button class="remove-btn" onclick="removeItem(${idx})" title="Remove">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateTotals();
+}
+
+// Live update without re-rendering table — keeps focus in input
+function liveUnitPrice(input) {
+  const idx = parseInt(input.dataset.idx);
+  const val = Math.max(0, parseFloat(input.value) || 0);
+  orderItems[idx].unitPrice = val;
+
+  const item = orderItems[idx];
+  const sym = currency === 'EUR' ? '€' : '$';
+  const discPct = item.listPrice > 0 ? ((1 - val / item.listPrice) * 100) : 0;
+  const lineTotal = val * item.qty;
+
+  const discCell = document.querySelector('.disc-cell-' + idx);
+  const totalCell = document.querySelector('.total-cell-' + idx);
+  if (discCell) discCell.innerHTML = discPct > 0.05
+    ? '<span class="discount-badge">-' + discPct.toFixed(1) + '%</span>'
+    : '<span class="no-disc">—</span>';
+  if (totalCell) totalCell.textContent = sym + lineTotal.toFixed(2);
+
+  updateTotals();
+}
+
+function changeQty(idx, d) { orderItems[idx].qty = Math.max(1, (orderItems[idx].qty||1)+d); renderOrder(); }
+function setQty(idx, v) { orderItems[idx].qty = Math.max(1, parseInt(v)||1); renderOrder(); }
+function setUnitPrice(idx, v) { orderItems[idx].unitPrice = Math.max(0, parseFloat(v)||0); }
+function removeItem(idx) { orderItems.splice(idx,1); renderOrder(); }
+
+function updateTotals() {
+  const total = orderItems.reduce((s,i) => s + i.unitPrice*i.qty, 0);
+  const sym = currency==='EUR'?'€':'$';
+  document.getElementById('grandTotal').textContent = sym + total.toFixed(2);
+  document.getElementById('depositAmt').textContent = sym + (total*.3).toFixed(2);
+  document.getElementById('remainingAmt').textContent = sym + (total*.7).toFixed(2);
+  document.getElementById('headerTotal').textContent = sym + total.toFixed(2);
+  document.getElementById('itemCount').textContent = orderItems.length;
+  document.getElementById('currencyLabel').textContent = currency;
+}
+
+function clearOrder() {
+  if (!confirm('Clear all order lines?')) return;
+  orderItems = []; renderOrder(); showToast('Order cleared');
+}
+
+// ============================================================
+// GLOBAL DISCOUNT (% only)
+// ============================================================
+function applyDiscount() {
+  const val = parseFloat(document.getElementById('discountValue').value);
+  if (isNaN(val) || val < 0 || val > 100) { showToast('Enter a valid % between 0 and 100'); return; }
+  orderItems.forEach(item => { item.unitPrice = parseFloat((item.listPrice * (1 - val/100)).toFixed(2)); });
+  renderOrder();
+  showToast(`✓ ${val}% discount applied to all lines`);
+}
+
+function resetPrices() {
+  orderItems.forEach(item => { item.unitPrice = item.listPrice; });
+  renderOrder(); showToast('Prices reset to list values');
+}
+
+// ============================================================
+// CURRENCY
+// ============================================================
+function setCurrency(cur) {
+  currency = cur;
+  document.querySelectorAll('.currency-btn').forEach(b => b.classList.toggle('active', b.textContent===cur));
+  document.getElementById('pfCurrency').value = cur;
+  // update order prices
+  orderItems.forEach(item => {
+    const found = findItem(item.id);
+    if (found) {
+      const newList = cur==='EUR' ? (found.eur ?? found.usd) : (found.usd ?? found.eur);
+      const ratio = item.listPrice > 0 ? item.unitPrice / item.listPrice : 1;
+      item.listPrice = newList;
+      item.unitPrice = parseFloat((newList * ratio).toFixed(2));
+    }
+  });
+  buildCatalog(); renderOrder();
+  fillBankDetails(cur==='EUR'?'eur':'usd');
+  document.getElementById('bankSelect').value = cur==='EUR'?'eur':'usd';
+}
+
+// ============================================================
+// BANK
+// ============================================================
+function fillBankDetails(bank) {
+  const banks = {
+    eur: { name:'İŞ BANKASI', address:'Sinanbey Mah. Alanyurt Cad. No:9A İNEGÖL', iban:'TR52 0006 4000 0022 2480 0012 20', swift:'ISBKTRIS' },
+    usd: { name:'ZİRAAT BANKASI', address:'Yeniceköy Mah. Mobilya Cad. No:30 INEGOL-BURSA', iban:'TR67 0001 0026 6062 8995 3850 08', swift:'TCZBTR2A' }
+  };
+  const b = banks[bank] || banks.eur;
+  document.getElementById('bankFullName').value = b.name;
+  document.getElementById('bankAddress').value = b.address;
+  document.getElementById('bankIban').value = b.iban;
+  document.getElementById('bankSwift').value = b.swift;
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)=> b.classList.toggle('active', ['order','setup'][i]===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ============================================================
+// PROFORMA PRINT — with List / Unit / Discount / Total columns
+// ============================================================
+function showPrintPreview() {
+  if (orderItems.length === 0) { showToast('Add products first'); return; }
+
+  const cur = document.getElementById('pfCurrency').value;
+  const sym = cur==='EUR'?'€':'$';
+  const total = orderItems.reduce((s,i) => s + i.unitPrice*i.qty, 0);
+  const totalListSum = orderItems.reduce((s,i) => s + i.listPrice*i.qty, 0);
+  const totalSaving = totalListSum - total;
+  const deposit = total * .3;
+  const balance = total * .7;
+  const pfDate = document.getElementById('pfDate').value;
+  const displayDate = pfDate ? new Date(pfDate).toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'}) : '—';
+  const payTerm = document.getElementById('pfPayment').value;
+
+  let rows = '';
+  orderItems.forEach((item, i) => {
+    const discPct = item.listPrice > 0 ? ((1 - item.unitPrice/item.listPrice)*100) : 0;
+    const lineTotal = item.unitPrice * item.qty;
+    rows += `
+      <tr>
+        <td class="pf-td-center" style="color:#999;">${i+1}</td>
+        <td>${item.name}${item.bundled ? ' <span style="font-size:8px;color:#B8935A;">BUNDLE</span>' : ''}</td>
+        <td class="pf-td-center">${item.qty}</td>
+        <td class="pf-td-right pf-list-price">${sym}${item.listPrice.toFixed(2)}</td>
+        <td class="pf-td-right pf-unit-price">${sym}${item.unitPrice.toFixed(2)}</td>
+        <td class="pf-td-center">${discPct > 0.05 ? `<span class="pf-disc-badge">-${discPct.toFixed(1)}%</span>` : '<span style="color:#ccc">—</span>'}</td>
+        <td class="pf-td-right pf-line-total">${sym}${lineTotal.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  const html = `
+    <div class="pf-header-row">
+      <div>
+        <div class="pf-company-name">SELİNA MOBİLYA ORMAN ÜRN.SAN.TİC.LTD.ŞTİ.</div>
+        <div class="pf-company-addr">Inegol-Bursa karayolu, 7.km, Turgut Ozal Mah., INEGOL / BURSA / TURKIYE</div>
+        <div class="pf-company-addr">export@morellomobilya.com</div>
+      </div>
+      <div>
+        <div class="pf-title">PROFORMA INVOICE</div>
+        <div class="pf-title-meta">PI NO: <strong>${document.getElementById('piNumber').value}</strong><br>DATE: ${displayDate}<br>VALIDITY: ${document.getElementById('pfValidity').value}</div>
+      </div>
+    </div>
+
+    <div class="pf-info-grid">
+      <div>
+        <div class="pf-section-label">Buyer Information</div>
+        <div class="pf-field-row"><span class="pf-field-key">Company:</span><span class="pf-field-val">${document.getElementById('buyerCompany').value||'—'}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Contact:</span><span class="pf-field-val">${document.getElementById('buyerContact').value||'—'}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Address:</span><span class="pf-field-val">${document.getElementById('buyerAddress').value||'—'}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Country:</span><span class="pf-field-val">${document.getElementById('buyerCountry').value||'—'}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Phone:</span><span class="pf-field-val">${document.getElementById('buyerPhone').value||'—'}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Email:</span><span class="pf-field-val">${document.getElementById('buyerEmail').value||'—'}</span></div>
+      </div>
+      <div>
+        <div class="pf-section-label">Invoice Details</div>
+        <div class="pf-field-row"><span class="pf-field-key">PI Number:</span><span class="pf-field-val">${document.getElementById('piNumber').value}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Currency:</span><span class="pf-field-val">${cur}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Price Term:</span><span class="pf-field-val">${document.getElementById('pfPriceTerm').value}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Payment:</span><span class="pf-field-val">${payTerm}</span></div>
+        <div class="pf-field-row"><span class="pf-field-key">Lead Time:</span><span class="pf-field-val">${document.getElementById('pfLeadTime').value}</span></div>
+      </div>
+    </div>
+
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th style="width:24px;" class="pf-td-center">No</th>
+          <th>Description</th>
+          <th style="width:40px;" class="right">Qty</th>
+          <th style="width:90px;" class="right">List Price (${cur})</th>
+          <th style="width:90px;" class="right">Unit Price (${cur})</th>
+          <th style="width:65px;" class="right">Discount</th>
+          <th style="width:100px;" class="right">Total (${cur})</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div class="pf-totals">
+      <div class="pf-totals-box">
+        ${totalSaving > 0 ? `<div class="pf-total-row"><span style="color:#888;">Total List Value</span><span style="color:#aaa;text-decoration:line-through;">${sym}${totalListSum.toFixed(2)}</span></div>
+        <div class="pf-total-row highlight"><span>Total Saving</span><span style="color:#92400E;font-weight:700;">-${sym}${totalSaving.toFixed(2)}</span></div>` : ''}
+        ${payTerm.includes('30%') || payTerm.includes('30') ? `
+        <div class="pf-total-row highlight"><span>Deposit (30%)</span><span>${sym}${deposit.toFixed(2)}</span></div>
+        <div class="pf-total-row highlight"><span>Balance (70%)</span><span>${sym}${balance.toFixed(2)}</span></div>` : ''}
+        <div class="pf-total-row"><span>TOTAL AMOUNT</span><span>${sym}${total.toFixed(2)}</span></div>
+      </div>
+    </div>
+
+    <div class="pf-bank">
+      <div class="pf-bank-title">Beneficiary Bank Details</div>
+      <div class="pf-bank-grid">
+        <div class="pf-bank-row"><span class="pf-bank-key">Beneficiary Name:</span><span>SELİNA MOBİLYA ORMAN ÜRN.SAN.TİC.LTD.ŞTİ.</span></div>
+        <div class="pf-bank-row"><span class="pf-bank-key">Bank Name:</span><span>${document.getElementById('bankFullName').value}</span></div>
+        <div class="pf-bank-row"><span class="pf-bank-key">Beneficiary Address:</span><span>Inegol-Bursa karayolu, 7.km, INEGOL / BURSA / TURKIYE</span></div>
+        <div class="pf-bank-row"><span class="pf-bank-key">Bank Address:</span><span>${document.getElementById('bankAddress').value}</span></div>
+        <div class="pf-bank-row"><span class="pf-bank-key">IBAN / Account No:</span><span>${document.getElementById('bankIban').value}</span></div>
+        <div class="pf-bank-row"><span class="pf-bank-key">SWIFT Code:</span><span>${document.getElementById('bankSwift').value}</span></div>
+      </div>
+    </div>
+
+    <div class="pf-notes">
+      <strong>NOTES:</strong> This proforma invoice is valid for ${document.getElementById('pfValidity').value}. · Production commences upon receipt of initial payment. · All bank charges outside Turkey are for the buyer's account. · Please verify all quantities and specifications prior to confirmation. · Loading date is subject to production completion and port availability. · The seller bears no responsibility for delays caused by customs, shipping lines, or port authorities. · The seller is not liable for damages during transportation unless insured. · Warranty is limited to manufacturing defects only.
+    </div>
+
+    <div class="pf-sig">
+      <div class="pf-sig-box">Buyer Signature & Stamp</div>
+      <div class="pf-sig-box">Seller Authorized Signature</div>
+    </div>
+  `;
+
+  document.getElementById('proforma-print').innerHTML = html;
+  document.getElementById('print-overlay').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function closePrintPreview() {
+  document.getElementById('print-overlay').style.display = 'none';
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastT;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
