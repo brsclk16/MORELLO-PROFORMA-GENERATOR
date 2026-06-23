@@ -334,6 +334,58 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="display:none;position:fixed;inset:0;background:#1A1A1A;z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:8px;padding:36px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:24px;font-weight:700;letter-spacing:4px;">M<span style="color:#B8935A;">O</span>RELLO</div>
+      <div style="font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-top:3px;">Proforma Generator</div>
+    </div>
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#991B1B;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;"></div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:4px;">E-posta</label>
+      <input id="login-email" type="email" placeholder="email@morello.com" style="width:100%;padding:9px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;outline:none;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Şifre</label>
+      <input id="login-pass" type="password" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;outline:none;" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button onclick="doLogin()" style="width:100%;padding:10px;background:#B8935A;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.5px;">Giriş Yap</button>
+    <div style="text-align:center;margin-top:14px;">
+      <button onclick="showRegister()" style="background:none;border:none;color:#888;font-size:11px;cursor:pointer;text-decoration:underline;">Hesap oluştur</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER PANEL -->
+<div id="register-panel" style="display:none;position:fixed;inset:0;background:#1A1A1A;z-index:100000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:8px;padding:36px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:700;letter-spacing:3px;">M<span style="color:#B8935A;">O</span>RELLO</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Yeni Hesap Oluştur</div>
+    </div>
+    <div id="reg-error" style="display:none;background:#FEE2E2;color:#991B1B;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;"></div>
+    <div id="reg-success" style="display:none;background:#D1FAE5;color:#065F46;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;"></div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Ad Soyad</label>
+      <input id="reg-name" type="text" placeholder="Barış Çelik" style="width:100%;padding:9px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;outline:none;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:4px;">E-posta</label>
+      <input id="reg-email" type="email" placeholder="email@morello.com" style="width:100%;padding:9px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;outline:none;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Şifre</label>
+      <input id="reg-pass" type="password" placeholder="Min. 6 karakter" style="width:100%;padding:9px 12px;border:1px solid #E0E0E0;border-radius:6px;font-size:13px;outline:none;">
+    </div>
+    <button onclick="doRegister()" style="width:100%;padding:10px;background:#2C2C2C;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Kayıt Ol</button>
+    <div style="text-align:center;margin-top:12px;">
+      <button onclick="hideRegister()" style="background:none;border:none;color:#888;font-size:11px;cursor:pointer;text-decoration:underline;">← Giriş ekranına dön</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- HEADER -->
 <div class="hdr">
   <div>
@@ -865,9 +917,11 @@ function onLoginSuccess(email) {
 
 function showRegister() {
   document.getElementById('register-panel').style.display='flex';
+  document.getElementById('login-overlay').style.display='none';
 }
 function hideRegister() {
   document.getElementById('register-panel').style.display='none';
+  document.getElementById('login-overlay').style.display='flex';
 }
 
 function checkSession() {
@@ -875,7 +929,6 @@ function checkSession() {
   if(saved) {
     try {
       const s = JSON.parse(saved);
-      // Check if token is still valid (exp check)
       const payload = JSON.parse(atob(s.access_token.split('.')[1]));
       if(payload.exp * 1000 > Date.now()) {
         currentUser = s;
@@ -885,7 +938,9 @@ function checkSession() {
       }
     } catch(e) {}
   }
-  document.getElementById('login-overlay').style.display='flex';
+  // No valid session — show login
+  const overlay = document.getElementById('login-overlay');
+  if(overlay) { overlay.style.display='flex'; }
   return false;
 }
 
