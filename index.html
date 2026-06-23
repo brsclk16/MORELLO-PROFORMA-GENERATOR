@@ -356,6 +356,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="lang-ui-btn cur-btn active" data-lang="en" onclick="setUILang('en')" style="padding:2px 8px;font-size:10px;font-weight:700;">EN</button>
       <button class="lang-ui-btn cur-btn" data-lang="tr" onclick="setUILang('tr')" style="padding:2px 8px;font-size:10px;font-weight:700;">TR</button>
     </div>
+    <span id="user-info" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:4px;"></span>
+    <button id="btn-logout" onclick="doLogout()" style="display:none;padding:2px 10px;font-size:10px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;color:#fff;cursor:pointer;">⎋ Çıkış</button>
     <button id="btn-clear" class="btn btn-outline btn-sm" onclick="clearOrder()">🗑 Clear</button>
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
@@ -554,6 +556,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         </div>
         <div id="histList"><div class="empty-hist">No saved proformas yet.<br>Click "Save" in the header to save the current order.</div></div>
       </div>
+      <div class="card" style="margin-top:0;">
+        <div class="card-hdr"><h3>💾 Veri Yedekleme</h3></div>
+        <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-dark" onclick="exportBackup()">⬇ JSON Yedek İndir</button>
+          <button class="btn btn-ghost" onclick="importBackup()">⬆ JSON Yedek Yükle</button>
+          <button class="btn btn-gold" onclick="syncFromCloud()">☁ Buluttan Yenile</button>
+          <span style="font-size:10px;color:var(--muted);">· Tüm müşteri, geçmiş ve özel ürünler</span>
+        </div>
+      </div>
     </div>
 
     <!-- CATALOG EDITOR TAB -->
@@ -613,7 +624,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
       <div class="card" style="background:var(--gold-light);border-color:var(--gold);">
         <div class="card-body" style="font-size:11px;color:var(--muted);line-height:1.8;">
-          💡 Eklenen ürünler katalogda <strong>özel seri</strong> olarak görünür ve proformaya eklenebilir. localStorage'da saklanır, sayfa yenilemesinde kaybolmaz.
+          💡 Eklenen ürünler katalogda <strong>⭐ Özel</strong> serisi altında görünür. Supabase'e otomatik kaydedilir.
         </div>
       </div>
     </div>
@@ -750,6 +761,266 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast" id="toast"></div>
 
 <script>
+
+
+
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPA_URL = 'https://etwanruohujctvkjvxzw.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d2FucnVvaHVqY3R2a2p2eHp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA0NzAsImV4cCI6MjA5Nzc4NjQ3MH0.aErGOAe7s7Ge5Nq5tRXi0EhOOU23EpCC4cCpth_oPsU';
+let currentUser = null;
+let currentUserId = null;
+
+async function supaFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + (currentUser?.access_token || SUPA_KEY),
+      'Content-Type': 'application/json',
+      'Prefer': method==='POST' ? 'return=representation' : ''
+    }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(SUPA_URL + path, opts);
+  if(!r.ok) {
+    const err = await r.text();
+    throw new Error(err);
+  }
+  if(r.status===204) return [];
+  return r.json();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display='none';
+  if(!email||!pass) { errEl.textContent='E-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
+  try {
+    const r = await fetch(SUPA_URL+'/auth/v1/token?grant_type=password', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass})
+    });
+    const data = await r.json();
+    if(data.error || !data.access_token) throw new Error(data.error_description||data.message||'Giriş başarısız');
+    currentUser = data;
+    currentUserId = data.user.id;
+    localStorage.setItem('morello_session', JSON.stringify({access_token:data.access_token,user:data.user}) );
+    onLoginSuccess(data.user.email);
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display='block';
+  }
+}
+
+async function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const errEl = document.getElementById('reg-error');
+  const sucEl = document.getElementById('reg-success');
+  errEl.style.display='none'; sucEl.style.display='none';
+  if(!email||!pass) { errEl.textContent='E-posta ve şifre zorunludur.'; errEl.style.display='block'; return; }
+  try {
+    const r = await fetch(SUPA_URL+'/auth/v1/signup', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass,data:{full_name:name}})
+    });
+    const data = await r.json();
+    if(data.error) throw new Error(data.error_description||data.message||'Kayıt başarısız');
+    sucEl.textContent='Kayıt başarılı! E-postanızı onaylayın veya doğrudan giriş yapın.';
+    sucEl.style.display='block';
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display='block';
+  }
+}
+
+function doLogout() {
+  currentUser = null; currentUserId = null;
+  localStorage.removeItem('morello_session');
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('user-info').textContent='';
+  document.getElementById('btn-logout').style.display='none';
+  showToast('Çıkış yapıldı');
+}
+
+function onLoginSuccess(email) {
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('register-panel').style.display='none';
+  const shortEmail = email.split('@')[0];
+  document.getElementById('user-info').textContent='👤 '+shortEmail;
+  document.getElementById('btn-logout').style.display='block';
+  // Sync from cloud on login
+  syncFromCloud();
+  showToast('✓ Hoş geldiniz, '+shortEmail);
+}
+
+function showRegister() {
+  document.getElementById('register-panel').style.display='flex';
+}
+function hideRegister() {
+  document.getElementById('register-panel').style.display='none';
+}
+
+function checkSession() {
+  const saved = localStorage.getItem('morello_session');
+  if(saved) {
+    try {
+      const s = JSON.parse(saved);
+      // Check if token is still valid (exp check)
+      const payload = JSON.parse(atob(s.access_token.split('.')[1]));
+      if(payload.exp * 1000 > Date.now()) {
+        currentUser = s;
+        currentUserId = s.user.id;
+        onLoginSuccess(s.user.email);
+        return true;
+      }
+    } catch(e) {}
+  }
+  document.getElementById('login-overlay').style.display='flex';
+  return false;
+}
+
+// ============================================================
+// CLOUD SYNC
+// ============================================================
+async function syncFromCloud() {
+  if(!currentUserId) return;
+  showToast('☁ Veriler yükleniyor…');
+  try {
+    // Load customers
+    const custs = await supaFetch('/rest/v1/customers?user_id=eq.'+currentUserId+'&order=created_at.asc');
+    if(custs.length) {
+      const mapped = custs.map(c=>({company:c.company,contact:c.contact,country:c.country,phone:c.phone,email:c.email,address:c.address,discount:c.discount||0,currency:c.currency,lang:c.lang,flag:c.flag,_supa_id:c.id}));
+      localStorage.setItem('morello_customers', JSON.stringify(mapped));
+    }
+    // Load history
+    const hist = await supaFetch('/rest/v1/proforma_history?user_id=eq.'+currentUserId+'&order=created_at.desc&limit=100');
+    if(hist.length) {
+      const mapped = hist.map(h=>({pi:h.pi,buyer:h.buyer,total:h.total,currency:h.currency,status:h.status||'Draft',cbm:h.cbm,date:h.date,items:h.items||[],buyer_data:h.buyer_data||{},settings:h.settings||{},_supa_id:h.id}));
+      localStorage.setItem('morello_history', JSON.stringify(mapped));
+    }
+    // Load custom products
+    const prods = await supaFetch('/rest/v1/custom_products?user_id=eq.'+currentUserId+'&order=created_at.asc');
+    if(prods.length) {
+      localStorage.setItem('morello_custom_products', JSON.stringify(prods));
+    }
+    renderCustomers(); renderHistory(); buildCatalog();
+    showToast('✓ Veriler buluttan yüklendi');
+  } catch(e) {
+    console.error('Sync error:', e);
+    showToast('⚠ Bulut yüklenemedi, lokal veri kullanılıyor');
+  }
+}
+
+async function saveCustomerToCloud(cust) {
+  if(!currentUserId) return;
+  try {
+    const payload = {user_id:currentUserId,company:cust.company,contact:cust.contact||'',country:cust.country||'',phone:cust.phone||'',email:cust.email||'',address:cust.address||'',discount:cust.discount||0,currency:cust.currency||'USD',lang:cust.lang||'en',flag:cust.flag||'🏳️'};
+    if(cust._supa_id) {
+      await supaFetch('/rest/v1/customers?id=eq.'+cust._supa_id, 'PATCH', payload);
+    } else {
+      const res = await supaFetch('/rest/v1/customers', 'POST', payload);
+      if(res[0]) cust._supa_id = res[0].id;
+    }
+  } catch(e) { console.error('Cloud save customer error:', e); }
+}
+
+async function deleteCustomerFromCloud(supaId) {
+  if(!currentUserId||!supaId) return;
+  try { await supaFetch('/rest/v1/customers?id=eq.'+supaId, 'DELETE'); } catch(e) { console.error(e); }
+}
+
+async function saveHistoryToCloud(entry) {
+  if(!currentUserId) return;
+  try {
+    const payload = {user_id:currentUserId,pi:entry.pi,buyer:entry.buyer,total:entry.total,currency:entry.currency,status:entry.status||'Draft',cbm:entry.cbm||'0.00',date:entry.date,items:entry.items,buyer_data:entry.buyer_data,settings:entry.settings};
+    if(entry._supa_id) {
+      await supaFetch('/rest/v1/proforma_history?id=eq.'+entry._supa_id, 'PATCH', payload);
+    } else {
+      const res = await supaFetch('/rest/v1/proforma_history', 'POST', payload);
+      if(res[0]) entry._supa_id = res[0].id;
+    }
+  } catch(e) { console.error('Cloud save history error:', e); }
+}
+
+async function deleteHistoryFromCloud(supaId) {
+  if(!currentUserId||!supaId) return;
+  try { await supaFetch('/rest/v1/proforma_history?id=eq.'+supaId, 'DELETE'); } catch(e) { console.error(e); }
+}
+
+async function saveProductToCloud(prod) {
+  if(!currentUserId) return;
+  try {
+    const payload = {...prod, user_id:currentUserId};
+    await supaFetch('/rest/v1/custom_products?id=eq.'+prod.id, 'DELETE').catch(()=>{});
+    await supaFetch('/rest/v1/custom_products', 'POST', payload);
+  } catch(e) { console.error('Cloud save product error:', e); }
+}
+
+async function deleteProductFromCloud(id) {
+  if(!currentUserId) return;
+  try { await supaFetch('/rest/v1/custom_products?id=eq.'+id, 'DELETE'); } catch(e) { console.error(e); }
+}
+
+// ============================================================
+// JSON EXPORT / IMPORT BACKUP
+// ============================================================
+function exportBackup() {
+  const data = {
+    version: '1.0',
+    exported: new Date().toISOString(),
+    customers: JSON.parse(localStorage.getItem('morello_customers')||'[]'),
+    history: JSON.parse(localStorage.getItem('morello_history')||'[]'),
+    custom_products: JSON.parse(localStorage.getItem('morello_custom_products')||'[]'),
+    pi_counter: {}
+  };
+  // Include PI counters
+  const year = new Date().getFullYear();
+  data.pi_counter[year] = parseInt(localStorage.getItem('morello_pi_counter_'+year)||'0');
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'morello-backup-'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Yedek indirildi');
+}
+
+function importBackup() {
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='.json';
+  inp.onchange = async e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      if(!data.version) throw new Error('Geçersiz dosya');
+      if(data.customers?.length) localStorage.setItem('morello_customers', JSON.stringify(data.customers));
+      if(data.history?.length) localStorage.setItem('morello_history', JSON.stringify(data.history));
+      if(data.custom_products?.length) localStorage.setItem('morello_custom_products', JSON.stringify(data.custom_products));
+      if(data.pi_counter) {
+        Object.entries(data.pi_counter).forEach(([yr,n])=>localStorage.setItem('morello_pi_counter_'+yr, n));
+      }
+      renderCustomers(); renderHistory(); buildCatalog();
+      showToast('✓ Yedek yüklendi · '+( (data.history?.length||0)+' proforma, '+(data.customers?.length||0)+' müşteri'));
+    } catch(err) {
+      showToast('✗ Dosya okunamadı: '+err.message);
+    }
+  };
+  inp.click();
+}
 
 
 // ============================================================
@@ -1412,6 +1683,8 @@ document.addEventListener('DOMContentLoaded', () => {
   uiLang = localStorage.getItem('morello_ui_lang') || 'en';
   document.querySelectorAll('.lang-ui-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===uiLang));
   if(uiLang==='tr') applyUILang();
+  // Auth check
+  checkSession();
 });
 
 // ============================================================
@@ -1706,7 +1979,10 @@ function fillBank(b) {
 // CUSTOMER BOOK (localStorage)
 // ============================================================
 function getCustomers() { try { return JSON.parse(localStorage.getItem('morello_customers')||'[]'); } catch{return[];} }
-function saveCustomers(arr) { localStorage.setItem('morello_customers', JSON.stringify(arr)); }
+function saveCustomers(arr) {
+  localStorage.setItem('morello_customers', JSON.stringify(arr));
+  // Cloud sync handled per-operation
+}
 
 function renderCustomers() {
   const list = document.getElementById('custList');
@@ -1778,7 +2054,9 @@ function saveCustomer() {
   const custs = getCustomers();
   const disc=parseFloat(document.getElementById('mc-discount').value)||0;
   custs.push({company, contact:document.getElementById('mc-contact').value, country:document.getElementById('mc-country').value, phone:document.getElementById('mc-phone').value, email:document.getElementById('mc-email').value, address:document.getElementById('mc-address').value, discount:disc});
-  saveCustomers(custs); closeCustModal(); renderCustomers(); showToast('✓ Customer saved: '+company);
+  saveCustomers(custs);
+  saveCustomerToCloud(custs[custs.length-1]);
+  closeCustModal(); renderCustomers(); showToast(u('toast_cust_saved')+' '+company);
 }
 
 function loadCustomer(i) {
@@ -1802,7 +2080,11 @@ function loadCustomer(i) {
 
 function deleteCustomer(i) {
   if(!confirm('Delete this customer?')) return;
-  const custs=getCustomers(); custs.splice(i,1); saveCustomers(custs); renderCustomers(); showToast('Customer deleted');
+  const custs=getCustomers();
+  const deleted=custs[i];
+  custs.splice(i,1); saveCustomers(custs);
+  if(deleted?._supa_id) deleteCustomerFromCloud(deleted._supa_id);
+  renderCustomers(); showToast(u('toast_cust_deleted'));
 }
 
 function loadPipelineCompany(i) {
@@ -1826,8 +2108,9 @@ function saveCurrentAsCust() {
   const existing=custs.findIndex(c=>c.company.toLowerCase()===company.toLowerCase());
   const disc=parseFloat(document.getElementById('discVal').value)||0;
   const obj={company, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, discount:disc};
-  if(existing>=0) { custs[existing]=obj; showToast('✓ Customer updated: '+company); } else { custs.push(obj); showToast('✓ Saved: '+company); }
-  saveCustomers(custs); renderCustomers();
+  if(existing>=0) { custs[existing]=obj; saveCustomers(custs); saveCustomerToCloud(obj); showToast(u('toast_cust_updated')+' '+company); }
+  else { custs.push(obj); saveCustomers(custs); saveCustomerToCloud(obj); showToast(u('toast_cust_saved')+' '+company); }
+  renderCustomers();
 }
 
 // ============================================================
@@ -1846,7 +2129,9 @@ function saveToHistory() {
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
   hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value } });
   if(hist.length>50) hist.splice(50);
-  saveHistory(hist); renderHistory(); showToast('✓ Saved to history: '+pi);
+  saveHistory(hist);
+  saveHistoryToCloud(hist[0]);
+  renderHistory(); showToast(u('toast_saved')+' '+pi);
 }
 
 
@@ -2055,7 +2340,11 @@ function loadHistory(i) {
 
 function deleteHistory(i) {
   if(!confirm('Delete this proforma?')) return;
-  const hist=getHistory(); hist.splice(i,1); saveHistory(hist); renderHistory(); showToast('Deleted');
+  const hist=getHistory();
+  const deleted=hist[i];
+  hist.splice(i,1); saveHistory(hist);
+  if(deleted?._supa_id) deleteHistoryFromCloud(deleted._supa_id);
+  renderHistory(); showToast(u('toast_hist_deleted'));
 }
 
 function clearHistory() {
@@ -2069,8 +2358,10 @@ function cycleStatus(i, e) {
   const hist=getHistory();
   const cur=statuses.indexOf(hist[i].status||'Draft');
   hist[i].status=statuses[(cur+1)%statuses.length];
-  saveHistory(hist); renderHistory();
-  showToast('Status → '+hist[i].status);
+  saveHistory(hist);
+  if(hist[i]._supa_id) saveHistoryToCloud(hist[i]);
+  renderHistory();
+  showToast(u('toast_status')+' '+hist[i].status);
 }
 
 // ============================================================
