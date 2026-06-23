@@ -352,10 +352,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="fx-live-badge" onclick="fetchLiveRates()" title="Fetch live rates">🔄 Live</button>
   </div>
   <div class="hdr-actions">
-    <button class="btn btn-outline btn-sm" onclick="clearOrder()">🗑 Clear</button>
-    <button class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
-    <button class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
-    <button class="btn btn-gold" onclick="showPrint()">📄 Generate Proforma</button>
+    <div style="display:flex;gap:3px;background:rgba(255,255,255,.1);padding:2px;border-radius:var(--r);margin-right:4px;">
+      <button class="lang-ui-btn cur-btn active" data-lang="en" onclick="setUILang('en')" style="padding:2px 8px;font-size:10px;font-weight:700;">EN</button>
+      <button class="lang-ui-btn cur-btn" data-lang="tr" onclick="setUILang('tr')" style="padding:2px 8px;font-size:10px;font-weight:700;">TR</button>
+    </div>
+    <button id="btn-clear" class="btn btn-outline btn-sm" onclick="clearOrder()">🗑 Clear</button>
+    <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
+    <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
+    <button id="btn-generate" class="btn btn-gold" onclick="showPrint()">📄 Generate Proforma</button>
   </div>
 </div>
 
@@ -396,8 +400,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
           <span class="disc-label">Apply to all lines:</span>
           <input type="number" class="disc-input" id="discVal" placeholder="%" min="0" max="100" step="0.5">
           <span style="font-size:12px;font-weight:700;color:var(--gold);">%</span>
-          <button class="btn btn-dark btn-sm" onclick="applyDiscount()">Apply to All</button>
-          <button class="btn btn-ghost btn-sm" onclick="resetPrices()">↺ Reset</button>
+          <button id="btn-apply-disc" class="btn btn-dark btn-sm" onclick="applyDiscount()">Apply to All</button>
+          <button id="btn-reset-disc" class="btn btn-ghost btn-sm" onclick="resetPrices()">↺ Reset</button>
           <span class="disc-note">· Type custom price per line below, discount% auto-calculates</span>
         </div>
       </div>
@@ -418,12 +422,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
             <thead>
               <tr>
                 <th style="width:22px;">#</th>
-                <th>Description</th>
-                <th style="width:58px;">Qty</th>
-                <th style="width:150px;">List → Unit</th>
-                <th style="width:48px;">Disc.</th>
-                <th style="width:48px;">CBM</th>
-                <th style="width:76px;">Total</th>
+                <th id="th-desc">Description</th>
+                <th style="width:58px;" id="th-qty">Qty</th>
+                <th style="width:150px;" id="th-listunit">List → Unit</th>
+                <th style="width:48px;" id="th-disc">Disc.</th>
+                <th style="width:48px;" id="th-cbm">CBM</th>
+                <th style="width:76px;" id="th-total">Total</th>
                 <th style="width:20px;"></th>
               </tr>
             </thead>
@@ -746,6 +750,282 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast" id="toast"></div>
 
 <script>
+
+
+// ============================================================
+// UI LANGUAGE
+// ============================================================
+const UI_LANG = {
+  en: {
+    // Header
+    clear: '🗑 Clear', save: '💾 Save', summary: '📋 Summary', generate: '📄 Generate Proforma',
+    // Tabs
+    tab_order: '📋 Order', tab_container: '🚢 Container', tab_customers: '👥 Customers',
+    tab_history: '🕐 History', tab_catalog_editor: '➕ Add Product', tab_setup: '⚙️ Details',
+    // Catalog
+    catalogue: '🪑 Catalogue',
+    search_placeholder: 'Search… (Roma, sofa, wardrobe)',
+    // Discount panel
+    global_discount: '💰 Global Discount',
+    apply_to_all: 'Apply to all lines:',
+    apply_btn: 'Apply to All',
+    reset_btn: '↺ Reset',
+    disc_note: '· Type custom price per line below, discount% auto-calculates',
+    // Order
+    order_items: '📦 Order Items',
+    lines: 'Lines:', cbm_lbl: 'CBM:', total_lbl: 'Total:',
+    empty_order: 'Add products from the left panel',
+    qty_col: 'Qty', list_unit_col: 'List → Unit', disc_col: 'Disc.', cbm_col: 'CBM', total_col: 'Total',
+    // Totals
+    grand_total: 'Grand Total', deposit: 'Deposit 30%', balance: 'Balance 70%',
+    total_cbm: 'Total CBM', you_save: 'You Save',
+    advance: 'Advance', before_loading: 'Before loading', vs_list: 'vs list price',
+    // FX
+    fx_order_try: 'Order in TRY:', live_btn: '🔄 Live',
+    // Customers
+    companies: '👥 Companies', new_btn: '+ New',
+    search_company: 'Search company…', all_sources: 'All Sources', pipeline: '📋 Pipeline', saved: '💾 Saved',
+    load_btn: '⚡ Load',
+    // Customers modal
+    new_customer: '➕ New Customer',
+    company_name: 'Company Name *', contact_person: 'Contact Person',
+    country: 'Country', phone: 'Phone', email: 'Email', address: 'Address',
+    default_disc: 'Default Discount %',
+    cancel: 'Cancel', save_customer: 'Save Customer',
+    save_as_cust: '💾 Save as Customer',
+    // History
+    proforma_history: '🕐 Proforma History', clear_all: '🗑 Clear All',
+    all_status: 'All Status', search_history: 'Search by company or PI number…',
+    load_hist: 'Load',
+    // Container
+    container_title: '🚢 Container & Vehicle Calculator',
+    container_sub: 'Auto-detects sofa vs furniture mode',
+    // Setup
+    buyer_info: '👤 Buyer Information', load_from: '📋 Load',
+    pf_lang: 'Proforma language:',
+    invoice_details: '📄 Invoice Details',
+    pi_number: 'PI Number', currency: 'Currency', price_term: 'Price / Delivery Term',
+    payment_terms: 'Payment Terms', lead_time: 'Lead Time', date: 'Date', validity: 'Validity',
+    bank_details: '🏦 Bank Details', account: 'Account',
+    // Catalog editor
+    add_product_title: '➕ Add New Product',
+    add_product_sub: 'Add custom product to catalogue',
+    series_name: 'Series Name (e.g. ZENA, ROMA)',
+    category: 'Category', product_name: 'Product Name',
+    eur_price: 'EUR Price (€)', usd_price: 'USD Price ($)', tl_price: 'TL Price (₺)',
+    cbm_field: 'CBM (m³)', is_bundle: 'Bundle price?', no_single: 'No — Single product', yes_set: 'Yes — Set/Bundle price',
+    add_to_cat: '➕ Add to Catalogue',
+    added_products: '📋 Added Products', delete_all: '🗑 Delete All',
+    no_products_yet: 'No products added yet.',
+    // Notes
+    note_placeholder: 'Note (colour, fabric…)', add_note: '+ Note',
+    // Stock
+    in_stock: 'In Stock',
+    // Empty states
+    no_customers: 'No customers saved yet. Add one to quickly fill proforma details.',
+    no_history: 'No saved proformas yet. Click Save in the header to save the current order.',
+    no_results: 'No results found.',
+    // Confirm dialogs
+    confirm_clear: 'Clear all order lines?',
+    confirm_del_cust: 'Delete this customer?',
+    confirm_del_hist: 'Delete this proforma?',
+    confirm_clear_hist: 'Delete ALL history?',
+    confirm_load_hist: 'Load proforma {pi}? Current order will be replaced.',
+    // Toast messages
+    toast_added: '✓ Added:',
+    toast_cleared: 'Order cleared',
+    toast_saved: '✓ Saved to history:',
+    toast_loaded: '✓ Loaded:',
+    toast_status: 'Status →',
+    toast_discount_applied: '% applied to all lines',
+    toast_prices_reset: 'Prices reset',
+    toast_cust_saved: '✓ Customer saved:',
+    toast_cust_updated: '✓ Customer updated:',
+    toast_cust_deleted: 'Customer deleted',
+    toast_hist_deleted: 'Deleted',
+    toast_hist_cleared: 'History cleared',
+    toast_product_added: '✓ Added:',
+    toast_product_deleted: 'Deleted',
+    toast_custom_cleared: 'Custom products cleared',
+    toast_live_rates: '✓ Live rates loaded · EUR/TRY:',
+    toast_rate_failed: '⚠ Rate fetch failed — check connection',
+  },
+  tr: {
+    // Header
+    clear: '🗑 Temizle', save: '💾 Kaydet', summary: '📋 Özet', generate: '📄 Proforma Oluştur',
+    // Tabs
+    tab_order: '📋 Sipariş', tab_container: '🚢 Konteyner', tab_customers: '👥 Müşteriler',
+    tab_history: '🕐 Geçmiş', tab_catalog_editor: '➕ Ürün Ekle', tab_setup: '⚙️ Ayarlar',
+    // Catalog
+    catalogue: '🪑 Ürün Kataloğu',
+    search_placeholder: 'Ara… (Roma, koltuk, gardırop)',
+    // Discount panel
+    global_discount: '💰 Genel İskonto',
+    apply_to_all: 'Tüm kalemlere uygula:',
+    apply_btn: 'Tümüne Uygula',
+    reset_btn: '↺ Sıfırla',
+    disc_note: '· Satır bazlı özel fiyat girebilirsiniz, iskonto % otomatik hesaplanır',
+    // Order
+    order_items: '📦 Sipariş Kalemleri',
+    lines: 'Kalem:', cbm_lbl: 'CBM:', total_lbl: 'Toplam:',
+    empty_order: 'Sol panelden ürün ekleyiniz',
+    qty_col: 'Adet', list_unit_col: 'Liste → Birim', disc_col: 'İsk.', cbm_col: 'CBM', total_col: 'Toplam',
+    // Totals
+    grand_total: 'Genel Toplam', deposit: 'Peşinat %30', balance: 'Kalan %70',
+    total_cbm: 'Toplam CBM', you_save: 'Kazanç',
+    advance: 'Peşin', before_loading: 'Yükleme öncesi', vs_list: 'liste fiyatına göre',
+    // FX
+    fx_order_try: 'Sipariş TL:', live_btn: '🔄 Canlı',
+    // Customers
+    companies: '👥 Firmalar', new_btn: '+ Yeni',
+    search_company: 'Firma ara…', all_sources: 'Tümü', pipeline: '📋 Pipeline', saved: '💾 Kayıtlı',
+    load_btn: '⚡ Yükle',
+    // Customers modal
+    new_customer: '➕ Yeni Müşteri',
+    company_name: 'Firma Adı *', contact_person: 'Yetkili Kişi',
+    country: 'Ülke', phone: 'Telefon', email: 'E-posta', address: 'Adres',
+    default_disc: 'Varsayılan İskonto %',
+    cancel: 'İptal', save_customer: 'Müşteriyi Kaydet',
+    save_as_cust: '💾 Müşteri Olarak Kaydet',
+    // History
+    proforma_history: '🕐 Proforma Geçmişi', clear_all: '🗑 Tümünü Sil',
+    all_status: 'Tüm Durumlar', search_history: 'Firma veya PI numarası ile ara…',
+    load_hist: 'Yükle',
+    // Container
+    container_title: '🚢 Konteyner & Araç Hesaplayıcı',
+    container_sub: 'Koltuk / mobilya modunu otomatik algılar',
+    // Setup
+    buyer_info: '👤 Alıcı Bilgileri', load_from: '📋 Yükle',
+    pf_lang: 'Proforma dili:',
+    invoice_details: '📄 Fatura Detayları',
+    pi_number: 'PI Numarası', currency: 'Para Birimi', price_term: 'Teslim Şekli',
+    payment_terms: 'Ödeme Koşulları', lead_time: 'Teslimat Süresi', date: 'Tarih', validity: 'Geçerlilik',
+    bank_details: '🏦 Banka Bilgileri', account: 'Hesap',
+    // Catalog editor
+    add_product_title: '➕ Yeni Ürün Ekle',
+    add_product_sub: 'Kataloga özel ürün ekle',
+    series_name: 'Seri Adı (örn: ZENA, ROMA)',
+    category: 'Kategori', product_name: 'Ürün Adı',
+    eur_price: 'EUR Fiyatı (€)', usd_price: 'USD Fiyatı ($)', tl_price: 'TL Fiyatı (₺)',
+    cbm_field: 'CBM (m³)', is_bundle: 'Set fiyatı mı?', no_single: 'Hayır — Tekil ürün', yes_set: 'Evet — Set/Takım fiyatı',
+    add_to_cat: '➕ Kataloga Ekle',
+    added_products: '📋 Eklenen Ürünler', delete_all: '🗑 Tümünü Sil',
+    no_products_yet: 'Henüz ürün eklenmedi.',
+    // Notes
+    note_placeholder: 'Not (renk, kumaş…)', add_note: '+ Not',
+    // Stock
+    in_stock: 'Stokta',
+    // Empty states
+    no_customers: 'Henüz müşteri kaydedilmedi. Proforma doldurmak için ekleyin.',
+    no_history: 'Henüz proforma kaydedilmedi. Kaydet butonuna tıklayın.',
+    no_results: 'Sonuç bulunamadı.',
+    // Confirm dialogs
+    confirm_clear: 'Tüm sipariş kalemleri silinsin mi?',
+    confirm_del_cust: 'Bu müşteri silinsin mi?',
+    confirm_del_hist: 'Bu proforma silinsin mi?',
+    confirm_clear_hist: 'Tüm geçmiş silinsin mi?',
+    confirm_load_hist: '{pi} proforması yüklensin mi? Mevcut sipariş silinecek.',
+    // Toast messages
+    toast_added: '✓ Eklendi:',
+    toast_cleared: 'Sipariş temizlendi',
+    toast_saved: '✓ Geçmişe kaydedildi:',
+    toast_loaded: '✓ Yüklendi:',
+    toast_status: 'Durum →',
+    toast_discount_applied: '% tüm kalemlere uygulandı',
+    toast_prices_reset: 'Fiyatlar sıfırlandı',
+    toast_cust_saved: '✓ Müşteri kaydedildi:',
+    toast_cust_updated: '✓ Müşteri güncellendi:',
+    toast_cust_deleted: 'Müşteri silindi',
+    toast_hist_deleted: 'Silindi',
+    toast_hist_cleared: 'Geçmiş temizlendi',
+    toast_product_added: '✓ Eklendi:',
+    toast_product_deleted: 'Silindi',
+    toast_custom_cleared: 'Özel ürünler temizlendi',
+    toast_live_rates: '✓ Canlı kur yüklendi · EUR/TRY:',
+    toast_rate_failed: '⚠ Kur alınamadı — bağlantıyı kontrol edin',
+  }
+};
+
+let uiLang = localStorage.getItem('morello_ui_lang') || 'en';
+function u(key) { return (UI_LANG[uiLang]||UI_LANG.en)[key] || key; }
+
+function setUILang(lang) {
+  uiLang = lang;
+  localStorage.setItem('morello_ui_lang', lang);
+  applyUILang();
+}
+
+function applyUILang() {
+  // Header buttons
+  const btnMap = {
+    'btn-clear': u('clear'),
+    'btn-save': u('save'),
+    'btn-summary': u('summary'),
+    'btn-generate': u('generate'),
+  };
+  Object.entries(btnMap).forEach(([id,txt])=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
+
+  // Tab buttons
+  const tabLabels=[u('tab_order'),u('tab_container'),u('tab_customers'),u('tab_history'),u('tab_catalog_editor'),u('tab_setup')];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{ if(tabLabels[i]) b.textContent=tabLabels[i]; });
+
+  // Catalog header
+  const catHdr=document.querySelector('.cat-hdr h2'); if(catHdr) catHdr.textContent=u('catalogue');
+  const srch=document.getElementById('searchInput'); if(srch) srch.placeholder=u('search_placeholder');
+
+  // Discount panel
+  const discHdr=document.querySelector('#tab-order .card-hdr h3'); if(discHdr) discHdr.textContent=u('global_discount');
+  const discLbl=document.querySelector('.disc-label'); if(discLbl) discLbl.textContent=u('apply_to_all');
+  const applyBtn=document.getElementById('btn-apply-disc'); if(applyBtn) applyBtn.textContent=u('apply_btn');
+  const resetBtn=document.getElementById('btn-reset-disc'); if(resetBtn) resetBtn.textContent=u('reset_btn');
+  const discNote=document.querySelector('.disc-note'); if(discNote) discNote.textContent=u('disc_note');
+
+  // FX widget
+  const fxLbl=document.querySelector('.fx-widget .fx-label:last-of-type'); 
+  const fxOrderLbl=document.getElementById('fx-order-lbl'); if(fxOrderLbl) fxOrderLbl.textContent=u('fx_order_try');
+  const liveBtnEl=document.querySelector('.fx-live-badge'); if(liveBtnEl&&liveBtnEl.textContent!=='⏳ Loading…') liveBtnEl.textContent=u('live_btn');
+
+  // Empty order message
+  const emptyMsg=document.getElementById('emptyMsg'); if(emptyMsg) emptyMsg.querySelector('p').textContent=u('empty_order');
+
+  // Totals bar
+  const totLbls=document.querySelectorAll('.tot-lbl');
+  const totKeys=['grand_total','deposit','balance','total_cbm','you_save'];
+  totLbls.forEach((el,i)=>{ if(totKeys[i]) el.textContent=u(totKeys[i]); });
+  const totSubs=document.querySelectorAll('.tot-sub');
+  if(totSubs[0]) totSubs[0].textContent='';
+  if(totSubs[1]) totSubs[1].textContent=u('advance');
+  if(totSubs[2]) totSubs[2].textContent=u('before_loading');
+  if(totSubs[3]) totSubs[3].textContent='m³';
+  if(totSubs[4]) totSubs[4].textContent=u('vs_list');
+
+  // Customer search placeholder
+  const custSrch=document.getElementById('custSearch'); if(custSrch) custSrch.placeholder=u('search_company');
+
+  // History search placeholder
+  const histSrch=document.getElementById('histSearch'); if(histSrch) histSrch.placeholder=u('search_history');
+
+  // Container tab
+  const contHdr=document.querySelector('#tab-container .card-hdr h3'); if(contHdr) contHdr.textContent=u('container_title');
+  const contSub=document.querySelector('#tab-container .card-hdr span'); if(contSub) contSub.textContent=u('container_sub');
+
+  // Note placeholders (re-render handles these)
+  // Lang toggle button active state
+  document.querySelectorAll('.lang-ui-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===uiLang));
+
+  // Table headers
+  const thMap={'th-qty':u('qty_col'),'th-listunit':u('list_unit_col'),'th-disc':u('disc_col'),'th-cbm':u('cbm_col'),'th-total':u('total_col'),'th-desc':'Description'};
+  Object.entries(thMap).forEach(([id,txt])=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
+
+  // Order card header
+  const orderHdr=document.querySelector('#tab-order .order-card .card-hdr h3'); if(orderHdr) orderHdr.textContent=u('order_items');
+  const orderMeta=document.querySelector('#itemCount')?.closest('.order-meta');
+
+  // Re-render dynamic content
+  renderOrder();
+  renderCustomers();
+  renderHistory();
+}
 
 const I18N = {
   en: {
@@ -1128,6 +1408,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCustomers();
   renderHistory();
   fetchLiveRates();
+  // Apply saved UI language
+  uiLang = localStorage.getItem('morello_ui_lang') || 'en';
+  document.querySelectorAll('.lang-ui-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===uiLang));
+  if(uiLang==='tr') applyUILang();
 });
 
 // ============================================================
@@ -1306,10 +1590,10 @@ function renderOrder() {
             ${item.bundled?'<div style="font-size:9px;color:var(--gold);">📦 Bundle</div>':''}
             <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
               ${getStockBadgeHtml(item.id)}
-              <button class="note-tmpl-btn" onclick="toggleNoteRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${item.note?'✏ '+item.note.slice(0,18)+(item.note.length>18?'…':''):'+ Note'}</button>
+              <button class="note-tmpl-btn" onclick="toggleNoteRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${item.note?'✏ '+item.note.slice(0,18)+(item.note.length>18?'…':''):u('add_note')}</button>
             </div>
             <div id="note-row-${idx}" style="display:none;margin-top:4px;">
-              <input class="note-inp" type="text" value="${item.note||''}" placeholder="Note (colour, fabric…)" data-idx="${idx}" oninput="liveNote(this)" style="margin-bottom:3px;">
+              <input class="note-inp" type="text" value="${item.note||''}" placeholder="${u('note_placeholder')}" data-idx="${idx}" oninput="liveNote(this)" style="margin-bottom:3px;">
               <div class="note-templates">${getNoteTemplateHtml(idx)}</div>
             </div>
           </div>
@@ -1951,7 +2235,7 @@ function liveNote(inp) {
   orderItems[idx].note=inp.value;
   // Update the toggle button label without re-render
   const btn=inp.closest('[id^="note-row-"]')?.previousElementSibling?.querySelector('button[onclick^="toggleNote"]');
-  if(btn) btn.textContent = inp.value ? ('✏ '+inp.value.slice(0,18)+(inp.value.length>18?'…':'')) : '+ Note';
+  if(btn) btn.textContent = inp.value ? ('✏ '+inp.value.slice(0,18)+(inp.value.length>18?'…':'')) : u('add_note');
 }
 
 function toggleNoteRow(idx) {
