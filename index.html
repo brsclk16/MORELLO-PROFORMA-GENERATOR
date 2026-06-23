@@ -825,23 +825,28 @@ let currentUser = null;
 let currentUserId = null;
 
 async function supaFetch(path, method='GET', body=null) {
+  const token = (currentUser && currentUser.access_token) ? currentUser.access_token : SUPA_KEY;
   const opts = {
     method,
     headers: {
       'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + (currentUser?.access_token || SUPA_KEY),
+      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json',
-      'Prefer': method==='POST' ? 'return=representation' : ''
+      'Prefer': method==='POST' ? 'return=representation' : '',
+      'Accept': 'application/json'
     }
   };
   if(body) opts.body = JSON.stringify(body);
-  const r = await fetch(SUPA_URL + path, opts);
-  if(!r.ok) {
-    const err = await r.text();
-    throw new Error(err);
+  try {
+    const r = await fetch(SUPA_URL + path, opts);
+    const text = await r.text();
+    if(!r.ok) throw new Error('HTTP '+r.status+': '+text);
+    if(!text || r.status===204) return [];
+    return JSON.parse(text);
+  } catch(e) {
+    console.error('supaFetch error:', path, e.message);
+    throw e;
   }
-  if(r.status===204) return [];
-  return r.json();
 }
 
 // ============================================================
@@ -977,16 +982,14 @@ async function syncFromCloud() {
 }
 
 async function saveCustomerToCloud(cust) {
-  if(!currentUserId) return;
-  try {
-    const payload = {user_id:currentUserId,company:cust.company,contact:cust.contact||'',country:cust.country||'',phone:cust.phone||'',email:cust.email||'',address:cust.address||'',discount:cust.discount||0,currency:cust.currency||'USD',lang:cust.lang||'en',flag:cust.flag||'🏳️'};
-    if(cust._supa_id) {
-      await supaFetch('/rest/v1/customers?id=eq.'+cust._supa_id, 'PATCH', payload);
-    } else {
-      const res = await supaFetch('/rest/v1/customers', 'POST', payload);
-      if(res[0]) cust._supa_id = res[0].id;
-    }
-  } catch(e) { console.error('Cloud save customer error:', e); }
+  if(!currentUserId) throw new Error('Giriş yapılmadı');
+  const payload = {user_id:currentUserId,company:cust.company,contact:cust.contact||'',country:cust.country||'',phone:cust.phone||'',email:cust.email||'',address:cust.address||'',discount:cust.discount||0,currency:cust.currency||'USD',lang:cust.lang||'en',flag:cust.flag||'🏳️'};
+  if(cust._supa_id) {
+    await supaFetch('/rest/v1/customers?id=eq.'+cust._supa_id, 'PATCH', payload);
+  } else {
+    const res = await supaFetch('/rest/v1/customers', 'POST', payload);
+    if(res[0]) cust._supa_id = res[0].id;
+  }
 }
 
 async function deleteCustomerFromCloud(supaId) {
@@ -2110,7 +2113,7 @@ function saveCustomer() {
   const disc=parseFloat(document.getElementById('mc-discount').value)||0;
   custs.push({company, contact:document.getElementById('mc-contact').value, country:document.getElementById('mc-country').value, phone:document.getElementById('mc-phone').value, email:document.getElementById('mc-email').value, address:document.getElementById('mc-address').value, discount:disc});
   saveCustomers(custs);
-  saveCustomerToCloud(custs[custs.length-1]);
+  saveCustomerToCloud(custs[custs.length-1]).then(()=>showToast('✓ Buluta kaydedildi')).catch(e=>showToast('⚠ Lokal kaydedildi: '+e.message));
   closeCustModal(); renderCustomers(); showToast(u('toast_cust_saved')+' '+company);
 }
 
