@@ -345,6 +345,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .irs-sig-box{flex:1;padding-top:36px;border-top:1px solid #1A1A1A;text-align:center;font-size:8.5px;font-weight:700;color:#444;letter-spacing:.5px;text-transform:uppercase;}
 .irs-notes{margin-top:10px;font-size:8.5px;color:#999;border-top:1px solid #E0E0E0;padding-top:7px;line-height:1.7;}
 
+
+/* PACKING LIST */
+#pl-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;}
+#pl-print{padding:24px 36px;max-width:780px;margin:50px auto 40px;background:#fff;font-family:Arial,sans-serif;font-size:11px;}
+.pl-title{font-size:22px;font-weight:700;text-decoration:underline;margin-bottom:4px;}
+.pl-date{font-size:11px;color:#333;margin-bottom:16px;}
+.pl-parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;}
+.pl-party-lbl{font-size:10px;font-weight:700;text-decoration:underline;margin-bottom:5px;letter-spacing:.5px;}
+.pl-party-line{font-size:10.5px;color:#1A1A1A;line-height:1.7;}
+.pl-table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px;}
+.pl-table th{border:1px solid #999;padding:6px 10px;text-align:center;font-weight:700;background:#F5F5F5;font-size:10px;}
+.pl-table td{border:1px solid #999;padding:6px 10px;vertical-align:middle;}
+.pl-table td.c{text-align:center;}
+.pl-table td.r{text-align:right;font-weight:700;}
+.pl-table tr.pl-total td{font-weight:700;text-decoration:underline;background:#F0F0F0;}
+.pl-notes-section{margin-top:14px;font-size:10px;color:#444;line-height:1.9;}
+.pl-notes-row{display:flex;gap:10px;}
+.pl-notes-key{font-weight:700;min-width:80px;}
+
 /* PRINT OVERLAY */
 #print-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;}
 .print-actions{position:fixed;top:0;left:0;right:0;background:var(--accent);padding:9px 20px;display:flex;gap:8px;z-index:10001;}
@@ -394,7 +413,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .toast{position:fixed;bottom:18px;right:18px;background:var(--accent);color:#fff;padding:8px 16px;border-radius:var(--r);font-size:12px;font-weight:600;z-index:9998;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.2);}
 .toast.show{opacity:1;transform:translateY(0);}
 .collapsed{display:none;}
-@media print{body>*:not(#print-overlay):not(#irsaliye-overlay){display:none!important;} #print-overlay,#irsaliye-overlay{display:block!important;position:static!important;} .print-actions{display:none!important;} #proforma-print,#irsaliye-print{margin:0;padding:20px;}}
+@media print{body>*:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay){display:none!important;} #print-overlay,#irsaliye-overlay,#pl-overlay{display:block!important;position:static!important;} .print-actions{display:none!important;} #proforma-print,#irsaliye-print,#pl-print{margin:0;padding:20px;}}
 </style>
 </head>
 <body>
@@ -479,6 +498,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
     <button class="btn btn-outline btn-sm" onclick="showIrsaliye()">📦 İrsaliye</button>
+    <button class="btn btn-outline btn-sm" onclick="showPackingList()">📋 Packing List</button>
     <button id="btn-generate" class="btn btn-gold" onclick="showPrint()">📄 Generate Proforma</button>
   </div>
 </div>
@@ -946,6 +966,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div id="summary-print"></div>
 </div>
 
+<!-- PACKING LIST OVERLAY -->
+<div id="pl-overlay">
+  <div class="print-actions">
+    <button class="btn btn-outline" onclick="closePL()">✕ Kapat</button>
+    <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
+  </div>
+  <div id="pl-print"></div>
+</div>
+
 <!-- İRSALİYE OVERLAY -->
 <div id="irsaliye-overlay">
   <div class="print-actions">
@@ -962,6 +991,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="btn btn-gold" onclick="printBoth()">🖨 İkisini Birden Kaydet</button>
     <button class="btn btn-outline" onclick="window.print()">🖨 Sadece Proforma</button>
     <button class="btn btn-outline" onclick="closePrint();showIrsaliye()">📦 İrsaliye</button>
+    <button class="btn btn-outline" onclick="closePrint();showPackingList()">📋 Packing List</button>
   </div>
   <div id="proforma-print" id="proforma-print"></div>
 </div>
@@ -3351,6 +3381,117 @@ function updateLogoPreview() {
   }
 }
 
+
+
+// ============================================================
+// PACKING LIST
+// ============================================================
+function showPackingList() {
+  if(!orderItems.length) { showToast('Önce ürün ekleyin'); return; }
+
+  const piNo  = document.getElementById('piNumber')?.value||'';
+  const pfDate= document.getElementById('pfDate')?.value||'';
+  const buyer = document.getElementById('buyerCompany')?.value||'—';
+  const buyerContact = document.getElementById('buyerContact')?.value||'';
+  const buyerCountry = document.getElementById('buyerCountry')?.value||'';
+  const buyerAddress = document.getElementById('buyerAddress')?.value||'';
+
+  const dateStr = pfDate
+    ? new Date(pfDate).toLocaleDateString('en-GB',{day:'numeric',month:'numeric',year:'numeric'})
+    : new Date().toLocaleDateString('en-GB',{day:'numeric',month:'numeric',year:'numeric'});
+
+  // Group items by product type (mal tanımı)
+  // We'll show each order line as its own row
+  let rows = '';
+  let totalQty=0, totalPkgs=0, totalGross=0, totalNet=0;
+
+  orderItems.forEach((item, idx) => {
+    const pd = PACKAGE_DATA[item.id];
+    const pkgs   = pd ? pd.pkgs * item.qty : '—';
+    const gross  = pd ? pd.kg  * item.qty : '—';
+    const net    = pd ? Math.round(pd.kg * item.qty * 0.98) : '—'; // ~2% tare
+
+    if(typeof pkgs==='number') totalPkgs  += pkgs;
+    if(typeof gross==='number' && typeof pkgs==='number'){ totalGross += gross; totalNet += gross - pkgs; }
+    totalQty += item.qty;
+
+    const pkgStr   = typeof pkgs==='number'  ? pkgs  : '—';
+    const grossStr = typeof gross==='number' ? gross.toFixed(2) : '—';
+    const netStr   = typeof net==='number'   ? net.toFixed(2)   : '—';
+    const custLine = item.endCustomer ? ' — '+item.endCustomer : '';
+
+    rows += `<tr>
+      <td>${item.name}${custLine}${item.note?' ('+item.note+')':''}</td>
+      <td class="c">${item.qty}</td>
+      <td class="c" style="font-weight:700;">${pkgStr}</td>
+      <td class="c">${grossStr}</td>
+      <td class="c">${netStr}</td>
+    </tr>`;
+  });
+
+  // Total row
+  rows += `<tr class="pl-total">
+    <td><strong>TOPLAM / TOTAL :</strong></td>
+    <td class="c">${totalQty}</td>
+    <td class="c"><strong>${totalPkgs||'—'}</strong></td>
+    <td class="c"><strong>${totalGross?totalGross.toFixed(2):'—'}</strong></td>
+    <td class="c"><strong>${totalNet?totalNet.toFixed(2):'—'}</strong></td>
+  </tr>`;
+
+  const buyerBlock = [buyer, buyerContact, buyerAddress, buyerCountry].filter(Boolean).join('<br>');
+
+  document.getElementById('pl-print').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="pl-title">PACKING LIST</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="pl-date">DATE &nbsp;&nbsp;&nbsp; <strong>${dateStr}</strong></div>
+        ${piNo?'<div class="pl-date">REF &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>'+piNo+'</strong></div>':''}
+      </div>
+    </div>
+
+    <div class="pl-parties">
+      <div>
+        <div class="pl-party-lbl">SELLER</div>
+        <div class="pl-party-line">
+          SELİNA MOBİLYA ORMAN ÜRÜNLERİ İNŞAAT TAAHHÜT SAN.TİC.LTD.ŞTİ.<br>
+          İnegöl / Bursa<br>
+          Tel: 2247141303<br>
+          EPosta: morellomobilya@hotmail.com<br>
+          Vergi Dairesi: İNEGÖL VERGİ DAİRESİ (016202)<br>
+          VKN: 7600395840<br>
+          MERSİSNO: 0760039584000013<br>
+          TİCARETSİCİLNO: 5498
+        </div>
+      </div>
+      <div>
+        <div class="pl-party-lbl">BUYER</div>
+        <div class="pl-party-line">${buyerBlock||'—'}</div>
+      </div>
+    </div>
+
+    <table class="pl-table">
+      <thead>
+        <tr>
+          <th style="width:40%;text-align:left;">TYPE OF GOODS / MAL TANIMI</th>
+          <th style="width:12%;">QUANTITY / MAL MİKTARI</th>
+          <th style="width:12%;">PACKS / PAKET ADEDİ</th>
+          <th style="width:13%;">GROSS KG / BRÜT KG</th>
+          <th style="width:13%;">NET KG</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+
+  document.getElementById('pl-overlay').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function closePL() {
+  document.getElementById('pl-overlay').style.display='none';
+}
 
 // ============================================================
 // İRSALİYE
