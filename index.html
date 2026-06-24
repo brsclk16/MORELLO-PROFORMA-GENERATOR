@@ -2064,6 +2064,159 @@ document.addEventListener('DOMContentLoaded', () => {
   checkSession();
 });
 
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, dur) {
+  dur = dur || 2800;
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(function(){ t.classList.remove('show'); }, dur);
+}
+
+// ============================================================
+// CUSTOM PRODUCTS (localStorage)
+// ============================================================
+function getCustomProducts() {
+  try { return JSON.parse(localStorage.getItem('morello_custom_products')||'[]'); } catch(e){ return []; }
+}
+function saveCustomProducts(arr) {
+  localStorage.setItem('morello_custom_products', JSON.stringify(arr));
+}
+function addCustomProduct() {
+  const series = document.getElementById('ce-series')?.value.trim().toUpperCase();
+  const name = document.getElementById('ce-name')?.value.trim();
+  const cat = document.getElementById('ce-category')?.value;
+  const eur = parseFloat(document.getElementById('ce-eur')?.value)||null;
+  const usd = parseFloat(document.getElementById('ce-usd')?.value)||null;
+  const tl = parseFloat(document.getElementById('ce-tl')?.value)||null;
+  const cbm = parseFloat(document.getElementById('ce-cbm')?.value)||0;
+  const bundled = document.getElementById('ce-bundled')?.value==='true';
+  if(!series||!name) { showToast('Seri adı ve ürün adı zorunludur'); return; }
+  const id = 'CUSTOM-'+series+'-'+Date.now();
+  const prod = {id, series, name, category:cat, eur, usd, tl, cbm, bundled};
+  const all = getCustomProducts();
+  all.push(prod);
+  saveCustomProducts(all);
+  ['ce-series','ce-name','ce-eur','ce-usd','ce-tl','ce-cbm'].forEach(function(cid){
+    const el=document.getElementById(cid); if(el) el.value='';
+  });
+  saveProductToCloud(prod);
+  renderCustomProducts();
+  buildCatalog();
+  showToast('✓ Eklendi: '+name);
+}
+function deleteCustomProduct(id) {
+  if(!confirm('Bu ürünü sil?')) return;
+  deleteProductFromCloud(id);
+  const all=getCustomProducts().filter(function(p){return p.id!==id;});
+  saveCustomProducts(all);
+  renderCustomProducts();
+  buildCatalog();
+  showToast('Silindi');
+}
+function clearCustomProducts() {
+  if(!confirm('Tüm özel ürünler silinsin mi?')) return;
+  saveCustomProducts([]);
+  renderCustomProducts();
+  buildCatalog();
+  showToast('Özel ürünler temizlendi');
+}
+function renderCustomProducts() {
+  const list=document.getElementById('customProdList');
+  if(!list) return;
+  const all=getCustomProducts();
+  if(!all.length){ list.innerHTML='<div class="empty-cust">Henüz ürün eklenmedi.</div>'; return; }
+  list.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='custom-product-list';
+  all.forEach(function(p){
+    const row=document.createElement('div'); row.className='custom-prod-row';
+    const sym=currency==='EUR'?'€':currency==='USD'?'$':'₺';
+    const price=currency==='EUR'?(p.eur||p.usd||p.tl):currency==='USD'?(p.usd||p.eur||p.tl):(p.tl||p.eur||p.usd);
+    const icon = p.category==='Bedroom'?'🛏':p.category==='Sofa Set'?'🛋':'🍽';
+    const iconDiv = document.createElement('div');
+    iconDiv.style.cssText='width:28px;height:22px;background:var(--surface2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:12px;';
+    iconDiv.textContent=icon;
+    const infoDiv = document.createElement('div');
+    infoDiv.className='cprod-info'; infoDiv.style.cssText='flex:1;min-width:0;';
+    infoDiv.innerHTML='<div class="cprod-name">'+p.name+'</div><div style="font-size:9.5px;color:var(--muted);">'+p.series+' · '+p.category+'</div>';
+    const priceSpan = document.createElement('span');
+    priceSpan.className='cprod-price'; priceSpan.textContent=price?sym+price:'—';
+    const delBtn = document.createElement('button');
+    delBtn.className='cprod-del'; delBtn.textContent='×';
+    delBtn.onclick=function(){deleteCustomProduct(p.id);};
+    row.appendChild(iconDiv); row.appendChild(infoDiv); row.appendChild(priceSpan); row.appendChild(delBtn);
+    wrap.appendChild(row);
+  });
+  list.appendChild(wrap);
+}
+
+// ============================================================
+// STOCK STATUS
+// ============================================================
+const STOCK_OPTIONS = ['In Stock', '25d Production', 'On Order', '45d Production'];
+const STOCK_CLASSES = ['st-instock', 'st-instock', 'st-order', 'st-production'];
+function getStock() { try { return JSON.parse(localStorage.getItem('morello_stock')||'{}'); } catch(e){ return {}; } }
+function saveStock(d) { localStorage.setItem('morello_stock', JSON.stringify(d)); }
+function cycleStock(itemId) {
+  const sd=getStock(); const cur=STOCK_OPTIONS.indexOf(sd[itemId]||'In Stock');
+  sd[itemId]=STOCK_OPTIONS[(cur+1)%STOCK_OPTIONS.length]; saveStock(sd); renderOrder();
+}
+
+// ============================================================
+// NOTE FUNCTIONS
+// ============================================================
+function liveNote(inp) {
+  const idx=parseInt(inp.dataset.idx);
+  orderItems[idx].note=inp.value;
+  const toggleBtn=document.querySelector('[onclick="toggleNoteRow('+idx+')"]');
+  if(toggleBtn) toggleBtn.textContent=inp.value?('✏ '+inp.value.slice(0,18)+(inp.value.length>18?'…':'')):'+ Not';
+}
+function liveEndCustomer(inp) {
+  const idx=parseInt(inp.dataset.idx);
+  orderItems[idx].endCustomer=inp.value;
+}
+function toggleNoteRow(idx) {
+  const row=document.getElementById('note-row-'+idx);
+  if(!row) return;
+  const isOpen=row.style.display!=='none';
+  row.style.display=isOpen?'none':'block';
+  if(!isOpen) { const inp=row.querySelector('.note-inp'); if(inp) inp.focus(); }
+}
+function applyNoteTemplate(idx, text) {
+  const cur=orderItems[idx].note||'';
+  orderItems[idx].note=cur?cur+', '+text:text;
+  const inp=document.querySelector('#note-row-'+idx+' .note-inp');
+  if(inp) inp.value=orderItems[idx].note;
+  const toggleBtn=document.querySelector('[onclick="toggleNoteRow('+idx+')"]');
+  if(toggleBtn) toggleBtn.textContent='✏ '+orderItems[idx].note.slice(0,18)+(orderItems[idx].note.length>18?'…':'');
+}
+function getNoteTemplateHtml(idx) {
+  const NOTE_TEMPLATES=['Antrasit kumaş','Ekru kumaş','Bej kumaş','Feza kumaş','Bornova kumaş','Ahşap ayak'];
+  return NOTE_TEMPLATES.map(function(tmpl){
+    return '<button class="note-tmpl-btn" data-tmpl="'+tmpl+'" data-idx="'+idx+'" onclick="applyNoteTmplBtn(this)">'+tmpl+'</button>';
+  }).join('');
+}
+function applyNoteTmplBtn(btn) {
+  const idx=parseInt(btn.dataset.idx); const text=btn.dataset.tmpl;
+  const cur=orderItems[idx].note||'';
+  orderItems[idx].note=cur?cur+', '+text:text;
+  const inp=document.querySelector('#note-row-'+idx+' .note-inp');
+  if(inp) inp.value=orderItems[idx].note;
+  const toggleBtn=document.querySelector('[onclick="toggleNoteRow('+idx+')"]');
+  if(toggleBtn) toggleBtn.textContent='✏ '+orderItems[idx].note.slice(0,18)+(orderItems[idx].note.length>18?'…':'');
+}
+
+// ============================================================
+// RENDER MARGIN (placeholder if missing)
+// ============================================================
+function renderMargin() {}
+
+
 // ============================================================
 // CATALOG
 // ============================================================
