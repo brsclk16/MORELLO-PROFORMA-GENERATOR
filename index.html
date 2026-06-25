@@ -2314,12 +2314,8 @@ async function syncFromCloud() {
   if(!currentUserId) return;
   showToast('☁ Veriler yükleniyor…');
   try {
-    // Load customers
-    const custs = await supaFetch('/rest/v1/customers?user_id=eq.'+currentUserId+'&order=created_at.asc');
-    if(custs.length) {
-      const mapped = custs.map(c=>({company:c.company,contact:c.contact,country:c.country,phone:c.phone,email:c.email,address:c.address,discount:c.discount||0,currency:c.currency,lang:c.lang,flag:c.flag,_supa_id:c.id}));
-      localStorage.setItem('morello_customers', JSON.stringify(mapped));
-    }
+    // Customers: local-only, do NOT overwrite from cloud
+    // localStorage 'morello_customers' is the source of truth
     // Load history
     const hist = await supaFetch('/rest/v1/proforma_history?user_id=eq.'+currentUserId+'&order=created_at.desc&limit=100');
     if(hist.length) {
@@ -4066,7 +4062,6 @@ function saveCustomer() {
   const note=document.getElementById('mc-note')?.value||'';
   custs.push({company, contact:document.getElementById('mc-contact').value, country:document.getElementById('mc-country').value, phone:document.getElementById('mc-phone').value, email:document.getElementById('mc-email').value, address:document.getElementById('mc-address').value, discount:disc, note});
   saveCustomers(custs);
-  saveCustomerToCloud(custs[custs.length-1]).then(()=>showToast('✓ Buluta kaydedildi')).catch(e=>showToast('⚠ Lokal kaydedildi: '+e.message));
   closeCustModal(); renderCustomers(); showToast(u('toast_cust_saved')+' '+company);
 }
 
@@ -4094,7 +4089,7 @@ function deleteCustomer(i) {
   const custs=getCustomers();
   const deleted=custs[i];
   custs.splice(i,1); saveCustomers(custs);
-  if(deleted?._supa_id) deleteCustomerFromCloud(deleted._supa_id);
+  // cloud delete disabled - local only
   renderCustomers(); showToast(u('toast_cust_deleted'));
 }
 
@@ -4119,8 +4114,8 @@ function saveCurrentAsCust() {
   const existing=custs.findIndex(c=>c.company.toLowerCase()===company.toLowerCase());
   const disc=parseFloat(document.getElementById('discVal').value)||0;
   const obj={company, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, discount:disc};
-  if(existing>=0) { custs[existing]=obj; saveCustomers(custs); saveCustomerToCloud(obj); showToast(u('toast_cust_updated')+' '+company); }
-  else { custs.push(obj); saveCustomers(custs); saveCustomerToCloud(obj); showToast(u('toast_cust_saved')+' '+company); }
+  if(existing>=0) { custs[existing]=obj; saveCustomers(custs); showToast(u('toast_cust_updated')+' '+company); }
+  else { custs.push(obj); saveCustomers(custs); showToast(u('toast_cust_saved')+' '+company); }
   renderCustomers();
 }
 
@@ -4769,7 +4764,7 @@ function loadPriceEdits() { try { const saved=JSON.parse(localStorage.getItem('m
 // ============================================================
 // CUSTOMER NOTE EDIT
 // ============================================================
-function editCustNote(idx) { const custs=getCustomers(); const c=custs[idx]; if(!c) return; const note=prompt('Not ekle/d\u00fczenle:',c.note||''); if(note===null) return; custs[idx].note=note; saveCustomers(custs); saveCustomerToCloud(custs[idx]); renderCustomers(); showToast('Not kaydedildi'); }
+function editCustNote(idx) { const custs=getCustomers(); const c=custs[idx]; if(!c) return; const note=prompt('Not ekle/d\u00fczenle:',c.note||''); if(note===null) return; custs[idx].note=note; saveCustomers(custs); renderCustomers(); showToast('Not kaydedildi'); }
 
 // ============================================================
 // PRINT BOTH
