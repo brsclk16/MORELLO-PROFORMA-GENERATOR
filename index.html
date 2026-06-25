@@ -331,6 +331,35 @@ body {
 }
 .tab-content.active { display: flex; }
 
+/* Order tab: order card fills space, table scrolls inside */
+.order-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.order-card .card-hdr { flex-shrink: 0; }
+.order-card #orderWrap {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+/* (backup) Order tab: order card fills space, table scrolls inside */
+#tab-order { overflow-y: hidden; }
+#tab-order .card:has(#orderWrap) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#orderWrap {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
 /* ─── CARDS ─── */
 .card {
   background: var(--surface);
@@ -1244,7 +1273,7 @@ body {
       </div>
 
       <!-- ORDER TABLE -->
-      <div class="card">
+      <div class="card order-card">
         <div class="card-hdr">
           <h3>📦 Order Items</h3>
           <div style="display:flex;gap:12px;">
