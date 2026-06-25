@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Morello — Proforma Generator</title>
+<title>Morello — Proforma Generator v1782368207</title>
 <style>
 :root {
   --bg:#F7F5F2; --surface:#fff; --surface2:#F0EDE8; --border:#E0D9D0;
@@ -1090,6 +1093,70 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast" id="toast"></div>
 
 <script>
+// CORE CONSTANTS
+const SOFA_SUFFIXES = ['3S','2S','BRG','SGL','CRN','SF-SET','SET-331','SET-221','SET-321'];
+const SOFA_UNIT_CBM = {'3S':1.585,'2S':1.585,'BRG':0.451,'SGL':0.451,'CRN':2.681,'SF-SET':3.619,'SET-331':2.970,'SET-221':2.970,'SET-321':2.970};
+const VEHICLES = [{id:'20dc',label:'20DC',m3:33.2},{id:'40hc',label:'40HC',m3:76.0},{id:'stdtir',label:'Std TIR',m3:79.0},{id:'megatir',label:'Mega TIR',m3:100.0}];
+
+function updateContainer(cbmOverride) {
+  const mode = detectMode();
+  const isSofa = mode === 'sofa';
+  let totalCBM = 0;
+  if(isSofa) {
+    orderItems.forEach(function(i){ totalCBM += getSofaUnitCBM(i.id)*i.qty; });
+  } else {
+    totalCBM = cbmOverride !== undefined ? cbmOverride : orderItems.reduce(function(s,i){ return s+(i.cbm||0)*i.qty; },0);
+  }
+  const modeLabel = isSofa ? 'Sofa Mode' : 'Furniture Mode';
+  const modeBg = isSofa ? '#EDE9FE' : '#F0FDF4';
+  const modeColor = isSofa ? '#5B21B6' : '#065F46';
+  const dispEl = document.getElementById('cont-cbm-display');
+  if(dispEl) dispEl.innerHTML =
+    '<span style="font-size:18px;font-weight:700;color:var(--gold);">'+totalCBM.toFixed(2)+' m\u00b3</span>'
+    +' <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+modeBg+';color:'+modeColor+';margin-left:6px;">'+modeLabel+'</span>';
+  const grid = document.getElementById('cont-vehicle-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  var bestV=null, bestF=0;
+  VEHICLES.forEach(function(v){
+    const cap=v.m3;
+    const needed=totalCBM>0?Math.ceil(totalCBM/cap):0;
+    const lastFill=totalCBM>0?(((totalCBM%cap)||cap)/cap*100):0;
+    const fill=Math.min(lastFill,100);
+    if(needed===1&&fill>bestF){bestF=fill;bestV=v;}
+    const color=fill>=80?'#059669':fill>=50?'#F59E0B':'#EF4444';
+    const bg=fill>=80?'#D1FAE5':fill>=50?'#FEF3C7':'#FEF2F2';
+    const setsLine=isSofa&&totalCBM>0?('<div style="font-size:8.5px;color:'+color+';font-weight:700;">'+Math.floor(cap/3.619)+' sets/vehicle</div>'):'';
+    const div=document.createElement('div');
+    div.className='cont-box';
+    div.style.cssText='border:1px solid '+color+';background:'+bg+';padding:10px;text-align:center;border-radius:4px;';
+    div.innerHTML='<div class="cont-type">'+v.label+'</div>'
+      +'<div class="cont-count" style="color:'+color+';">'+(totalCBM>0?needed:'—')+'</div>'
+      +'<div style="font-size:8px;color:#888;">'+(totalCBM>0?(needed===1?'vehicle':'vehicles'):'—')+'</div>'
+      +'<div style="font-size:9px;color:#666;margin-top:1px;">'+cap+' m\u00b3</div>'
+      +'<div class="cont-bar-wrap"><div class="cont-bar" style="width:'+(totalCBM>0?fill.toFixed(0):0)+'%;background:'+color+';"></div></div>'
+      +'<div class="cont-fill" style="color:'+color+';">'+(totalCBM>0?fill.toFixed(0)+'% fill':'—')+'</div>'
+      +setsLine;
+    grid.appendChild(div);
+  });
+  const rec=document.getElementById('cont-recommendation');
+  if(!rec) return;
+  if(totalCBM<=0){rec.innerHTML='';return;}
+  var bestStr='';
+  if(bestV){
+    const rem=(bestV.m3-totalCBM).toFixed(2);
+    bestStr='<span style="color:#059669;font-weight:700;">Best: 1x '+bestV.label+'</span> — '+bestF.toFixed(0)+'% full — '+rem+' m\u00b3 remaining';
+  } else {
+    const cheapest=VEHICLES.reduce(function(a,b){return Math.ceil(totalCBM/a.m3)<=Math.ceil(totalCBM/b.m3)?a:b;});
+    const n=Math.ceil(totalCBM/cheapest.m3);
+    const avgF=(totalCBM/(n*cheapest.m3)*100).toFixed(0);
+    bestStr='<span style="color:var(--gold);font-weight:700;">'+n+'x '+cheapest.label+' needed</span> — avg '+avgF+'% fill';
+  }
+  var sofaLine='';
+  if(isSofa){sofaLine='<div style="margin-top:4px;font-size:10px;color:#666;">~'+(totalCBM/3.619).toFixed(1)+' sets (3+3+1 equivalent)</div>';}
+  rec.innerHTML='<div style="padding:10px 14px;background:var(--surface2);border-radius:var(--r);font-size:11px;">'+bestStr+sofaLine+'</div>';
+}
+
 
 
 
@@ -2015,11 +2082,7 @@ const CATALOG = {
 // STATE
 // ============================================================
 let currency = 'EUR';
-let orderItems = [];
-
-const SOFA_SUFFIXES = ['3S','2S','BRG','SGL','CRN','SF-SET','SET-331','SET-221','SET-321'];
-const SOFA_UNIT_CBM = {'3S':1.585,'2S':1.585,'BRG':0.451,'SGL':0.451,'CRN':2.681,'SF-SET':3.619,'SET-331':2.970,'SET-221':2.970,'SET-321':2.970};
-const VEHICLES = [{id:'20dc',label:'20DC',m3:33.2},{id:'40hc',label:'40HC',m3:76.0},{id:'stdtir',label:'Std TIR',m3:79.0},{id:'megatir',label:'Mega TIR',m3:100.0}]; // {id,name,listPrice,unitPrice,qty,cbm,bundled}
+let orderItems = []; // {id,name,listPrice,unitPrice,qty,cbm,bundled}
 
 
 const NOTE_TEMPLATES = [
@@ -2971,64 +3034,6 @@ function detectMode() {
   return orderItems.every(function(i){ return isSofaItem(i.id); }) ? 'sofa' : 'furniture';
 }
 
-function updateContainer(cbmOverride) {
-  const mode = detectMode();
-  const isSofa = mode === 'sofa';
-  let totalCBM = 0;
-  if(isSofa) {
-    orderItems.forEach(function(i){ totalCBM += getSofaUnitCBM(i.id)*i.qty; });
-  } else {
-    totalCBM = cbmOverride !== undefined ? cbmOverride : orderItems.reduce(function(s,i){ return s+(i.cbm||0)*i.qty; },0);
-  }
-  const modeLabel = isSofa ? 'Sofa Mode' : 'Furniture Mode';
-  const modeBg = isSofa ? '#EDE9FE' : '#F0FDF4';
-  const modeColor = isSofa ? '#5B21B6' : '#065F46';
-  const dispEl = document.getElementById('cont-cbm-display');
-  if(dispEl) dispEl.innerHTML =
-    '<span style="font-size:18px;font-weight:700;color:var(--gold);">'+totalCBM.toFixed(2)+' m\u00b3</span>'
-    +' <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+modeBg+';color:'+modeColor+';margin-left:6px;">'+modeLabel+'</span>';
-  const grid = document.getElementById('cont-vehicle-grid');
-  if(!grid) return;
-  grid.innerHTML = '';
-  var bestV=null, bestF=0;
-  VEHICLES.forEach(function(v){
-    const cap=v.m3;
-    const needed=totalCBM>0?Math.ceil(totalCBM/cap):0;
-    const lastFill=totalCBM>0?(((totalCBM%cap)||cap)/cap*100):0;
-    const fill=Math.min(lastFill,100);
-    if(needed===1&&fill>bestF){bestF=fill;bestV=v;}
-    const color=fill>=80?'#059669':fill>=50?'#F59E0B':'#EF4444';
-    const bg=fill>=80?'#D1FAE5':fill>=50?'#FEF3C7':'#FEF2F2';
-    const setsLine=isSofa&&totalCBM>0?('<div style="font-size:8.5px;color:'+color+';font-weight:700;">'+Math.floor(cap/3.619)+' sets/vehicle</div>'):'';
-    const div=document.createElement('div');
-    div.className='cont-box';
-    div.style.cssText='border:1px solid '+color+';background:'+bg+';padding:10px;text-align:center;border-radius:4px;';
-    div.innerHTML='<div class="cont-type">'+v.label+'</div>'
-      +'<div class="cont-count" style="color:'+color+';">'+(totalCBM>0?needed:'—')+'</div>'
-      +'<div style="font-size:8px;color:#888;">'+(totalCBM>0?(needed===1?'vehicle':'vehicles'):'—')+'</div>'
-      +'<div style="font-size:9px;color:#666;margin-top:1px;">'+cap+' m\u00b3</div>'
-      +'<div class="cont-bar-wrap"><div class="cont-bar" style="width:'+(totalCBM>0?fill.toFixed(0):0)+'%;background:'+color+';"></div></div>'
-      +'<div class="cont-fill" style="color:'+color+';">'+(totalCBM>0?fill.toFixed(0)+'% fill':'—')+'</div>'
-      +setsLine;
-    grid.appendChild(div);
-  });
-  const rec=document.getElementById('cont-recommendation');
-  if(!rec) return;
-  if(totalCBM<=0){rec.innerHTML='';return;}
-  var bestStr='';
-  if(bestV){
-    const rem=(bestV.m3-totalCBM).toFixed(2);
-    bestStr='<span style="color:#059669;font-weight:700;">Best: 1x '+bestV.label+'</span> — '+bestF.toFixed(0)+'% full — '+rem+' m\u00b3 remaining';
-  } else {
-    const cheapest=VEHICLES.reduce(function(a,b){return Math.ceil(totalCBM/a.m3)<=Math.ceil(totalCBM/b.m3)?a:b;});
-    const n=Math.ceil(totalCBM/cheapest.m3);
-    const avgF=(totalCBM/(n*cheapest.m3)*100).toFixed(0);
-    bestStr='<span style="color:var(--gold);font-weight:700;">'+n+'x '+cheapest.label+' needed</span> — avg '+avgF+'% fill';
-  }
-  var sofaLine='';
-  if(isSofa){sofaLine='<div style="margin-top:4px;font-size:10px;color:#666;">~'+(totalCBM/3.619).toFixed(1)+' sets (3+3+1 equivalent)</div>';}
-  rec.innerHTML='<div style="padding:10px 14px;background:var(--surface2);border-radius:var(--r);font-size:11px;">'+bestStr+sofaLine+'</div>';
-}
 
 
 // ============================================================
