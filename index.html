@@ -399,6 +399,118 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .ship-inp:focus{border-color:var(--gold);}
 .ship-inp.filled{border-color:var(--gold);background:var(--gold-light);}
 
+
+/* ============================================================
+   MOBILE RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Layout */
+  .app-wrap { flex-direction: column !important; }
+  .cat-panel { width: 100% !important; max-width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--border); max-height: 240px; overflow-y: auto; }
+  .main-panel { flex: 1; min-width: 0; }
+  
+  /* Header */
+  .hdr { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+  .hdr img { height: 28px !important; }
+  .hdr-sub { font-size: 9px !important; }
+  .fx-widget { display: none !important; }
+  .hdr > div:last-child { flex-wrap: wrap; gap: 4px; }
+  .btn-sm { padding: 4px 8px !important; font-size: 10px !important; }
+  .btn-gold { padding: 6px 12px !important; font-size: 11px !important; }
+  #btn-generate { order: -1; width: 100%; }
+  
+  /* Tabs */
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; gap: 0 !important; padding: 0 !important; }
+  .tab-btn { min-width: max-content; font-size: 10px !important; padding: 8px 10px !important; white-space: nowrap; }
+  
+  /* Order table */
+  .order-table { font-size: 10px; }
+  .order-table th, .order-table td { padding: 3px 4px !important; }
+  .order-table th:nth-child(5), .order-table td:nth-child(5),
+  .order-table th:nth-child(6), .order-table td:nth-child(6) { display: none; }
+  .up-inp { width: 54px !important; }
+  
+  /* Totals bar */
+  .totals-bar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .tot-item { min-width: 80px; }
+  .tot-val { font-size: 14px !important; }
+  
+  /* Cards */
+  .card { border-radius: 0 !important; border-left: none !important; border-right: none !important; margin-bottom: 0 !important; }
+  .card-body { padding: 10px 12px !important; }
+  .card-hdr { padding: 8px 12px !important; }
+  
+  /* Catalog */
+  .cat-series-list { padding: 4px 8px !important; }
+  .cat-item { padding: 6px 8px !important; }
+  .cat-item-name { font-size: 11px !important; }
+  .cat-item-price { font-size: 10px !important; }
+  .cat-item img { width: 36px !important; height: 28px !important; }
+  
+  /* Customer cards */
+  .cust-grid { grid-template-columns: 1fr !important; }
+  
+  /* Report grid */
+  .report-grid { grid-template-columns: 1fr 1fr !important; }
+  
+  /* Print overlay */
+  #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay {
+    overflow-x: auto;
+  }
+  .doc-print { padding: 12px !important; font-size: 9px !important; }
+  
+  /* Language toggle */
+  .lang-ui-btn { padding: 2px 6px !important; font-size: 9px !important; }
+  
+  /* Ship grid */
+  .ship-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 480px) {
+  .report-grid { grid-template-columns: 1fr !important; }
+  .hdr { padding: 6px 8px; }
+  .tot-val { font-size: 13px !important; }
+}
+
+/* iPad landscape */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .cat-panel { width: 240px !important; }
+  .fx-widget { gap: 6px; }
+  .fx-inp { width: 52px !important; }
+}
+
+/* CUSTOMER DETAIL MODAL */
+#cust-detail-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 9000; align-items: center; justify-content: center; padding: 16px;
+}
+#cust-detail-overlay.open { display: flex; }
+.cust-detail-modal {
+  background: var(--bg); border-radius: 8px; width: 100%; max-width: 640px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+.cdm-hdr {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; background: var(--bg); z-index: 1;
+}
+.cdm-name { font-size: 16px; font-weight: 700; }
+.cdm-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.cdm-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+.cdm-body { padding: 16px 20px; }
+.cdm-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+.cdm-stat { background: var(--surface2); border-radius: 6px; padding: 10px 12px; text-align: center; }
+.cdm-stat-lbl { font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.cdm-stat-val { font-size: 18px; font-weight: 700; color: var(--accent); }
+.cdm-stat-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
+.cdm-history { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.cdm-hist-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 11px; }
+.cdm-hist-row:last-child { border-bottom: none; }
+.cdm-hist-row:hover { background: var(--surface2); cursor: pointer; }
+.cdm-pi { font-weight: 700; font-size: 11px; color: var(--accent); min-width: 100px; }
+.cdm-date { color: var(--muted); font-size: 10px; min-width: 80px; }
+.cdm-total { font-weight: 700; color: var(--gold); margin-left: auto; }
+
 /* PRINT OVERLAY */
 #print-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;}
 .print-actions{position:fixed;top:0;left:0;right:0;background:var(--accent);padding:9px 20px;display:flex;gap:8px;z-index:10001;}
@@ -1091,6 +1203,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- CUSTOMER DETAIL MODAL -->
+<div id="cust-detail-overlay" onclick="if(event.target===this)closeCustDetail()">
+  <div class="cust-detail-modal">
+    <div class="cdm-hdr">
+      <div>
+        <div class="cdm-name" id="cdm-name">—</div>
+        <div class="cdm-meta" id="cdm-meta">—</div>
+      </div>
+      <button class="cdm-close" onclick="closeCustDetail()">×</button>
+    </div>
+    <div class="cdm-body">
+      <div class="cdm-stats" id="cdm-stats"></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Proforma Geçmişi</div>
+      <div class="cdm-history" id="cdm-history"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 // CORE CONSTANTS
@@ -2132,6 +2262,63 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
+// ============================================================
+// CUSTOMER DETAIL
+// ============================================================
+function showCustDetail(companyName) {
+  const hist = getHistory();
+  // Match history entries for this company
+  const custHist = hist.filter(h => {
+    const buyer = (h.buyer||'').toLowerCase();
+    const name = (companyName||'').toLowerCase();
+    return buyer.includes(name.slice(0,10)) || name.includes(buyer.slice(0,10));
+  });
+
+  // Stats
+  const totalVal = custHist.reduce(function(s,h){ return s + parseFloat((h.total||'0').replace(/[^0-9.]/g,'')||0); }, 0);
+  const cur = custHist[0]?.currency || 'EUR';
+  const sym = cur==='TRY'?'₺':cur==='EUR'?'€':'$';
+  const avgVal = custHist.length ? totalVal/custHist.length : 0;
+  const sent = custHist.filter(h=>['Sent','Confirmed','Production','Shipped'].includes(h.status)).length;
+  const lastDate = custHist[0]?.date || '—';
+
+  // Header
+  document.getElementById('cdm-name').textContent = companyName;
+  document.getElementById('cdm-meta').textContent = custHist.length + ' proforma · Son: ' + lastDate;
+
+  // Stats boxes
+  document.getElementById('cdm-stats').innerHTML =
+    '<div class="cdm-stat"><div class="cdm-stat-lbl">Toplam Ciro</div><div class="cdm-stat-val">'+sym+totalVal.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>' +
+    '<div class="cdm-stat"><div class="cdm-stat-lbl">Proforma</div><div class="cdm-stat-val">'+custHist.length+'</div></div>' +
+    '<div class="cdm-stat"><div class="cdm-stat-lbl">Ort. Sipariş</div><div class="cdm-stat-val">'+sym+avgVal.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>' +
+    '<div class="cdm-stat"><div class="cdm-stat-lbl">Gönderilen</div><div class="cdm-stat-val">'+sent+'</div></div>';
+
+  // History list
+  const stClass = {'Draft':'st-draft','Sent':'st-sent','Confirmed':'st-confirmed','Production':'st-production','Shipped':'st-shipped'};
+  if(!custHist.length) {
+    document.getElementById('cdm-history').innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">Bu firma için proforma kaydı yok</div>';
+  } else {
+    document.getElementById('cdm-history').innerHTML = custHist.map(function(h,i){
+      const realIdx = hist.findIndex(function(x){ return x.pi===h.pi && x.date===h.date; });
+      const sc = stClass[h.status||'Draft'] || 'st-draft';
+      return '<div class="cdm-hist-row" onclick="loadHistory('+realIdx+');closeCustDetail();showTab(\'order\')">' +
+        '<span class="cdm-pi">'+h.pi+'</span>' +
+        '<span class="cdm-date">'+h.date+'</span>' +
+        '<button class="status-badge '+sc+'" onclick="event.stopPropagation();cycleStatus('+realIdx+',event)" style="font-size:9px;">'+( h.status||'Draft')+'</button>' +
+        (h.cbm&&h.cbm!='0.00'?'<span style="font-size:10px;color:var(--muted);">'+h.cbm+' m³</span>':'') +
+        '<span class="cdm-total">'+h.total+'</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  document.getElementById('cust-detail-overlay').classList.add('open');
+}
+
+function closeCustDetail() {
+  document.getElementById('cust-detail-overlay').classList.remove('open');
+}
+
 // ============================================================
 // TOAST
 // ============================================================
@@ -2647,6 +2834,7 @@ function renderCustomers() {
       </div>
       <div class="cust-card-actions">
         <button class="cust-load-btn" onclick="${loadFn}">⚡ Load</button>
+        <button class="cust-load-btn" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);" onclick="showCustDetail('${c.name}')">📊</button>
         <span class="last-activity ${laClass}">${laTxt}</span>
         <span class="cust-lang-badge">${langLabels[c.lang]||'EN'} · ${c.currency||'USD'}</span>
         ${c.discount>0?`<span class="disc-profile-badge">%${c.discount}</span>`:''}
