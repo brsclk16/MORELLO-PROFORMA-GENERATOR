@@ -511,6 +511,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .cdm-date { color: var(--muted); font-size: 10px; min-width: 80px; }
 .cdm-total { font-weight: 700; color: var(--gold); margin-left: auto; }
 
+
+/* ARCHIVE TABLE */
+#arch-tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+#arch-tbody tr:hover { background: var(--surface2); cursor: pointer; }
+#arch-tbody td { padding: 7px 10px; vertical-align: middle; }
+#arch-tbody tr:nth-child(even) td { background: rgba(0,0,0,.015); }
+.arch-pi { font-weight: 700; color: var(--accent); font-size: 11px; }
+.arch-firm { font-weight: 600; font-size: 11px; }
+.arch-total { font-weight: 700; color: var(--gold); text-align: right; }
+.arch-sum-item { display: flex; flex-direction: column; align-items: center; }
+.arch-sum-lbl { font-size: 9px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+.arch-sum-val { font-size: 15px; font-weight: 700; color: var(--accent); }
+
 /* PRINT OVERLAY */
 #print-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;}
 .print-actions{position:fixed;top:0;left:0;right:0;background:var(--accent);padding:9px 20px;display:flex;gap:8px;z-index:10001;}
@@ -705,6 +718,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="tab-btn" onclick="showTab('customers')">👥 Customers</button>
       <button class="tab-btn" onclick="showTab('history')">🕐 History</button>
       <button class="tab-btn" onclick="showTab('reports')">📊 Rapor</button>
+      <button class="tab-btn" onclick="showTab('archive')">🗂 Arşiv</button>
       <button class="tab-btn" onclick="showTab('price-editor')">💰 Fiyatlar</button>
       <button class="tab-btn" onclick="showTab('catalog-editor')">➕ Ürün Ekle</button>
       <button class="tab-btn" onclick="showTab('setup')">⚙️ Details</button>
@@ -956,6 +970,44 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="card" style="background:var(--gold-light);border-color:var(--gold);">
         <div class="card-body" style="font-size:11px;color:var(--muted);">
           💡 Değiştirdiğiniz fiyatlar <strong>sarı</strong> görünür. "Kaydet" ile kataloga ve localStorage'a işlenir. Sayfa yenilenince tekrar yüklenir.
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHIVE TAB -->
+    <div class="tab-content" id="tab-archive">
+      <div class="card">
+        <div class="card-hdr">
+          <h3>🗂 Proforma Arşivi</h3>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <input id="arch-search" type="text" placeholder="PI no, firma ara..." oninput="renderArchive()" style="padding:4px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:11px;background:var(--bg);outline:none;width:160px;">
+            <select id="arch-year" onchange="renderArchive()" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);outline:none;">
+              <option value="all">Tüm Yıllar</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+            <select id="arch-cur" onchange="renderArchive()" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);outline:none;">
+              <option value="all">Tüm Para Birimleri</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="TRY">TRY</option>
+            </select>
+          </div>
+        </div>
+        <div id="arch-summary" style="padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;display:flex;gap:20px;flex-wrap:wrap;"></div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;" id="arch-table">
+            <thead><tr style="background:var(--accent);color:#fff;">
+              <th style="padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.5px;">PI NO</th>
+              <th style="padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.5px;">FİRMA</th>
+              <th style="padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.5px;">TARİH</th>
+              <th style="padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.5px;">DURUM</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.5px;">CBM</th>
+              <th style="padding:7px 10px;text-align:right;font-size:9px;font-weight:700;letter-spacing:.5px;">TUTAR</th>
+              <th style="padding:7px 10px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.5px;">İŞLEM</th>
+            </tr></thead>
+            <tbody id="arch-tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1289,6 +1341,53 @@ function updateContainer(cbmOverride) {
 
 
 
+
+
+// ============================================================
+// GTİP CODES
+// ============================================================
+const GTIP_MAP = {
+  // SOFA / KOLTUK → 9401.61.00.00.19
+  'ROMA-3S':'9401.61','ROMA-2S':'9401.61','ROMA-BRG':'9401.61','ROMA-SF-SET':'9401.61',
+  'ROMA-SET-331':'9401.61','ROMA-SET-221':'9401.61','ROMA-SET-321':'9401.61',
+  'IST-3S':'9401.61','IST-2S':'9401.61','IST-BRG':'9401.61','IST-SF-SET':'9401.61',
+  'IST-CRN':'9401.61','IST-SET-331':'9401.61','IST-SET-221':'9401.61','IST-SET-321':'9401.61',
+  'LION-3S':'9401.61','LION-2S':'9401.61','LION-BRG':'9401.61','LION-SF-SET':'9401.61',
+  'LION-CRN':'9401.61','LION-SET-331':'9401.61','LION-SET-221':'9401.61','LION-SET-321':'9401.61',
+  'VER-3S':'9401.61','VER-2S':'9401.61','VER-BRG':'9401.61','VER-SF-SET':'9401.61',
+  'VER-SET-331':'9401.61','VER-SET-221':'9401.61','VER-SET-321':'9401.61',
+  'MIRAY-3S':'9401.61','MIRAY-2S':'9401.61','MIRAY-BRG':'9401.61','MIRAY-SF-SET':'9401.61',
+  'MIRAY-CRN':'9401.61','MIRAY-SET-331':'9401.61','MIRAY-SET-221':'9401.61','MIRAY-SET-321':'9401.61',
+  'DIVA-3S':'9401.61','DIVA-2S':'9401.61','DIVA-BRG':'9401.61','DIVA-SF-SET':'9401.61',
+  'DIVA-SET-331':'9401.61','DIVA-SET-221':'9401.61','DIVA-SET-321':'9401.61',
+  'ZENA-3S':'9401.61','ZENA-2S':'9401.61','ZENA-BRG':'9401.61','ZENA-SF-SET':'9401.61',
+  'ZENA-SET-331':'9401.61','ZENA-SET-221':'9401.61','ZENA-SET-321':'9401.61',
+  'LUNA-3S':'9401.61','LUNA-2S':'9401.61','LUNA-BRG':'9401.61','LUNA-SF-SET':'9401.61',
+  'LUNA-SET-331':'9401.61','LUNA-SET-221':'9401.61','LUNA-SET-321':'9401.61',
+  'BEYZA-3S':'9401.61','BEYZA-2S':'9401.61','BEYZA-SGL':'9401.61','BEYZA-SF-SET':'9401.61',
+  'BEYZA-SET-331':'9401.61','BEYZA-SET-221':'9401.61','BEYZA-SET-321':'9401.61',
+  'SIDE-3S':'9401.61','SIDE-2S':'9401.61','SIDE-BRG':'9401.61','SIDE-SF-SET':'9401.61',
+  'EFES-3S':'9401.61','EFES-2S':'9401.61','EFES-BRG':'9401.61','EFES-SF-SET':'9401.61',
+  'NAPOLI-3S':'9401.61','NAPOLI-2S':'9401.61','NAPOLI-BRG':'9401.61','NAPOLI-SF-SET':'9401.61',
+  // BEDROOM → 9403.50.00.00.19
+  'ROMA-WARD':'9403.50','ROMA-DRESS':'9403.50','ROMA-NIGHT':'9403.50','ROMA-BED':'9403.50','ROMA-BED-SET':'9403.50',
+  'IST-WARD':'9403.50','IST-DRESS':'9403.50','IST-NIGHT':'9403.50','IST-BED':'9403.50','IST-BED-SET':'9403.50',
+  'MIRAY-WARD':'9403.50','MIRAY-DRESS':'9403.50','MIRAY-NIGHT':'9403.50','MIRAY-BED':'9403.50','MIRAY-BED-SET':'9403.50',
+  'ZENA-WARD':'9403.50','ZENA-DRESS':'9403.50','ZENA-NIGHT':'9403.50','ZENA-BED':'9403.50','ZENA-BED-SET':'9403.50',
+  'BEYZA-WARD':'9403.50','BEYZA-DRESS':'9403.50','BEYZA-NIGHT':'9403.50','BEYZA-BED':'9403.50','BEYZA-BED-SET':'9403.50',
+  'NAPOLI-WARD':'9403.50','NAPOLI-DRESS':'9403.50','NAPOLI-NIGHT':'9403.50','NAPOLI-BED':'9403.50','NAPOLI-BED-SET':'9403.50',
+  // DINING → 9403.60.10.00.00
+  'ROMA-CONS':'9403.60','ROMA-TV':'9403.60','ROMA-TBL':'9403.60','ROMA-CHR':'9401.61','ROMA-COF':'9403.60','ROMA-DIN-SET':'9403.60',
+  'IST-CONS':'9403.60','IST-TV':'9403.60','IST-TBL':'9403.60','IST-CHR':'9401.61','IST-COF':'9403.60','IST-DIN-SET':'9403.60',
+  'MIRAY-CONS':'9403.60','MIRAY-TV':'9403.60','MIRAY-TBL':'9403.60','MIRAY-CHR':'9401.61','MIRAY-COF':'9403.60','MIRAY-DIN-SET':'9403.60',
+  'ZENA-CONS':'9403.60','ZENA-TV':'9403.60','ZENA-TBL':'9403.60','ZENA-CHR':'9401.61','ZENA-COF':'9403.60','ZENA-DIN-SET':'9403.60',
+  'BEYZA-CONS':'9403.60','BEYZA-TV':'9403.60','BEYZA-TBL':'9403.60','BEYZA-CHR':'9401.61','BEYZA-COF':'9403.60','BEYZA-DIN-SET':'9403.60',
+  'NAPOLI-CONS':'9403.60','NAPOLI-TV':'9403.60','NAPOLI-TBL':'9403.60','NAPOLI-CHR':'9401.61','NAPOLI-COF':'9403.60','NAPOLI-DIN-SET':'9403.60',
+};
+
+function getGtip(itemId) {
+  return GTIP_MAP[itemId] || '9403.60';
+}
 
 // ============================================================
 // SUPABASE CONFIG
@@ -2248,7 +2347,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildCatalog();
   renderCustomers();
   renderHistory();
-  fetchLiveRates();
+  autoUpdateFX(); // Auto-updates every 6 hours
   // Apply saved UI language
   uiLang = localStorage.getItem('morello_ui_lang') || 'en';
   document.querySelectorAll('.lang-ui-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===uiLang));
@@ -2318,6 +2417,143 @@ function showCustDetail(companyName) {
 function closeCustDetail() {
   document.getElementById('cust-detail-overlay').classList.remove('open');
 }
+
+
+// ============================================================
+// ARCHIVE
+// ============================================================
+function renderArchive() {
+  const search = (document.getElementById('arch-search')?.value||'').toLowerCase();
+  const yearF  = document.getElementById('arch-year')?.value||'all';
+  const curF   = document.getElementById('arch-cur')?.value||'all';
+
+  let hist = getHistory();
+  if(search) hist = hist.filter(h => (h.pi||'').toLowerCase().includes(search)||(h.buyer||'').toLowerCase().includes(search));
+  if(yearF!=='all') hist = hist.filter(h => (h.pi||'').includes(yearF)||(h.date||'').includes(yearF));
+  if(curF!=='all') hist = hist.filter(h => (h.currency||'')=== curF);
+
+  // Sort by PI number descending
+  hist = hist.sort(function(a,b){ return (b.pi||'').localeCompare(a.pi||''); });
+
+  const allHist = getHistory();
+  const tbody = document.getElementById('arch-tbody');
+  const summary = document.getElementById('arch-summary');
+  if(!tbody) return;
+
+  // Summary
+  const totalCiro = hist.reduce(function(s,h){ return s+parseFloat((h.total||'0').replace(/[^0-9.]/g,'')||0); },0);
+  const mainCur = hist[0]?.currency||'EUR';
+  const sym = mainCur==='TRY'?'₺':mainCur==='EUR'?'€':'$';
+  summary.innerHTML =
+    '<div class="arch-sum-item"><div class="arch-sum-lbl">Toplam Proforma</div><div class="arch-sum-val">'+hist.length+'</div></div>'+
+    '<div class="arch-sum-item"><div class="arch-sum-lbl">Toplam Ciro</div><div class="arch-sum-val">'+sym+totalCiro.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>'+
+    '<div class="arch-sum-item"><div class="arch-sum-lbl">Benzersiz Müşteri</div><div class="arch-sum-val">'+new Set(hist.map(function(h){return h.buyer;})).size+'</div></div>'+
+    '<div class="arch-sum-item"><div class="arch-sum-lbl">Ort. Sipariş</div><div class="arch-sum-val">'+(hist.length?sym+(totalCiro/hist.length).toLocaleString('tr-TR',{maximumFractionDigits:0}):'—')+'</div></div>';
+
+  if(!hist.length) {
+    tbody.innerHTML='<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted);">Kayıt bulunamadı</td></tr>';
+    return;
+  }
+
+  const stClass={'Draft':'st-draft','Sent':'st-sent','Confirmed':'st-confirmed','Production':'st-production','Shipped':'st-shipped'};
+  tbody.innerHTML = hist.map(function(h){
+    const realIdx = allHist.findIndex(function(x){ return x.pi===h.pi&&x.date===h.date; });
+    const sc = stClass[h.status||'Draft']||'st-draft';
+    return '<tr onclick="loadHistory('+realIdx+');showTab(\'order\')">' +
+      '<td class="arch-pi">'+h.pi+'</td>'+
+      '<td class="arch-firm">'+(h.buyer||'—')+'</td>'+
+      '<td style="color:var(--muted);font-size:10px;">'+(h.date||'—')+'</td>'+
+      '<td><button class="status-badge '+sc+'" onclick="event.stopPropagation();cycleStatus('+realIdx+',event)" style="font-size:9px;">'+(h.status||'Draft')+'</button></td>'+
+      '<td style="text-align:right;color:var(--muted);font-size:10px;">'+(h.cbm&&h.cbm!='0.00'?h.cbm+' m³':'—')+'</td>'+
+      '<td class="arch-total">'+(h.total||'—')+'</td>'+
+      '<td style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();loadHistory('+realIdx+');showPrint()" style="font-size:9px;padding:2px 6px;">PDF</button></td>'+
+      '</tr>';
+  }).join('');
+}
+
+// ============================================================
+// AUTO FX UPDATE
+// ============================================================
+async function autoUpdateFX() {
+  const lastUpdate = localStorage.getItem('morello_fx_last_update');
+  const now = Date.now();
+  // Update if more than 6 hours old
+  if(lastUpdate && (now - parseInt(lastUpdate)) < 6*60*60*1000) {
+    const savedEur = localStorage.getItem('morello_fx_eur');
+    const savedUsd = localStorage.getItem('morello_fx_usd');
+    if(savedEur && savedUsd) {
+      const eurEl = document.getElementById('fx-eur-try');
+      const usdEl = document.getElementById('fx-usd-try');
+      if(eurEl) eurEl.value = savedEur;
+      if(usdEl) usdEl.value = savedUsd;
+      calcFX();
+      return;
+    }
+  }
+  // Fetch fresh rates
+  try {
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
+    const data = await r.json();
+    const tryRate = data.rates['TRY'];
+    const usdRate = data.rates['USD'];
+    if(tryRate) {
+      const eurTry = tryRate.toFixed(2);
+      const usdTry = (tryRate/usdRate).toFixed(2);
+      const eurEl = document.getElementById('fx-eur-try');
+      const usdEl = document.getElementById('fx-usd-try');
+      if(eurEl) eurEl.value = eurTry;
+      if(usdEl) usdEl.value = usdTry;
+      localStorage.setItem('morello_fx_eur', eurTry);
+      localStorage.setItem('morello_fx_usd', usdTry);
+      localStorage.setItem('morello_fx_last_update', String(now));
+      calcFX();
+    }
+  } catch(e) {
+    // Silent fail - use stored values
+    const savedEur = localStorage.getItem('morello_fx_eur');
+    const savedUsd = localStorage.getItem('morello_fx_usd');
+    if(savedEur) { const el=document.getElementById('fx-eur-try'); if(el) el.value=savedEur; }
+    if(savedUsd) { const el=document.getElementById('fx-usd-try'); if(el) el.value=savedUsd; }
+    calcFX();
+  }
+}
+
+// ============================================================
+// GTIP AUTO-FILL in Sevkiyat Bilgileri
+// ============================================================
+function autoFillGtip() {
+  if(!orderItems.length) return;
+  // Detect dominant category
+  const sofaCount = orderItems.filter(function(i){ return isSofaItem(i.id); }).length;
+  const bedroomCount = orderItems.filter(function(i){ return i.id.includes('-BED')||i.id.includes('-WARD')||i.id.includes('-NIGHT')||i.id.includes('-DRESS'); }).length;
+  const diningCount = orderItems.filter(function(i){ return i.id.includes('-TBL')||i.id.includes('-CONS')||i.id.includes('-TV'); }).length;
+  
+  let gtip = '9403.60';
+  if(sofaCount >= bedroomCount && sofaCount >= diningCount) gtip = '9401.61';
+  else if(bedroomCount >= diningCount) gtip = '9403.50';
+  
+  const el = document.getElementById('ship-gtip');
+  if(el && !el.value) { el.value = gtip; el.classList.add('filled'); }
+}
+
+// ============================================================
+// API HELPER — Supabase REST endpoint info
+// ============================================================
+const API_INFO = {
+  url: 'https://etwanruohujctvkjvxzw.supabase.co/rest/v1/',
+  headers: {
+    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d2FucnVvaHVqY3R2a2p2eHp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA0NzAsImV4cCI6MjA5Nzc4NjQ3MH0.aErGOAe7s7Ge5Nq5tRXi0EhOOU23EpCC4cCpth_oPsU'
+  },
+  endpoints: {
+    proformas: 'proforma_history',
+    customers: 'customers',
+    products:  'custom_products'
+  }
+};
+
+// Example: fetch all proformas for a user
+// GET https://etwanruohujctvkjvxzw.supabase.co/rest/v1/proforma_history?user_id=eq.{userId}
+// Headers: apikey + Authorization: Bearer {jwt}
 
 // ============================================================
 // TOAST
@@ -3185,6 +3421,7 @@ function showTab(tab) {
   if(tab==='history') renderHistory();
   if(tab==='reports') renderReport('all');
   if(tab==='price-editor') renderPriceEditor();
+  if(tab==='archive') renderArchive();
 }
 
 // ============================================================
@@ -3473,7 +3710,7 @@ function closeCI() { document.getElementById('ci-overlay').style.display='none';
 function showCeki() {
   if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
   const {totalPkgs,totalGross,totalNet}=getDocTotals(); const s=getShipBlock();
-  let rows=buildDocRows(false);
+  let rows=buildDocRows(false, true);
   rows+='<tr class="doc-total"><td><strong>TOPLAM :</strong></td><td></td><td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td><td class="c"><strong>'+(totalGross?totalGross.toFixed(2):'\u2014')+'</strong></td><td class="c"><strong>'+(totalNet?totalNet.toFixed(2):'\u2014')+'</strong></td></tr>';
   const footer=[['L\u0130MAN',s.pol],['GEM\u0130 ADI',s.vessel],['ACENTE',s.agent],['KONTEYNER NO',s.container],['NOT',s.note]].filter(r=>r[1]).map(r=>infoRow(r[0],r[1])).join('');
   document.getElementById('ceki-print').innerHTML=getPfLogoHtml()+'<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><div class="doc-main-title">\u00c7EK\u0130 L\u0130STES\u0130</div><div class="doc-meta">TAR\u0130H &nbsp; <strong>'+getDocDate()+'</strong></div></div><div class="doc-parties"><div><div class="doc-party-lbl">SATICI :</div><div class="doc-party-body">'+SELLER_INFO+'</div></div><div><div class="doc-party-lbl">ALICI</div><div class="doc-party-body">'+(getBuyerBlock()||'\u2014')+'</div></div></div><table class="doc-table"><thead><tr><th style="width:40%;text-align:left;">MAL TANIMI</th><th>MAL M\u0130KTARI</th><th>PAKET ADED\u0130</th><th>BR\u00dcT KG</th><th>NET KG</th></tr></thead><tbody>'+rows+'</tbody></table>'+(footer?'<div class="doc-footer">'+footer+'</div>':'');
@@ -3489,7 +3726,7 @@ function showTalimat() {
   const {totalPkgs,totalGross,totalNet}=getDocTotals(); const s=getShipBlock(); const buyer=getBuyerBlock();
   let rows=buildDocRows(false);
   rows+='<tr class="doc-total"><td><strong>TOPLAM :</strong></td><td></td><td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td><td class="c"><strong>'+(totalGross?totalGross.toFixed(2):'\u2014')+'</strong></td><td class="c"><strong>'+(totalNet?totalNet.toFixed(2):'\u2014')+'</strong></td></tr>';
-  document.getElementById('talimat-print').innerHTML=getPfLogoHtml()+'<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><div class="doc-main-title">Y\u00dcKLEME TAL\u0130MATI</div><div class="doc-meta">TAR\u0130H &nbsp; <strong>'+getDocDate()+'</strong></div></div><div class="doc-parties"><div><div class="doc-party-lbl">BENEFICIARY / SATICI</div><div class="doc-party-body">'+SELLER_INFO+'</div></div><div><div class="doc-party-lbl">APPLICANT / ALICI</div><div class="doc-party-body">'+(buyer||'\u2014')+'</div>'+(buyer?'<div class="doc-party-lbl" style="margin-top:10px;">NOTIFY</div><div class="doc-party-body">'+buyer+'</div>':'')+'</div></div><table class="doc-table"><thead><tr><th style="width:40%;text-align:left;">MAL TANIMI / TYPE OF GOODS</th><th>M\u0130KTAR</th><th>PAKET</th><th>BR\u00dcT KG</th><th>NET KG</th></tr></thead><tbody>'+rows+'</tbody></table><div class="doc-footer" style="margin-top:14px;">'+infoRow('GEM\u0130 ADI',s.vessel)+infoRow('Y\u00dcKLEME L\u0130MANI',s.pol)+infoRow('BO\u015eALTMA L\u0130MANI',s.pod)+infoRow('ACENTE',s.agent)+infoRow('KONTEYNER NO',s.container)+infoRow('GT\u0130P KODU',s.gtip)+infoRow('TESL\u0130M \u015eEKL\u0130',s.terms||getPriceTerm())+(s.partial?infoRow('Y\u00dcKLEME T\u0130P\u0130',s.partial):'')+(s.note?infoRow('NOT',s.note):'')+'<div style="margin-top:8px;">'+infoRow('TOPLAM A\u011eIRLIK',(totalGross?totalGross.toFixed(2)+' KG':''))+infoRow('NET A\u011eIRLIK',(totalNet?totalNet.toFixed(2)+' KG':''))+infoRow('TOPLAM PAKET',String(totalPkgs||''))+'</div></div>';
+  document.getElementById('talimat-print').innerHTML=getPfLogoHtml()+'<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><div class="doc-main-title">Y\u00dcKLEME TAL\u0130MATI</div><div class="doc-meta">TAR\u0130H &nbsp; <strong>'+getDocDate()+'</strong></div></div><div class="doc-parties"><div><div class="doc-party-lbl">BENEFICIARY / SATICI</div><div class="doc-party-body">'+SELLER_INFO+'</div></div><div><div class="doc-party-lbl">APPLICANT / ALICI</div><div class="doc-party-body">'+(buyer||'\u2014')+'</div>'+(buyer?'<div class="doc-party-lbl" style="margin-top:10px;">NOTIFY</div><div class="doc-party-body">'+buyer+'</div>':'')+'</div></div><table class="doc-table"><thead><tr><th style="width:38%;text-align:left;">MAL TANIMI / TYPE OF GOODS</th><th>M\u0130KTAR</th><th>PAKET</th><th>BR\u00dcT KG</th><th>NET KG</th><th>GT\u0130P</th></tr></thead><tbody>'+rows+'</tbody></table><div class="doc-footer" style="margin-top:14px;">'+infoRow('GEM\u0130 ADI',s.vessel)+infoRow('Y\u00dcKLEME L\u0130MANI',s.pol)+infoRow('BO\u015eALTMA L\u0130MANI',s.pod)+infoRow('ACENTE',s.agent)+infoRow('KONTEYNER NO',s.container)+infoRow('GT\u0130P KODU',s.gtip)+infoRow('TESL\u0130M \u015eEKL\u0130',s.terms||getPriceTerm())+(s.partial?infoRow('Y\u00dcKLEME T\u0130P\u0130',s.partial):'')+(s.note?infoRow('NOT',s.note):'')+'<div style="margin-top:8px;">'+infoRow('TOPLAM A\u011eIRLIK',(totalGross?totalGross.toFixed(2)+' KG':''))+infoRow('NET A\u011eIRLIK',(totalNet?totalNet.toFixed(2)+' KG':''))+infoRow('TOPLAM PAKET',String(totalPkgs||''))+'</div></div>';
   document.getElementById('talimat-overlay').style.display='block'; window.scrollTo(0,0);
 }
 function closeTalimat() { document.getElementById('talimat-overlay').style.display='none'; }
