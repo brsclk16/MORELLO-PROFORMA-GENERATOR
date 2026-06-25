@@ -1251,7 +1251,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <div class="toast" id="toast"></div>
 <!-- SIPARIS IMPORT MODAL -->
-<div id="import-overlay" onclick="if(event.target===this)closeImport()">
+<div id="import-overlay" style="display:none;" onclick="if(event.target===this)closeImport()">
   <div class="import-modal">
     <div class="import-hdr">
       <h3>🤖 AI Sipariş Import</h3>
@@ -2438,7 +2438,15 @@ let importParsedItems = [];
 let importImageB64 = null;
 
 function showImport() {
-  document.getElementById('import-overlay').classList.add('open');
+  const ov = document.getElementById('import-overlay');
+  ov.style.display = 'flex';
+  ov.style.position = 'fixed';
+  ov.style.inset = '0';
+  ov.style.background = 'rgba(0,0,0,.75)';
+  ov.style.zIndex = '10500';
+  ov.style.alignItems = 'center';
+  ov.style.justifyContent = 'center';
+  ov.style.padding = '16px';
   document.getElementById('import-text').value = '';
   document.getElementById('import-preview').style.display = 'none';
   document.getElementById('import-loading').style.display = 'none';
@@ -2450,7 +2458,7 @@ function showImport() {
 }
 
 function closeImport() {
-  document.getElementById('import-overlay').classList.remove('open');
+  document.getElementById('import-overlay').style.display = 'none';
 }
 
 function handleImportDrop(e) {
