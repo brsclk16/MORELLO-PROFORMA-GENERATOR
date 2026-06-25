@@ -1362,6 +1362,172 @@ body {
   .print-actions { display: none !important; }
   #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print { margin: 0; padding: 20px; }
 }
+
+/* ─── PROFORMA TOTALS ─── */
+.pf-tots {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+.pf-tots-inner {
+  width: 300px;
+  border: 1.5px solid #E0E0E0;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 10.5px;
+}
+.pf-tot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  border-bottom: 1px solid #EBEBEB;
+  color: #333;
+}
+.pf-tot-row:last-child { border-bottom: none; }
+.pf-tot-row span:last-child { font-weight: 600; }
+.pf-grand {
+  background: #1C1C1E;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 12px;
+  padding: 9px 14px;
+  border-bottom: none;
+}
+.pf-grand span { color: #fff !important; font-weight: 700 !important; }
+.pf-saving { background: #F0FDF4; color: #059669 !important; }
+.pf-saving span { color: #059669 !important; }
+
+/* ─── PROFORMA CONTAINER SECTION ─── */
+.pf-cont-section {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: #FAFAFA;
+  border: 1px solid #E8E8E8;
+  border-radius: 6px;
+}
+.pf-cont-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E8E8E8;
+}
+.pf-cont-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.pf-cont-box {
+  border: 1.5px solid #E0E0E0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.pf-cont-type {
+  font-size: 10px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+  letter-spacing: .3px;
+}
+.pf-cont-count {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.pf-cont-m3 {
+  font-size: 8px;
+  color: #AAA;
+  margin-bottom: 6px;
+}
+.pf-cont-bar-wrap {
+  height: 4px;
+  background: #EBEBEB;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.pf-cont-bar {
+  height: 100%;
+  border-radius: 2px;
+}
+.pf-cont-fill {
+  font-size: 9px;
+  font-weight: 700;
+}
+.pf-cont-best {
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ─── PROFORMA BANK & NOTES ─── */
+.pf-bank {
+  background: #F8F8F8;
+  border: 1px solid #E5E5E5;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 10px;
+}
+.pf-bank-title {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #AAA;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #EBEBEB;
+}
+.pf-bank-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.pf-bank-row:last-child { margin-bottom: 0; }
+.pf-bk {
+  font-weight: 700;
+  color: #555;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+.pf-notes {
+  font-size: 9px;
+  color: #777;
+  line-height: 1.75;
+  border-top: 1px solid #E8E8E8;
+  padding-top: 12px;
+  margin-bottom: 14px;
+}
+.pf-notes strong { color: #444; }
+
+/* ─── PROFORMA SIGNATURES ─── */
+.pf-sigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #E8E8E8;
+}
+.pf-sig {
+  border-top: 1.5px solid #333;
+  padding-top: 6px;
+  font-size: 9.5px;
+  color: #666;
+  text-align: center;
+}
+
 </style>
 </head>
 <body>
@@ -4444,23 +4610,31 @@ function buildContainerHTML(furnitureCBM) {
   const pfV=[{label:'20DC',m3:33.2},{label:'40HC',m3:76.0},{label:'Std TIR',m3:79.0},{label:'Mega TIR',m3:100.0}];
   let boxes='';
   pfV.forEach(function(v){
-    var n=Math.ceil(pfCBM/v.m3); var fill=((pfCBM%v.m3)||v.m3)/v.m3*100;
-    var color=fill>=80?'#059669':fill>=50?'#F59E0B':'#EF4444';
-    var bg=fill>=80?'#D1FAE5':fill>=50?'#FEF3C7':'#FEF2F2';
-    boxes+='<div class="pf-cont-box" style="border-color:'+color+';background:'+bg+';">'
-      +'<div class="pf-cont-type">'+v.label+'</div><div class="pf-cont-count" style="color:'+color+';">'+n+'</div>'
-      +'<div style="font-size:7.5px;color:#888;">'+v.m3+'m³</div>'
-      +'<div class="pf-cont-bar-wrap"><div class="pf-cont-bar" style="width:'+fill.toFixed(0)+'%;background:'+color+';"></div></div>'
-      +'<div class="pf-cont-fill" style="color:'+color+';">'+fill.toFixed(0)+'% fill</div></div>';
+    var n=Math.ceil(pfCBM/v.m3);
+    var fill=((pfCBM%v.m3)||v.m3)/v.m3*100;
+    var borderColor=fill>=80?'#059669':fill>=50?'#F59E0B':'#EF4444';
+    var bgColor=fill>=80?'#F0FDF4':fill>=50?'#FFFBEB':'#FFF5F5';
+    var fillColor=fill>=80?'#059669':fill>=50?'#D97706':'#DC2626';
+    boxes+='<div class="pf-cont-box" style="border-color:'+borderColor+';background:'+bgColor+';">'
+      +'<div class="pf-cont-type">'+v.label+'</div>'
+      +'<div class="pf-cont-count" style="color:'+fillColor+';">'+n+'</div>'
+      +'<div class="pf-cont-m3">'+v.m3+' m³</div>'
+      +'<div class="pf-cont-bar-wrap"><div class="pf-cont-bar" style="width:'+fill.toFixed(0)+'%;background:'+fillColor+';"></div></div>'
+      +'<div class="pf-cont-fill" style="color:'+fillColor+';">'+fill.toFixed(0)+'% full</div>'
+      +'</div>';
   });
   var singles=pfV.filter(function(v){return Math.ceil(pfCBM/v.m3)===1;});
   var best=singles.length>0?singles[singles.length-1]:pfV.reduce(function(a,b){return Math.ceil(pfCBM/a.m3)<=Math.ceil(pfCBM/b.m3)?a:b;});
-  var bn=Math.ceil(pfCBM/best.m3); var bfill=(((pfCBM%best.m3)||best.m3)/best.m3*100).toFixed(0); var brem=(best.m3*bn-pfCBM).toFixed(2);
+  var bn=Math.ceil(pfCBM/best.m3);
+  var bfill=(((pfCBM%best.m3)||best.m3)/best.m3*100).toFixed(0);
+  var brem=(best.m3*bn-pfCBM).toFixed(2);
+  var bestBg=bfill>=80?'#F0FDF4':'#FFFBEB';
+  var bestColor=bfill>=80?'#065F46':'#92400E';
   return '<div class="pf-cont-section">'
-    +'<div class="pf-cont-title">Container & Vehicle Requirements</div>'
-    +'<div class="pf-cont-grid" style="grid-template-columns:repeat(4,1fr);">'+boxes+'</div>'
-    +'<div class="pf-cont-best" style="background:'+(bfill>=80?'#D1FAE5':'#FEF3C7')+';color:'+(bfill>=80?'#065F46':'#92400E')+';font-size:10px;font-weight:600;padding:6px 10px;border-radius:3px;margin-top:8px;">'
-    +bfill+'% fill — Best: '+bn+'x '+best.label+' — '+brem+' m³ remaining'
+    +'<div class="pf-cont-title">Container &amp; Vehicle Requirements</div>'
+    +'<div class="pf-cont-grid">'+boxes+'</div>'
+    +'<div class="pf-cont-best" style="background:'+bestBg+';color:'+bestColor+';">'
+    +'✓ Recommended: '+bn+'× '+best.label+' — '+bfill+'% full — '+brem+' m³ free'
     +'</div></div>';
 }
 
@@ -4570,14 +4744,14 @@ function showPrint() {
       +'<th class="pf-r" style="width:72px;">'+t.totalCol+'</th>'
       +'<th class="pf-c" style="width:38px;">'+t.cbmCol+'</th>'
       +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="pf-tots">'
+    +'<div class="pf-tots"><div class="pf-tots-inner">'
       +'<div class="pf-tot-row"><span>'+t.listTotal+'</span><span>'+sym+listTotal.toFixed(2)+'</span></div>'
-      +(saving>0?'<div class="pf-tot-row" style="color:#059669;"><span>'+t.saving+'</span><span>-'+sym+saving.toFixed(2)+'</span></div>':'')
+      +(saving>0?'<div class="pf-tot-row pf-saving"><span>'+t.saving+'</span><span>− '+sym+saving.toFixed(2)+'</span></div>':'')
       +'<div class="pf-tot-row pf-grand"><span>'+t.grandTotal+'</span><span>'+sym+grandTotal.toFixed(2)+'</span></div>'
       +'<div class="pf-tot-row"><span>'+t.deposit+'</span><span>'+sym+deposit.toFixed(2)+'</span></div>'
       +'<div class="pf-tot-row"><span>'+t.balance+'</span><span>'+sym+balance.toFixed(2)+'</span></div>'
       +'<div class="pf-tot-row"><span>'+t.cbmTotal+'</span><span>'+cbm.toFixed(2)+' m\u00b3</span></div>'
-    +'</div>'
+    +'</div></div>'
     +buildContainerHTML(cbm)
     +'<div class="pf-bank"><div class="pf-bank-title">'+t.bankTitle+'</div>'
       +'<div class="pf-bank-row"><span class="pf-bk">'+t.bankName+'</span><span>'+bank.name+'</span></div>'
