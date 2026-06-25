@@ -783,26 +783,36 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
 
       <!-- TOTALS -->
-      <div class="totals-bar" style="grid-template-columns:repeat(5,1fr);">
+      <div class="totals-bar" style="grid-template-columns:repeat(6,1fr);">
         <div class="tot-item">
-          <span class="tot-lbl">Grand Total</span>
-          <span class="tot-val gold" id="grandTotal">0.00</span>
+          <span class="tot-lbl" style="font-size:9px;letter-spacing:.5px;">GENEL TOPLAM</span>
+          <span class="tot-val gold" id="grandTotal" style="font-size:22px;">0.00</span>
           <span class="tot-sub" id="curLabel">EUR</span>
         </div>
         <div class="tot-item">
-          <span class="tot-lbl">Deposit 30%</span>
+          <span class="tot-lbl" style="font-size:9px;letter-spacing:.5px;">PEŞİNAT %30</span>
           <span class="tot-val" id="depAmt">0.00</span>
-          <span class="tot-sub">Advance</span>
+          <span class="tot-sub">Peşin</span>
         </div>
         <div class="tot-item">
-          <span class="tot-lbl">Balance 70%</span>
+          <span class="tot-lbl" style="font-size:9px;letter-spacing:.5px;">KALAN %70</span>
           <span class="tot-val" id="balAmt">0.00</span>
-          <span class="tot-sub">Before loading</span>
+          <span class="tot-sub">Yükleme öncesi</span>
         </div>
         <div class="tot-item">
-          <span class="tot-lbl">Total CBM</span>
+          <span class="tot-lbl" style="font-size:9px;letter-spacing:.5px;">TOPLAM CBM</span>
           <span class="tot-val" id="totalCBMbar">0.00</span>
           <span class="tot-sub">m³</span>
+        </div>
+        <div class="tot-item" style="background:rgba(5,150,105,.1);border-radius:6px;padding:4px 8px;">
+          <span class="tot-lbl" style="font-size:9px;letter-spacing:.5px;color:#059669;">MÜŞTERİ TASARRUFU</span>
+          <span class="tot-val" id="savingAmt" style="color:#059669;font-size:18px;">—</span>
+          <span class="tot-sub" style="color:#059669;">liste fiyatına göre</span>
+        </div>
+        <div class="tot-item" style="background:rgba(255,255,255,.05);border-radius:6px;padding:4px 8px;">
+          <span class="tot-lbl" style="font-size:9px;letter-spacing:.5px;">ORDER IN TRY</span>
+          <span class="tot-val" id="order-try-equiv" style="font-size:14px;">—</span>
+          <span class="tot-sub">₺ karşılık</span>
         </div>
         <div class="tot-item">
           <span class="tot-lbl">You Save</span>
@@ -3140,7 +3150,18 @@ function updateTotals() {
   document.getElementById('totalCBMbar').textContent=cbm.toFixed(2);
   document.getElementById('itemCount').textContent=orderItems.length;
   document.getElementById('curLabel').textContent=currency;
-  document.getElementById('savingAmt').textContent=saving>0?sym+saving.toFixed(2):'—';
+  const savEl=document.getElementById('savingAmt');
+  if(savEl){
+    if(saving>0){
+      const pct=(saving/listTotal*100).toFixed(1);
+      savEl.textContent=sym+saving.toFixed(2);
+      savEl.title='%'+pct+' indirim';
+      savEl.nextElementSibling.textContent='%'+pct+' indirim';
+    } else {
+      savEl.textContent='—';
+      savEl.nextElementSibling.textContent='liste fiyatına göre';
+    }
+  }
   updateContainer(cbm);
 }
 
