@@ -2882,5 +2882,188 @@ function applyImport() {
 function printBoth() { window.print(); setTimeout(()=>{ closePrint(); showIrsaliye(); setTimeout(()=>window.print(),800); },500); }
 
 
+
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, dur) {
+  dur = dur || 2800;
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(function(){ t.classList.remove('show'); }, dur);
+}
+
+// ============================================================
+// BANK / FX
+// ============================================================
+function fillBank(cur) {
+  const banks = {
+    eur: { name:'TÜRKİYE İŞ BANKASI A.Ş.', iban:'TR52 0006 4000 0022 2480 0012 20', swift:'ISBKTRIS', addr:'Sinanbey Mah. Alanyurt Cad. No:9A İNEGÖL' },
+    usd: { name:'ZİRAAT BANKASI', iban:'TR67 0001 0026 6062 8995 3850 08', swift:'TCZBTR2A', addr:'Yeniceköy Mah. Mobilya Cad. No:30 INEGOL-BURSA' },
+    try: { name:'ZİRAAT BANKASI TL', iban:'TR67 0001 0026 6062 8995 3850 01', swift:'TCZBTR2A', addr:'Yeniceköy Mah. Mobilya Cad. No:30 INEGOL-BURSA' }
+  };
+  const b = banks[cur] || banks.eur;
+  const el = document.getElementById('bankDetails');
+  if(el) el.innerHTML = '<strong>'+b.name+'</strong><br>'+b.addr+'<br>IBAN: '+b.iban+'<br>SWIFT: '+b.swift;
+}
+
+function calcFX() {
+  const eurTry = parseFloat(document.getElementById('fx-eur-try')?.value) || 0;
+  const usdTry = parseFloat(document.getElementById('fx-usd-try')?.value) || 0;
+  const el = document.getElementById('order-try-equiv');
+  if(!el || !orderItems.length) { if(el) el.textContent='—'; return; }
+  let total = 0;
+  orderItems.forEach(function(item){
+    const v = item.unitPrice * item.qty;
+    if(currency==='EUR') total += v * eurTry;
+    else if(currency==='USD') total += v * usdTry;
+    else total += v;
+  });
+  el.textContent = total > 0 ? '₺' + total.toLocaleString('tr-TR',{maximumFractionDigits:0}) : '—';
+}
+
+function fetchLiveRates() { autoUpdateFX(); }
+
+// ============================================================
+// REPORTS
+// ============================================================
+function setReportPeriod(period, btn) {
+  document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  renderReport(period);
+}
+
+function filterHistByPeriod(hist, period) {
+  if(period==='all') return hist;
+  const now = Date.now();
+  const days = period==='month'?30:period==='3m'?90:period==='6m'?180:365;
+  return hist.filter(function(h){
+    const parts = (h.date||'').split('/');
+    const d = parts.length===3 ? new Date(parts[2],parts[1]-1,parts[0]) : new Date(h.date||'');
+    return (now - d.getTime()) / 86400000 <= days;
+  });
+}
+
+function parseAmount(s) { return parseFloat((s||'').replace(/[^0-9.]/g,'')) || 0; }
+
+function renderReport(period) {
+  const hist = filterHistByPeriod(getHistory(), period||'all');
+  const se = document.getElementById('report-stats');
+  if(!se) return;
+  const total = hist.reduce(function(s,h){ return s+parseAmount(h.total); }, 0);
+  const avg = hist.length ? total/hist.length : 0;
+  const cur = (hist[0]&&hist[0].currency)||'EUR';
+  const sym = cur==='TRY'?'₺':cur==='EUR'?'€':'$';
+  const sent = hist.filter(function(h){ return ['Sent','Confirmed','Production','Shipped'].includes(h.status); }).length;
+  se.innerHTML = '<div class="report-stat"><div class="rs-lbl">Toplam Ciro</div><div class="rs-val">'+sym+total.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div><div class="rs-sub">'+hist.length+' proforma</div></div>'+
+    '<div class="report-stat"><div class="rs-lbl">Ort. Sipariş</div><div class="rs-val">'+sym+avg.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div></div>'+
+    '<div class="report-stat"><div class="rs-lbl">Gönderilen</div><div class="rs-val">'+sent+'</div></div>'+
+    '<div class="report-stat"><div class="rs-lbl">Müşteri</div><div class="rs-val">'+new Set(hist.map(function(h){return h.buyer;})).size+'</div></div>';
+  const pm = {};
+  hist.forEach(function(h){ (h.items||[]).forEach(function(i){ if(!pm[i.name]) pm[i.name]={qty:0,total:0}; pm[i.name].qty+=i.qty||1; pm[i.name].total+=(i.unitPrice||0)*(i.qty||1); }); });
+  const tp = Object.entries(pm).sort(function(a,b){ return b[1].total-a[1].total; }).slice(0,8);
+  const mp = tp[0]?tp[0][1].total:1;
+  const tpEl = document.getElementById('report-top-products');
+  if(tpEl) tpEl.innerHTML = tp.map(function(e){ return '<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e[0]+'</td><td style="text-align:right;">'+e[1].qty+'</td><td style="text-align:right;"><div>'+sym+e[1].total.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div><div class="report-bar" style="width:'+(e[1].total/mp*100).toFixed(0)+'%;"></div></td></tr>'; }).join('') || '<tr><td colspan="3" style="color:var(--muted);padding:12px;">Veri yok</td></tr>';
+  const cm = {};
+  hist.forEach(function(h){ const b=h.buyer||'?'; if(!cm[b]) cm[b]={count:0,total:0}; cm[b].count++; cm[b].total+=parseAmount(h.total); });
+  const tc = Object.entries(cm).sort(function(a,b){ return b[1].total-a[1].total; }).slice(0,8);
+  const mc = tc[0]?tc[0][1].total:1;
+  const tcEl = document.getElementById('report-top-customers');
+  if(tcEl) tcEl.innerHTML = tc.map(function(e){ return '<tr><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e[0]+'</td><td style="text-align:right;">'+e[1].count+'</td><td style="text-align:right;"><div>'+sym+e[1].total.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div><div class="report-bar" style="width:'+(e[1].total/mc*100).toFixed(0)+'%;background:#5B21B6;"></div></td></tr>'; }).join('') || '<tr><td colspan="3" style="color:var(--muted);padding:12px;">Veri yok</td></tr>';
+  const ctm = {};
+  hist.forEach(function(h){ const c=(h.buyer_data&&h.buyer_data.country)||'Unknown'; if(!ctm[c]) ctm[c]={count:0,total:0}; ctm[c].count++; ctm[c].total+=parseAmount(h.total); });
+  const tfc = Object.values(ctm).reduce(function(s,d){ return s+d.total; }, 0)||1;
+  const tctEl = document.getElementById('report-countries');
+  if(tctEl) tctEl.innerHTML = Object.entries(ctm).sort(function(a,b){ return b[1].total-a[1].total; }).slice(0,10).map(function(e){ return '<tr><td>'+e[0]+'</td><td style="text-align:right;">'+e[1].count+'</td><td style="text-align:right;">'+sym+e[1].total.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</td><td style="text-align:right;">'+(e[1].total/tfc*100).toFixed(1)+'%</td></tr>'; }).join('') || '<tr><td colspan="4" style="color:var(--muted);padding:12px;">Veri yok</td></tr>';
+}
+
+// ============================================================
+// PRICE EDITOR
+// ============================================================
+let priceEdits = {};
+
+function renderPriceEditor() {
+  const tbody = document.getElementById('pe-tbody');
+  if(!tbody) return;
+  const cf = document.getElementById('pe-cat-filter')?.value||'all';
+  tbody.innerHTML = '';
+  try { priceEdits = JSON.parse(localStorage.getItem('morello_price_edits')||'{}'); } catch(e){ priceEdits={}; }
+  Object.entries(CATALOG).forEach(function([cn,cd]){
+    if(cf!=='all'&&cn!==cf) return;
+    Object.entries(cd.series).forEach(function([sn,sd]){
+      const hr = document.createElement('tr'); hr.className='pe-series-hdr';
+      hr.innerHTML = '<td colspan="4">'+cd.icon+' '+cn+' — '+sn+'</td>'; tbody.appendChild(hr);
+      sd.items.forEach(function(item){
+        const ed = priceEdits[item.id]||{};
+        const eur = ed.eur!==undefined?ed.eur:item.eur;
+        const usd = ed.usd!==undefined?ed.usd:item.usd;
+        const tl = ed.tl!==undefined?ed.tl:(TL_PRICES[item.id]||null);
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td style="font-size:11px;">'+item.name+(item.bundled?' <span style="font-size:8.5px;color:var(--gold);">SET</span>':'')+'</td>'+
+          '<td><input class="pe-inp '+(ed.eur!==undefined?'changed':'')+'" type="number" value="'+(eur||'')+'" placeholder="—" data-id="'+item.id+'" data-cur="eur" oninput="markPriceEdit(this)" step="1" min="0"></td>'+
+          '<td><input class="pe-inp '+(ed.usd!==undefined?'changed':'')+'" type="number" value="'+(usd||'')+'" placeholder="—" data-id="'+item.id+'" data-cur="usd" oninput="markPriceEdit(this)" step="1" min="0"></td>'+
+          '<td><input class="pe-inp '+(ed.tl!==undefined?'changed':'')+'" type="number" value="'+(tl||'')+'" placeholder="—" data-id="'+item.id+'" data-cur="tl" oninput="markPriceEdit(this)" step="100" min="0"></td>';
+        tbody.appendChild(tr);
+      });
+    });
+  });
+}
+
+function markPriceEdit(inp) {
+  const id=inp.dataset.id, cur=inp.dataset.cur;
+  const val = parseFloat(inp.value)||null;
+  if(!priceEdits[id]) priceEdits[id]={};
+  if(val){ priceEdits[id][cur]=val; inp.classList.add('changed'); }
+  else { delete priceEdits[id][cur]; inp.classList.remove('changed'); }
+}
+
+function savePriceEdits() {
+  let count=0;
+  Object.entries(priceEdits).forEach(function([id,edits]){
+    for(const [cn,cd] of Object.entries(CATALOG)){
+      for(const [sn,sd] of Object.entries(cd.series)){
+        const item=sd.items.find(function(i){return i.id===id;});
+        if(item){ if(edits.eur!==undefined) item.eur=edits.eur; if(edits.usd!==undefined) item.usd=edits.usd; if(edits.tl!==undefined) TL_PRICES[id]=edits.tl; count++; }
+      }
+    }
+  });
+  localStorage.setItem('morello_price_edits', JSON.stringify(priceEdits));
+  buildCatalog(); renderOrder(); showToast('✓ '+count+' ürün fiyatı güncellendi');
+}
+
+function resetPriceEdits() {
+  if(!confirm('Tüm fiyat düzenlemeleri sıfırlansın mı?')) return;
+  priceEdits={}; localStorage.removeItem('morello_price_edits'); renderPriceEditor(); showToast('Fiyatlar sıfırlandı');
+}
+
+function loadPriceEdits() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('morello_price_edits')||'{}');
+    Object.entries(saved).forEach(function([id,edits]){
+      for(const [cn,cd] of Object.entries(CATALOG)){
+        for(const [sn,sd] of Object.entries(cd.series)){
+          const item=sd.items.find(function(i){return i.id===id;});
+          if(item){ if(edits.eur!==undefined) item.eur=edits.eur; if(edits.usd!==undefined) item.usd=edits.usd; if(edits.tl!==undefined) TL_PRICES[id]=edits.tl; }
+        }
+      }
+    });
+  } catch(e){}
+}
+
+// ============================================================
+// CUSTOMER NOTE EDIT
+// ============================================================
+function editCustNote(idx) {
+  const custs=getCustomers(); const c=custs[idx]; if(!c) return;
+  const note=prompt('Not ekle/düzenle:',c.note||''); if(note===null) return;
+  custs[idx].note=note; saveCustomers(custs); saveCustomerToCloud(custs[idx]); renderCustomers(); showToast('Not kaydedildi');
+}
+
+
 </script></body>
 </html>
