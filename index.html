@@ -2015,7 +2015,11 @@ const CATALOG = {
 // STATE
 // ============================================================
 let currency = 'EUR';
-let orderItems = []; // {id,name,listPrice,unitPrice,qty,cbm,bundled}
+let orderItems = [];
+
+const SOFA_SUFFIXES = ['3S','2S','BRG','SGL','CRN','SF-SET','SET-331','SET-221','SET-321'];
+const SOFA_UNIT_CBM = {'3S':1.585,'2S':1.585,'BRG':0.451,'SGL':0.451,'CRN':2.681,'SF-SET':3.619,'SET-331':2.970,'SET-221':2.970,'SET-321':2.970};
+const VEHICLES = [{id:'20dc',label:'20DC',m3:33.2},{id:'40hc',label:'40HC',m3:76.0},{id:'stdtir',label:'Std TIR',m3:79.0},{id:'megatir',label:'Mega TIR',m3:100.0}]; // {id,name,listPrice,unitPrice,qty,cbm,bundled}
 
 
 const NOTE_TEMPLATES = [
@@ -2951,17 +2955,7 @@ function updateLogoPreview() {
 // ============================================================
 // SOFA / CONTAINER HELPERS
 // ============================================================
-const SOFA_SUFFIXES = ['3S','2S','BRG','SGL','CRN','SF-SET','SET-331','SET-221','SET-321'];
-const SOFA_UNIT_CBM = {
-  '3S':1.585,'2S':1.585,'BRG':0.451,'SGL':0.451,'CRN':2.681,
-  'SF-SET':3.619,'SET-331':2.970,'SET-221':2.970,'SET-321':2.970
-};
-const VEHICLES = [
-  {id:'20dc',label:'20DC',m3:33.2},
-  {id:'40hc',label:'40HC',m3:76.0},
-  {id:'stdtir',label:'Std TIR',m3:79.0},
-  {id:'megatir',label:'Mega TIR',m3:100.0}
-];
+
 
 function isSofaItem(itemId) {
   return SOFA_SUFFIXES.some(function(s){ return itemId.endsWith('-'+s); });
