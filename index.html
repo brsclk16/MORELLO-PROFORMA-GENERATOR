@@ -845,35 +845,166 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: #fff;
+  background: #F2F2F0;
   z-index: 9999;
-  overflow: auto;
+  overflow-y: auto;
 }
-.doc-print {
-  padding: 30px 40px;
-  max-width: 800px;
-  margin: 50px auto 40px;
+/* DOC ACTION BAR */
+.doc-actions-bar {
   background: #fff;
-  font-family: Arial, sans-serif;
-  font-size: 11px;
-  color: #000;
+  border-bottom: 1px solid #E0E0E0;
+  padding: 10px 32px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
-.doc-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-.doc-main-title { font-size: 21px; font-weight: 700; text-decoration: underline; letter-spacing: 1px; }
-.doc-meta { text-align: right; font-size: 10.5px; line-height: 2; }
-.doc-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 18px; }
-.doc-party-lbl { font-weight: 700; text-decoration: underline; font-size: 10px; letter-spacing: .5px; margin-bottom: 4px; }
-.doc-party-body { font-size: 10.5px; line-height: 1.8; }
-.doc-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
-.doc-table th { border: 1px solid #000; padding: 5px 10px; text-align: center; font-weight: 700; font-size: 10px; }
-.doc-table td { border: 1px solid #000; padding: 5px 10px; }
+/* A4 PAPER */
+.doc-paper {
+  background: #fff;
+  width: 794px;
+  min-height: 1000px;
+  margin: 24px auto 40px;
+  padding: 48px 56px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.10);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  color: #111;
+  line-height: 1.5;
+}
+/* DOC HEADER */
+.doc-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #111;
+}
+.doc-hdr-left img { height: 44px; object-fit: contain; display: block; margin-bottom: 6px; }
+.doc-hdr-right { text-align: right; }
+.doc-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #111;
+  margin-bottom: 6px;
+}
+.doc-ref-block { font-size: 10px; color: #666; line-height: 1.9; }
+.doc-ref-block strong { color: #111; }
+/* PARTIES */
+.doc-parties-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.doc-party-box {
+  border: 1px solid #DEDEDE;
+  border-radius: 4px;
+  padding: 12px 14px;
+}
+.doc-party-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #EBEBEB;
+}
+.doc-party-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 3px;
+}
+.doc-party-detail {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.7;
+}
+/* TABLE */
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0;
+  font-size: 10.5px;
+}
+.doc-table thead tr { background: #111; }
+.doc-table th {
+  padding: 8px 10px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: #fff;
+  border: none;
+}
+.doc-table th:first-child { text-align: left; }
+.doc-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #EBEBEB;
+  color: #222;
+}
 .doc-table td.c { text-align: center; }
 .doc-table td.r { text-align: right; }
-.doc-table tr.doc-total td { font-weight: 700; border-top: 2px solid #000; background: #F0F0F0; }
-.doc-footer { margin-top: 14px; font-size: 10.5px; line-height: 2; }
-.doc-footer-row { display: flex; gap: 8px; }
-.doc-footer-key { font-weight: 700; min-width: 120px; }
-.pl-title { font-size: 22px; font-weight: 700; text-decoration: underline; margin-bottom: 4px; }
+.doc-table tbody tr:last-child td { border-bottom: none; }
+.doc-table tbody tr:nth-child(even) td { background: #FAFAFA; }
+.doc-table tbody tr:hover td { background: #FBF6EC; }
+.doc-table tfoot tr td {
+  padding: 9px 10px;
+  font-weight: 700;
+  font-size: 11px;
+  background: #F0F0EE;
+  border-top: 2px solid #111;
+  border-bottom: none;
+  color: #111;
+}
+/* FOOTER */
+.doc-footer-box {
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: #F8F8F6;
+  border: 1px solid #E8E8E8;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.doc-footer-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+  line-height: 1.6;
+}
+.doc-footer-row:last-child { margin-bottom: 0; }
+.doc-footer-key { font-weight: 700; color: #444; min-width: 100px; flex-shrink: 0; }
+.doc-sigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 40px;
+}
+.doc-sig-line {
+  border-top: 1.5px solid #333;
+  padding-top: 6px;
+  font-size: 9.5px;
+  color: #666;
+  text-align: center;
+}
+/* compat - old classes still used in some overlays */
+.doc-main-title { font-size: 22px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.doc-meta { text-align: right; font-size: 10px; line-height: 1.9; color: #555; }
+.doc-party-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #999; margin-bottom: 4px; }
+.doc-party-body { font-size: 10px; color: #444; line-height: 1.7; }
+.doc-footer { margin-top: 16px; font-size: 10px; }
+.doc-footer-key { font-weight: 700; min-width: 110px; }
+.pl-title { font-size: 22px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
 
 /* ─── IMPORT OVERLAY ─── */
 #import-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.8); z-index: 10500; align-items: center; justify-content: center; padding: 20px; }
@@ -2142,7 +2273,7 @@ body {
 
 <!-- KONŞİMENTO TALİMATI OVERLAY -->
 <div id="talimat-overlay" class="doc-overlay">
-  <div class="print-actions">
+  <div class="doc-actions-bar">
     <button class="btn btn-outline" onclick="closeTalimat()">✕ Kapat</button>
     <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
   </div>
@@ -2151,7 +2282,7 @@ body {
 
 <!-- COMMERCIAL INVOICE OVERLAY -->
 <div id="ci-overlay" class="doc-overlay">
-  <div class="print-actions">
+  <div class="doc-actions-bar">
     <button class="btn btn-outline" onclick="closeCI()">✕ Kapat</button>
     <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
   </div>
@@ -2160,7 +2291,7 @@ body {
 
 <!-- ÇEKİ LİSTESİ OVERLAY -->
 <div id="ceki-overlay" class="doc-overlay">
-  <div class="print-actions">
+  <div class="doc-actions-bar">
     <button class="btn btn-outline" onclick="closeCeki()">✕ Kapat</button>
     <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
   </div>
@@ -2168,17 +2299,17 @@ body {
 </div>
 
 <!-- PACKING LIST OVERLAY -->
-<div id="pl-overlay" style="display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow-y:auto;">
-  <div class="print-actions">
-    <button class="btn btn-outline" onclick="closePL()">✕ Kapat</button>
-    <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
+<div id="pl-overlay" style="display:none;position:fixed;inset:0;background:#F2F2F0;z-index:9999;overflow-y:auto;">
+  <div class="doc-actions-bar">
+    <button class="btn btn-ghost btn-sm" onclick="closePL()">✕ Kapat</button>
+    <button class="btn btn-gold btn-sm" onclick="window.print()">🖨 Yazdır / PDF</button>
   </div>
   <div id="pl-print"></div>
 </div>
 
 <!-- İRSALİYE OVERLAY -->
 <div id="irsaliye-overlay" style="display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow-y:auto;">
-  <div class="print-actions">
+  <div class="doc-actions-bar">
     <button class="btn btn-outline" onclick="closeIrsaliye()">✕ Kapat</button>
     <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
   </div>
@@ -4828,10 +4959,68 @@ function buildDocRows(withPrice) {
 function showPackingList() {
   if(!orderItems.length) { showToast('Önce ürün ekleyin'); return; }
   try {
-  const {totalQty,totalPkgs,totalGross,totalNet}=getDocTotals(); const piNo=document.getElementById('piNumber')?.value||'';
-  let rows=buildDocRows(false);
-  rows+='<tr class="doc-total"><td><strong>TOTAL :</strong></td><td></td><td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td><td class="c"><strong>'+(totalGross?totalGross.toFixed(2):'\u2014')+'</strong></td><td class="c"><strong>'+(totalNet?totalNet.toFixed(2):'\u2014')+'</strong></td></tr>';
-  document.getElementById('pl-print').innerHTML=getPfLogoHtml()+'<div class="doc-main-title" style="margin-top:8px;">PACKING LIST</div><div style="display:flex;justify-content:space-between;"><div class="doc-party-lbl">SELLER</div><div>'+(piNo?'REF: <strong>'+piNo+'</strong> &nbsp;&nbsp;':'')+'DATE: <strong>'+getDocDate()+'</strong></div></div><div class="doc-party-body" style="margin-bottom:12px;">'+SELLER_INFO+'</div><div class="doc-party-lbl">BUYER</div><div class="doc-party-body" style="margin-bottom:12px;">'+(getBuyerBlock()||'\u2014')+'</div><table class="doc-table"><thead><tr><th style="width:40%;text-align:left;">TYPE OF GOODS</th><th>QUANTITY</th><th>PACKS</th><th>GROSS KG</th><th>NET KG</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  const {totalQty,totalPkgs,totalGross,totalNet}=getDocTotals();
+  const piNo=document.getElementById('piNumber')?.value||'';
+  const buyerCo=document.getElementById('buyerCompany')?.value||'';
+  const buyerCt=document.getElementById('buyerContact')?.value||'';
+  const buyerAd=document.getElementById('buyerAddress')?.value||'';
+  const buyerCn=document.getElementById('buyerCountry')?.value||'';
+  let rows='';
+  orderItems.forEach(item=>{
+    const pd=PACKAGE_DATA[item.id];
+    const pkgs=pd?Math.ceil(pd.pkgs*item.qty):'—';
+    const gross=pd?(pd.kg*item.qty).toFixed(2):'—';
+    const net=pd?(pd.kg*item.qty - Math.ceil(pd.pkgs*item.qty)*0.5).toFixed(2):'—';
+    const note=item.note?' <span style="font-size:9px;color:#888;">('+item.note+')</span>':'';
+    rows+='<tr><td>'+item.name+note+'</td>'
+      +'<td class="c">'+item.qty+'</td>'
+      +'<td class="c"><strong>'+pkgs+'</strong></td>'
+      +'<td class="c">'+gross+'</td>'
+      +'<td class="c">'+net+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('pl-print').innerHTML=
+    '<div class="doc-paper">'
+    +'<div class="doc-hdr">'
+      +'<div class="doc-hdr-left">'+getPfLogoHtml()+'</div>'
+      +'<div class="doc-hdr-right">'
+        +'<div class="doc-title">Packing List</div>'
+        +'<div class="doc-ref-block">'
+          +(piNo?'<div>PI No &nbsp;&nbsp;&nbsp; <strong>'+piNo+'</strong></div>':'')
+          +'<div>Date &nbsp;&nbsp;&nbsp;&nbsp; <strong>'+getDocDate()+'</strong></div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="doc-parties-grid">'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Seller</div>'
+        +'<div class="doc-party-name">SELİNA MOBİLYA ORMAN ÜRÜNLERİ</div>'
+        +'<div class="doc-party-detail">İnegöl / Bursa, Türkiye<br>Tel: +90 224 714 13 03<br>export@morellomobilya.com</div>'
+      +'</div>'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Buyer</div>'
+        +(buyerCo?'<div class="doc-party-name">'+buyerCo+'</div>':'<div class="doc-party-name" style="color:#bbb;font-style:italic;">—</div>')
+        +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<table class="doc-table">'
+      +'<thead><tr>'
+        +'<th style="width:42%;text-align:left;">Type of Goods</th>'
+        +'<th style="width:10%;">Qty</th>'
+        +'<th style="width:10%;">Packs</th>'
+        +'<th style="width:14%;">Gross KG</th>'
+        +'<th style="width:14%;">Net KG</th>'
+      +'</tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr>'
+        +'<td><strong>TOTAL</strong></td>'
+        +'<td class="c">'+totalQty+'</td>'
+        +'<td class="c"><strong>'+(totalPkgs||'—')+'</strong></td>'
+        +'<td class="c">'+(totalGross?totalGross.toFixed(2):'—')+'</td>'
+        +'<td class="c">'+(totalNet?totalNet.toFixed(2):'—')+'</td>'
+      +'</tr></tfoot>'
+    +'</table>'
+    +'</div>';
   document.getElementById('pl-overlay').style.display='block'; window.scrollTo(0,0);
   } catch(e) { console.error('PL error:', e); showToast('Hata: ' + e.message); }
 }
