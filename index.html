@@ -1489,8 +1489,9 @@ body {
 /* ─── PRINT ─── */
 @media print {
   body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay) { display: none !important; }
+  #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay { display: none !important; }
   #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay { display: block !important; position: static !important; }
-  .print-actions { display: none !important; }
+  .print-actions, .doc-actions-bar, .summary-actions { display: none !important; }
   #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print { margin: 0; padding: 20px; }
 }
 
