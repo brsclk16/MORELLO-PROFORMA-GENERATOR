@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1782822328</title>
+<title>Morello — Proforma Generator v1782823952</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -62,6 +62,54 @@
   --shadow-lg: 0 8px 32px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.08);
 }
 
+[data-theme="dark"] {
+  --bg: #16151A;
+  --surface: #1E1D24;
+  --surface2: #24232B;
+  --surface3: #2C2B34;
+  --border: #36353F;
+  --border-light: #2C2B34;
+
+  --accent: #F5F3EF;
+  --accent-hover: #E5E2DA;
+  --gold: #D4AF6A;
+  --gold-mid: #C4A05A;
+  --gold-light: #2C2616;
+  --gold-subtle: #221E13;
+
+  --text: #F0EEEA;
+  --text-sec: #C7C3BB;
+  --muted: #8E8980;
+  --muted-light: #5E5A53;
+
+  --danger: #F87171;
+  --danger-bg: #3A1A1A;
+  --success: #4ADE80;
+  --success-bg: #15301F;
+  --warning: #FBBF24;
+  --warning-bg: #3A2E10;
+  --info: #60A5FA;
+  --info-bg: #16243D;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+  --shadow: 0 2px 8px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.35);
+}
+[data-theme="dark"] .doc-paper, [data-theme="dark"] #all-docs-print, [data-theme="dark"] .irs-hdr, [data-theme="dark"] #irsaliye-print {
+  background: #fff; color: #111;
+}
+[data-theme="dark"] img[src*="data:image"] { background: #fff; }
+
+/* ─── SKELETON LOADING ─── */
+.skel-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border-light); }
+.skel { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 37%, var(--surface2) 63%); background-size: 400% 100%; animation: skel-shimmer 1.4s ease infinite; border-radius: 4px; }
+.skel-circle { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
+.skel-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.skel-line { height: 9px; }
+@keyframes skel-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+.best-seller-badge { font-size: 10px; }
+
 /* ─── RESET & BASE ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -93,7 +141,12 @@ body {
   top: 0;
   z-index: 200;
   box-shadow: 0 1px 0 rgba(255,255,255,.06), var(--shadow-md);
+  border-bottom: 3px solid transparent;
+  transition: border-color .25s ease;
 }
+.hdr.cur-accent-eur { border-bottom-color: #4F8DF5; }
+.hdr.cur-accent-usd { border-bottom-color: #34C77B; }
+.hdr.cur-accent-try { border-bottom-color: #E8554E; }
 .hdr-logo {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 19px;
@@ -506,6 +559,8 @@ body {
 .empty-order { padding: 48px 20px; text-align: center; color: var(--muted); }
 .empty-order .ei { font-size: 36px; margin-bottom: 10px; opacity: .5; }
 .empty-order p { font-size: 13px; }
+.empty-cust, .empty-hist { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+.empty-cust .ei, .empty-hist .ei { font-size: 32px; margin-bottom: 8px; opacity: .5; display: block; }
 
 /* ─── TOTALS BAR ─── */
 .totals-bar {
@@ -1763,6 +1818,7 @@ body {
       <button class="lang-ui-btn cur-btn active" data-lang="en" onclick="setUILang('en')" style="padding:2px 8px;font-size:10px;font-weight:700;">EN</button>
       <button class="lang-ui-btn cur-btn" data-lang="tr" onclick="setUILang('tr')" style="padding:2px 8px;font-size:10px;font-weight:700;">TR</button>
     </div>
+    <button id="theme-toggle-btn" onclick="toggleTheme()" title="Tema değiştir" style="padding:3px 9px;font-size:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r);color:#fff;cursor:pointer;margin-right:4px;">🌙</button>
     <span id="user-info" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:4px;"></span>
     <button id="btn-logout" onclick="doLogout()" style="display:none;padding:2px 10px;font-size:10px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;color:#fff;cursor:pointer;">⎋ Çıkış</button>
     <button class="btn btn-outline btn-sm" onclick="showImport()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-color:#5B21B6;color:#fff;">🤖 Import</button>
@@ -1974,7 +2030,7 @@ body {
             <button class="btn btn-gold btn-sm" onclick="openNewCustomer()">+ New</button>
           </div>
         </div>
-        <div id="custList"><div class="empty-cust">Loading…</div></div>
+        <div id="custList"><div class="empty-cust"><span class="ei">👥</span>Loading…</div></div>
       </div>
     </div>
 
@@ -1999,7 +2055,7 @@ body {
         <div class="hist-filter-row">
           <input class="hist-filter-inp" id="histSearch" placeholder="Search by company or PI number…" oninput="renderHistory()">
         </div>
-        <div id="histList"><div class="empty-hist">No saved proformas yet.<br>Click "Save" in the header to save the current order.</div></div>
+        <div id="histList"><div class="empty-hist"><span class="ei">🗂️</span>Henüz kayıtlı proforma yok.<br>Üst bardaki "Save" ile mevcut siparişi kaydedebilirsin.</div></div>
       </div>
       <div class="card" style="margin-top:0;">
         <div class="card-hdr"><h3>🖼 Morello Logo</h3><span style="font-size:10px;color:var(--muted);">Proforma çıktısında görünür</span></div>
@@ -2179,7 +2235,7 @@ body {
         <div class="card-hdr"><h3>📋 Eklenen Ürünler</h3>
           <button class="btn btn-ghost btn-sm" onclick="clearCustomProducts()">🗑 Tümünü Sil</button>
         </div>
-        <div id="customProdList"><div class="empty-cust">Henüz ürün eklenmedi.</div></div>
+        <div id="customProdList"><div class="empty-cust"><span class="ei">➕</span>Henüz özel ürün eklenmedi.</div></div>
       </div>
       <div class="card" style="background:var(--gold-light);border-color:var(--gold);">
         <div class="card-body" style="font-size:11px;color:var(--muted);line-height:1.8;">
@@ -2740,9 +2796,17 @@ function checkSession() {
 // ============================================================
 // CLOUD SYNC
 // ============================================================
+function showSkeletonLoading() {
+  const skelRow = '<div class="skel-row"><div class="skel skel-circle"></div><div class="skel-lines"><div class="skel skel-line" style="width:70%;"></div><div class="skel skel-line" style="width:45%;"></div></div></div>';
+  const custList = document.getElementById('custList');
+  if(custList) custList.innerHTML = skelRow.repeat(4);
+  const histList = document.getElementById('histList');
+  if(histList) histList.innerHTML = skelRow.repeat(4);
+}
+
 async function syncFromCloud() {
   if(!currentUserId) return;
-  showToast('☁ Veriler yükleniyor…');
+  showSkeletonLoading();
   try {
     // Customers: local-only, do NOT overwrite from cloud
     // localStorage 'morello_customers' is the source of truth
@@ -3531,6 +3595,21 @@ let currency = 'EUR';
 let orderItems = []; // {id,name,listPrice,unitPrice,qty,cbm,bundled}
 let loadedFxLock = null; // {eurTry, usdTry, lockedAt} - set when a saved proforma's locked FX rate is loaded
 
+function initTheme() {
+  const saved = localStorage.getItem('morello_theme') || 'light';
+  applyTheme(saved);
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
+  localStorage.setItem('morello_theme', theme);
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
 
 const NOTE_TEMPLATES = [
   'Antrasit kumaş', 'Ekru kumaş', 'Bej kumaş',
@@ -3575,6 +3654,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Logo preview
   updateLogoPreview();
   loadShipDraft();
+  initTheme();
+  applyCurrencyAccent(currency);
   // Auth check
   checkSession();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
@@ -4094,7 +4175,7 @@ function renderCustomProducts() {
   const list=document.getElementById('customProdList');
   if(!list) return;
   const all=getCustomProducts();
-  if(!all.length){ list.innerHTML='<div class="empty-cust">Henüz ürün eklenmedi.</div>'; return; }
+  if(!all.length){ list.innerHTML='<div class="empty-cust"><span class="ei">➕</span>Henüz özel ürün eklenmedi.</div>'; return; }
   list.innerHTML='';
   const wrap=document.createElement('div'); wrap.className='custom-product-list';
   all.forEach(function(p){
@@ -4184,9 +4265,17 @@ function renderMargin() {}
 // ============================================================
 // CATALOG
 // ============================================================
+function getBestSellerIds(limit) {
+  const hist = getHistory().filter(h=>!h.trashed);
+  const counts = {};
+  hist.forEach(h => (h.items||[]).forEach(it => { counts[it.id] = (counts[it.id]||0) + (it.qty||1); }));
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,limit||8).map(e=>e[0]);
+}
+
 function buildCatalog() {
   const tree = document.getElementById('catTree');
   tree.innerHTML = '';
+  const bestSellers = new Set(getBestSellerIds(8));
   // Merge custom products into catalog
   const customProds = getCustomProducts();
   const mergedCatalog = JSON.parse(JSON.stringify(CATALOG)); // deep clone
@@ -4226,7 +4315,8 @@ function buildCatalog() {
       sb.appendChild(sh);
       const pl = document.createElement('div');
       pl.id = `ser-${sid}`; pl.className = 'collapsed';
-      sd.items.forEach(item => {
+      const sortedItems = sd.items.slice().sort((a,b)=>(bestSellers.has(b.id)?1:0)-(bestSellers.has(a.id)?1:0));
+      sortedItems.forEach(item => {
         const p = getP(item);
         const pi = document.createElement('div');
         pi.className = 'prod-item';
@@ -4235,7 +4325,8 @@ function buildCatalog() {
         const thumbHtml = imgSrc
           ? `<img src="${imgSrc}" style="width:36px;height:30px;object-fit:contain;border-radius:3px;border:1px solid var(--border);background:#fff;">`
           : `<div class="prod-thumb">${catData.icon}</div>`;
-        pi.innerHTML = `${thumbHtml}<div class="prod-info"><div class="prod-name">${item.name}${item.bundled?' 📦':''}</div><div class="prod-price">${p!==null?fmt(p):'—'}</div></div><button class="add-btn" onclick="addItem('${item.id}')">+</button>`;
+        const bestBadge = bestSellers.has(item.id) ? ' <span class="best-seller-badge" title="En çok satan">🔥</span>' : '';
+        pi.innerHTML = `${thumbHtml}<div class="prod-info"><div class="prod-name">${item.name}${item.bundled?' 📦':''}${bestBadge}</div><div class="prod-price">${p!==null?fmt(p):'—'}</div></div><button class="add-btn" onclick="addItem('${item.id}')">+</button>`;
         pl.appendChild(pi);
       });
       sb.appendChild(pl); wrap.appendChild(sb);
@@ -4466,6 +4557,13 @@ function setCurrency(c) {
   const bankKey=c==='EUR'?'eur':'usd';
   fillBank(bankKey);
   document.getElementById('bankSelect').value=bankKey;
+  applyCurrencyAccent(c);
+}
+function applyCurrencyAccent(c) {
+  const hdr = document.querySelector('.hdr');
+  if(!hdr) return;
+  hdr.classList.remove('cur-accent-eur','cur-accent-usd','cur-accent-try');
+  hdr.classList.add('cur-accent-'+c.toLowerCase());
 }
 
 // ============================================================
@@ -4517,7 +4615,7 @@ function renderCustomers() {
   // Filter by search
   if(search) all = all.filter(c=>(c.name||'').toLowerCase().includes(search)||(c.country||'').toLowerCase().includes(search));
 
-  if(!all.length){list.innerHTML='<div class="empty-cust">No companies found.</div>';return;}
+  if(!all.length){list.innerHTML='<div class="empty-cust"><span class="ei">👥</span>Hiç firma bulunamadı.</div>';return;}
 
   const langLabels={en:'EN',fr:'FR',ar:'AR',de:'DE'};
   const grid = document.createElement('div'); grid.className='cust-grid';
@@ -4865,7 +4963,7 @@ function renderHistory() {
   hist = isTrashView ? hist.filter(h=>h.trashed) : hist.filter(h=>!h.trashed);
   if(search) hist=hist.filter(h=>(h.buyer||'').toLowerCase().includes(search)||(h.pi||'').toLowerCase().includes(search));
   if(!isTrashView && statusFilter!=='all') hist=hist.filter(h=>(h.status||'Draft')===statusFilter);
-  if(!hist.length) { list.innerHTML='<div class="empty-hist">'+(isTrashView?'Çöp kutusu boş.':'No results found.')+'</div>'; return; }
+  if(!hist.length) { list.innerHTML='<div class="empty-hist"><span class="ei">'+(isTrashView?'🗑️':'🔍')+'</span>'+(isTrashView?'Çöp kutusu boş.':'Sonuç bulunamadı.')+'</div>'; return; }
   // Count label
   const allHist=getHistory();
   list.innerHTML='<div style="padding:5px 12px;font-size:10px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);">'+hist.length+' proforma'+(isTrashView?' (çöp kutusu)':(search||statusFilter!=='all'?' (filtered)':''))+'</div>';
