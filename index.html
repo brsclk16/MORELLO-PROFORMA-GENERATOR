@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1782820912</title>
+<title>Morello — Proforma Generator v1782821936</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1501,12 +1501,16 @@ body {
 
 /* ─── PRINT ─── */
 @media print {
-  body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay) { display: none !important; }
+  body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay):not(#all-docs-overlay) { display: none !important; }
   #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay { display: none !important; }
-  #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay { display: block !important; position: static !important; }
+  #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay, #all-docs-overlay { display: block !important; position: static !important; }
   .print-actions, .doc-actions-bar, .summary-actions { display: none !important; }
   #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print { margin: 0; padding: 20px; }
+  .all-docs-page { page-break-after: always; }
+  .all-docs-page:last-child { page-break-after: auto; }
 }
+.all-docs-page { background: #fff; }
+.all-docs-page + .all-docs-page { margin-top: 24px; border-top: 2px dashed #ccc; padding-top: 24px; }
 
 /* ─── PROFORMA TOTALS ─── */
 .pf-tots {
@@ -1908,12 +1912,49 @@ body {
       <div class="card" id="cont-comp-card" style="display:none;">
         <div class="card-body" id="cont-composition"></div>
       </div>
+      <div class="card">
+        <div class="card-hdr"><h3>🚢 Sevkiyat Detayları</h3><span style="font-size:10px;color:var(--muted);">CI / Packing List / Talimat / İrsaliye'de kullanılır</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;">
+            <div class="frow"><label>Konteyner No</label><input type="text" id="ship-container" placeholder="MSKU1234567" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>Mühür No</label><input type="text" id="ship-seal" placeholder="SL-998877" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>Gemi / Sefer No</label><input type="text" id="ship-vessel" placeholder="MSC ISTANBUL / 26W01" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>B/L No</label><input type="text" id="ship-bl" placeholder="263216868" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>Yükleme Limanı</label><input type="text" id="ship-pol" placeholder="Gemlik, Türkiye" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>Boşaltma Limanı</label><input type="text" id="ship-pod" placeholder="Mogadishu, Somalia" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>Acente</label><input type="text" id="ship-agent" placeholder="Galea Lojistik" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>GTİP Kodu</label><input type="text" id="ship-gtip" placeholder="9403.60" oninput="saveShipDraft()"></div>
+            <div class="frow"><label>Kısmi Yükleme</label>
+              <select id="ship-partial" onchange="saveShipDraft()">
+                <option value="Not Allowed">Not Allowed</option>
+                <option value="Allowed">Allowed</option>
+              </select>
+            </div>
+            <div class="frow"><label>Teslim Şartı</label><input type="text" id="ship-terms" placeholder="FOB Gemlik" oninput="saveShipDraft()"></div>
+          </div>
+          <div class="frow"><label>Not</label><input type="text" id="ship-note" placeholder="Ek nakliye notu..." oninput="saveShipDraft()"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="text-align:center;">
+          <button class="btn btn-gold" onclick="generateAllDocuments()" style="font-size:13px;padding:12px 24px;">📑 Tüm Belgeleri Oluştur (PI + Packing List + C.Invoice + Çeki + Talimat + İrsaliye)</button>
+        </div>
+      </div>
       <div class="card" style="background:var(--gold-light);border-color:var(--gold);">
         <div class="card-body" style="font-size:11px;color:var(--muted);line-height:1.8;">
           💡 Add products to your order first, then come back here to see container requirements. CBM values are pre-loaded from the Morello measurement sheet.
         </div>
       </div>
     </div>
+
+<div id="all-docs-overlay" style="display:none;position:fixed;inset:0;background:#F2F2F0;z-index:10500;overflow-y:auto;">
+  <div class="doc-actions-bar" style="position:sticky;top:0;background:#fff;padding:10px 16px;display:flex;gap:8px;justify-content:flex-end;border-bottom:1px solid var(--border);z-index:2;">
+    <button class="btn btn-ghost" onclick="closeAllDocuments()">✕ Kapat</button>
+    <button class="btn btn-gold" onclick="window.print()">🖨 Yazdır / PDF</button>
+  </div>
+  <div id="all-docs-print"></div>
+</div>
+
 
 
 
@@ -1950,6 +1991,7 @@ body {
               <option value="Confirmed">Confirmed</option>
               <option value="Production">Production</option>
               <option value="Shipped">Shipped</option>
+              <option value="trash">🗑 Çöp</option>
             </select>
             <button class="btn btn-ghost btn-sm" onclick="clearHistory()">🗑 Clear All</button>
           </div>
@@ -3531,6 +3573,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPriceEdits();
   // Logo preview
   updateLogoPreview();
+  loadShipDraft();
   // Auth check
   checkSession();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
@@ -3545,6 +3588,7 @@ function showCustDetail(companyName) {
   const hist = getHistory();
   // Match history entries for this company
   const custHist = hist.filter(h => {
+    if(h.trashed) return false;
     const buyer = (h.buyer||'').toLowerCase();
     const name = (companyName||'').toLowerCase();
     return buyer.includes(name.slice(0,10)) || name.includes(buyer.slice(0,10));
@@ -3583,6 +3627,7 @@ function showCustDetail(companyName) {
         '<button class="status-badge '+sc+'" onclick="event.stopPropagation();cycleStatus('+realIdx+',event)" style="font-size:9px;">'+( h.status||'Draft')+'</button>' +
         (h.cbm&&h.cbm!='0.00'?'<span style="font-size:10px;color:var(--muted);">'+h.cbm+' m³</span>':'') +
         '<span class="cdm-total">'+h.total+'</span>' +
+        '<button class="status-badge" title="Tekrar Sipariş" style="font-size:9px;" onclick="event.stopPropagation();reorderFromHistory('+realIdx+');closeCustDetail();">🔁</button>' +
         '</div>';
     }).join('');
   }
@@ -4530,10 +4575,52 @@ function renderCustomers() {
 function openNewCustomer() { document.getElementById('custModal').classList.add('open'); ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-discount','mc-note'].forEach(id=>document.getElementById(id).value=''); }
 function closeCustModal() { document.getElementById('custModal').classList.remove('open'); }
 
+function normalizeCompanyName(s) {
+  return (s||'').toLowerCase()
+    .replace(/[.,'"]/g,'')
+    .replace(/\b(ltd|sti|şti|a\.?ş|inc|gmbh|llc|co|company|şirketi|limited)\b/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if(!m) return n; if(!n) return m;
+  const d = Array.from({length:m+1}, (_,i)=>[i].concat(Array(n).fill(0)));
+  for(let j=0;j<=n;j++) d[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      d[i][j] = a[i-1]===b[j-1] ? d[i-1][j-1] : 1+Math.min(d[i-1][j], d[i][j-1], d[i-1][j-1]);
+    }
+  }
+  return d[m][n];
+}
+function findSimilarCustomer(company, custs) {
+  const norm = normalizeCompanyName(company);
+  if(!norm) return null;
+  let best = null, bestScore = 0;
+  custs.forEach(function(c){
+    const cn = normalizeCompanyName(c.company);
+    if(!cn) return;
+    if(cn === norm) { best = c; bestScore = 1; return; }
+    const dist = levenshtein(norm, cn);
+    const maxLen = Math.max(norm.length, cn.length);
+    const score = 1 - (dist / maxLen);
+    const substrMatch = norm.length>3 && cn.length>3 && (cn.includes(norm) || norm.includes(cn));
+    const finalScore = substrMatch ? Math.max(score, 0.88) : score;
+    if(finalScore > bestScore) { bestScore = finalScore; best = c; }
+  });
+  return bestScore >= 0.82 ? best : null;
+}
+
 function saveCustomer() {
   const company = document.getElementById('mc-company').value.trim();
   if(!company) { showToast('Company name required'); return; }
   const custs = getCustomers();
+  const similar = findSimilarCustomer(company, custs);
+  if(similar) {
+    const proceed = confirm('"'+company+'" firması "'+similar.company+'" ile çok benzer görünüyor — zaten kayıtlı olabilir.\n\nYine de YENİ ayrı kayıt olarak eklemek istiyor musun?\n(İptal = eklemekten vazgeç, mevcut kaydı kullan)');
+    if(!proceed) { showToast('Eklenmedi — mevcut kayıt: '+similar.company); return; }
+  }
   const disc=parseFloat(document.getElementById('mc-discount').value)||0;
   const note=document.getElementById('mc-note')?.value||'';
   custs.push({company, contact:document.getElementById('mc-contact').value, country:document.getElementById('mc-country').value, phone:document.getElementById('mc-phone').value, email:document.getElementById('mc-email').value, address:document.getElementById('mc-address').value, discount:disc, note});
@@ -4609,7 +4696,7 @@ function saveToHistory() {
   const sym = currency==='EUR'?'€':'$';
   const hist = getHistory();
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
-  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value } });
+  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value }, shipment:getShipBlock() });
   if(hist.length>50) hist.splice(50);
   saveHistory(hist);
   saveHistoryToCloud(hist[0]);
@@ -4770,13 +4857,15 @@ function renderHistory() {
   const search=(document.getElementById('histSearch')?.value||'').toLowerCase();
   const statusFilter=document.getElementById('histStatusFilter')?.value||'all';
   let hist=getHistory();
+  const isTrashView = statusFilter==='trash';
   // Filter
+  hist = isTrashView ? hist.filter(h=>h.trashed) : hist.filter(h=>!h.trashed);
   if(search) hist=hist.filter(h=>(h.buyer||'').toLowerCase().includes(search)||(h.pi||'').toLowerCase().includes(search));
-  if(statusFilter!=='all') hist=hist.filter(h=>(h.status||'Draft')===statusFilter);
-  if(!hist.length) { list.innerHTML='<div class="empty-hist">No results found.</div>'; return; }
+  if(!isTrashView && statusFilter!=='all') hist=hist.filter(h=>(h.status||'Draft')===statusFilter);
+  if(!hist.length) { list.innerHTML='<div class="empty-hist">'+(isTrashView?'Çöp kutusu boş.':'No results found.')+'</div>'; return; }
   // Count label
   const allHist=getHistory();
-  list.innerHTML='<div style="padding:5px 12px;font-size:10px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);">'+hist.length+' proforma'+(search||statusFilter!=='all'?' (filtered)':'')+'</div>';
+  list.innerHTML='<div style="padding:5px 12px;font-size:10px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);">'+hist.length+' proforma'+(isTrashView?' (çöp kutusu)':(search||statusFilter!=='all'?' (filtered)':''))+'</div>';
   const ul=document.createElement('div'); ul.className='hist-list';
   hist.forEach((h,i) => {
     // Find real index in full history for cycleStatus/load/delete
@@ -4784,21 +4873,21 @@ function renderHistory() {
     const row=document.createElement('div'); row.className='hist-item';
     const stClass=['st-draft','st-sent','st-confirmed','st-production','st-shipped'];
     const stLabels=['Draft','Sent','Confirmed','Production','Shipped'];
-    const stIdx=stLabels.indexOf(h.status||'Draft'); 
+    const stIdx=stLabels.indexOf(h.status||'Draft');
     const stCls=stClass[stIdx>=0?stIdx:0];
+    const actionsHtml = isTrashView
+      ? '<button class="hist-load-btn" onclick="restoreHistory('+realIdx+')">♻ Geri Al</button><button class="hist-del-btn" onclick="permanentlyDeleteHistory('+realIdx+')">Kalıcı Sil</button>'
+      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
     row.innerHTML=`
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span class="hist-pi">${h.pi}</span>
-          <button class="status-badge ${stCls}" onclick="cycleStatus(${realIdx},event)">${h.status||'Draft'}</button>
+          ${isTrashView ? '' : '<button class="status-badge '+stCls+'" onclick="cycleStatus('+realIdx+',event)">'+(h.status||'Draft')+'</button>'}
         </div>
         <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}</div>
       </div>
       <div class="hist-total">${h.total}</div>
-      <div class="hist-actions">
-        <button class="hist-load-btn" onclick="loadHistory(${realIdx})">Load</button>
-        <button class="hist-del-btn" onclick="deleteHistory(${realIdx})">×</button>
-      </div>`;
+      <div class="hist-actions">${actionsHtml}</div>`;
     ul.appendChild(row);
   });
   list.appendChild(ul);
@@ -4817,11 +4906,60 @@ function loadHistory(i) {
   document.getElementById('buyerEmail').value=h.buyer_data?.email||'';
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; }
+  loadShipDraft(h.shipment || {});
   renderOrder(); buildCatalog(); showTab('order'); showToast('✓ Loaded: '+h.pi);
 }
 
+function reorderFromHistory(i) {
+  const h=getHistory()[i]; if(!h) return;
+  if(!confirm(`"${h.pi}" siparişini temel alarak yeni bir taslak oluşturulsun mu? Yeni bir PI numarası atanacak, eski kayıt değişmeyecek.`)) return;
+  orderItems=JSON.parse(JSON.stringify(h.items));
+  // Reset prices to current list price / re-link package & cbm data in case catalog changed since
+  orderItems.forEach(function(it){
+    const cat = findItem(it.id);
+    if(cat) {
+      const lp = getP(cat) ?? (currency==='EUR'?cat.usd:cat.eur);
+      if(lp!=null) { it.listPrice = lp; it.unitPrice = lp; }
+    }
+    it.cbm = CBM_DATA[it.id] || it.cbm || 0;
+  });
+  currency=h.currency;
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.textContent===currency));
+  document.getElementById('buyerCompany').value=h.buyer_data?.company||'';
+  document.getElementById('buyerContact').value=h.buyer_data?.contact||'';
+  document.getElementById('buyerCountry').value=h.buyer_data?.country||'';
+  document.getElementById('buyerPhone').value=h.buyer_data?.phone||'';
+  document.getElementById('buyerEmail').value=h.buyer_data?.email||'';
+  document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
+  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; }
+  document.getElementById('piNumber').value = getNextPI();
+  document.getElementById('pfDate').value = new Date().toISOString().split('T')[0];
+  clearShipDraft();
+  renderOrder(); buildCatalog(); showTab('order'); showToast('✓ Yeni taslak oluşturuldu: '+document.getElementById('piNumber').value);
+}
+
 function deleteHistory(i) {
-  if(!confirm('Delete this proforma?')) return;
+  if(!confirm('Bu proformayı çöp kutusuna taşı?')) return;
+  const hist=getHistory();
+  hist[i].trashed = true;
+  hist[i].trashedAt = new Date().toISOString();
+  saveHistory(hist);
+  if(hist[i]._supa_id) saveHistoryToCloud(hist[i]);
+  renderHistory(); showToast('🗑 Çöp kutusuna taşındı');
+}
+
+function restoreHistory(i) {
+  const hist=getHistory();
+  if(!hist[i]) return;
+  hist[i].trashed = false;
+  delete hist[i].trashedAt;
+  saveHistory(hist);
+  if(hist[i]._supa_id) saveHistoryToCloud(hist[i]);
+  renderHistory(); showToast('♻ Geri alındı: '+hist[i].pi);
+}
+
+function permanentlyDeleteHistory(i) {
+  if(!confirm('Bu proforma kalıcı olarak silinecek, geri alınamaz. Emin misin?')) return;
   const hist=getHistory();
   const deleted=hist[i];
   hist.splice(i,1); saveHistory(hist);
@@ -5089,7 +5227,34 @@ function closePrint() {
 function markShipFilled(inp) { inp.classList.toggle('filled', inp.value.trim().length > 0); }
 function getShip(id) { return document.getElementById(id)?.value?.trim()||''; }
 function getShipBlock() {
-  return { container:getShip('ship-container'), vessel:getShip('ship-vessel'), pol:getShip('ship-pol'), pod:getShip('ship-pod'), agent:getShip('ship-agent'), note:getShip('ship-note'), terms:getShip('ship-terms'), partial:getShip('ship-partial'), gtip:getShip('ship-gtip') };
+  return { container:getShip('ship-container'), seal:getShip('ship-seal'), vessel:getShip('ship-vessel'), bl:getShip('ship-bl'), pol:getShip('ship-pol'), pod:getShip('ship-pod'), agent:getShip('ship-agent'), note:getShip('ship-note'), terms:getShip('ship-terms'), partial:getShip('ship-partial'), gtip:getShip('ship-gtip') };
+}
+const SHIP_FIELD_IDS = ['ship-container','ship-seal','ship-vessel','ship-bl','ship-pol','ship-pod','ship-agent','ship-gtip','ship-partial','ship-terms','ship-note'];
+function saveShipDraft() {
+  const data = {};
+  SHIP_FIELD_IDS.forEach(function(id){ const el=document.getElementById(id); if(el) data[id]=el.value; });
+  try { localStorage.setItem('morello_ship_draft', JSON.stringify(data)); } catch(e){}
+}
+function loadShipDraft(data) {
+  const src = data || (function(){ try { return JSON.parse(localStorage.getItem('morello_ship_draft')||'{}'); } catch(e){ return {}; } })();
+  SHIP_FIELD_IDS.forEach(function(id){ const el=document.getElementById(id); if(el) el.value = src[id] || (id==='ship-partial' ? 'Not Allowed' : ''); });
+}
+function clearShipDraft() {
+  SHIP_FIELD_IDS.forEach(function(id){ const el=document.getElementById(id); if(el) el.value = (id==='ship-partial' ? 'Not Allowed' : ''); });
+  try { localStorage.removeItem('morello_ship_draft'); } catch(e){}
+}
+function buildShipInfoBoxHtml() {
+  const s = getShipBlock();
+  const rows = [
+    ['Konteyner No', s.container], ['Mühür No', s.seal], ['Gemi / Sefer', s.vessel],
+    ['B/L No', s.bl], ['Yükleme Limanı', s.pol], ['Boşaltma Limanı', s.pod],
+    ['Acente', s.agent], ['GTİP', s.gtip], ['Kısmi Yükleme', s.partial && s.partial!=='Not Allowed' ? s.partial : '']
+  ].filter(function(r){ return r[1]; });
+  if(!rows.length) return '';
+  const cells = rows.map(function(r){
+    return '<div class="doc-footer-row"><span class="doc-footer-key">'+r[0]+':</span><span>'+r[1]+'</span></div>';
+  }).join('');
+  return '<div class="doc-footer-box" style="margin-bottom:14px;">'+cells+'</div>';
 }
 
 // ============================================================
@@ -5174,6 +5339,7 @@ function showPackingList() {
         +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+'</div>'
       +'</div>'
     +'</div>'
+    +buildShipInfoBoxHtml()
     +'<table class="doc-table">'
       +'<thead><tr>'
         +'<th style="width:42%;text-align:left;">Type of Goods</th>'
@@ -5242,6 +5408,7 @@ function showCI() {
         +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+'</div>'
       +'</div>'
     +'</div>'
+    +buildShipInfoBoxHtml()
     +'<table class="doc-table">'
       +'<thead><tr>'
         +'<th style="width:46%;text-align:left;">Type of Goods</th>'
@@ -5293,10 +5460,7 @@ function showCeki() {
       +'<td class="c">'+net+'</td>'
       +'</tr>';
   });
-  const shipRows=[['Liman',s.pol],['Gemi Adı',s.vessel],['Acente',s.agent],['Konteyner No',s.container],['Not',s.note]]
-    .filter(r=>r[1])
-    .map(r=>'<div class="doc-footer-row"><span class="doc-footer-key">'+r[0]+':</span><span>'+r[1]+'</span></div>')
-    .join('');
+  const shipBoxHtml = buildShipInfoBoxHtml();
   document.getElementById('ceki-print').innerHTML=
     '<div class="doc-paper">'
     +'<div class="doc-hdr">'
@@ -5338,7 +5502,7 @@ function showCeki() {
         +'<td class="c">'+(totalNet?totalNet.toFixed(2):'\u2014')+'</td>'
       +'</tr></tfoot>'
     +'</table>'
-    +(shipRows?'<div class="doc-footer-box">'+shipRows+'</div>':'')
+    +shipBoxHtml
     +'</div>';
   document.getElementById('ceki-overlay').style.display='block'; window.scrollTo(0,0);
 }
@@ -5419,6 +5583,8 @@ function showTalimat() {
       +(s.pod?'<div class="doc-footer-row"><span class="doc-footer-key">Bo\u015faltma Liman\u0131:</span><span>'+s.pod+'</span></div>':'')
       +(s.agent?'<div class="doc-footer-row"><span class="doc-footer-key">Acente:</span><span>'+s.agent+'</span></div>':'')
       +(s.container?'<div class="doc-footer-row"><span class="doc-footer-key">Konteyner No:</span><span>'+s.container+'</span></div>':'')
+      +(s.seal?'<div class="doc-footer-row"><span class="doc-footer-key">M\u00fch\u00fcr No:</span><span>'+s.seal+'</span></div>':'')
+      +(s.bl?'<div class="doc-footer-row"><span class="doc-footer-key">B/L No:</span><span>'+s.bl+'</span></div>':'')
       +(s.gtip?'<div class="doc-footer-row"><span class="doc-footer-key">GT\u0130P Kodu:</span><span>'+s.gtip+'</span></div>':'')
       +'<div class="doc-footer-row"><span class="doc-footer-key">Teslim \u015eekli:</span><span>'+(s.terms||getPriceTerm())+'</span></div>'
       +'<div class="doc-footer-row"><span class="doc-footer-key">Toplam A\u011f\u0131rl\u0131k:</span><span>'+(totalGross?totalGross.toFixed(2)+' KG':'\u2014')+'</span></div>'
@@ -5462,6 +5628,47 @@ function showIrsaliye() {
   document.getElementById('irsaliye-overlay').style.display='block'; window.scrollTo(0,0);
 }
 function closeIrsaliye() { document.getElementById('irsaliye-overlay').style.display='none'; }
+
+// ============================================================
+// GENERATE ALL DOCUMENTS (combined print)
+// ============================================================
+function generateAllDocuments() {
+  if(!orderItems.length) { showToast('Önce ürün ekleyin'); return; }
+
+  // Build each document's HTML by invoking existing builders, then read back their content
+  showPrint();
+  const piHtml = document.getElementById('proforma-print').innerHTML;
+  document.getElementById('print-overlay').style.display = 'none';
+
+  showPackingList();
+  const plHtml = document.getElementById('pl-print').innerHTML;
+  document.getElementById('pl-overlay').style.display = 'none';
+
+  showCI();
+  const ciHtml = document.getElementById('ci-print').innerHTML;
+  document.getElementById('ci-overlay').style.display = 'none';
+
+  showCeki();
+  const cekiHtml = document.getElementById('ceki-print').innerHTML;
+  document.getElementById('ceki-overlay').style.display = 'none';
+
+  showTalimat();
+  const talimatHtml = document.getElementById('talimat-print').innerHTML;
+  document.getElementById('talimat-overlay').style.display = 'none';
+
+  showIrsaliye();
+  const irsHtml = document.getElementById('irsaliye-print').innerHTML;
+  document.getElementById('irsaliye-overlay').style.display = 'none';
+
+  const pages = [piHtml, plHtml, ciHtml, cekiHtml, talimatHtml, irsHtml];
+  document.getElementById('all-docs-print').innerHTML = pages.map(function(p){
+    return '<div class="all-docs-page">'+p+'</div>';
+  }).join('');
+
+  document.getElementById('all-docs-overlay').style.display = 'block';
+  window.scrollTo(0,0);
+}
+function closeAllDocuments() { document.getElementById('all-docs-overlay').style.display='none'; }
 
 // ============================================================
 // REPORTS
