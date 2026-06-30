@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1782818291</title>
+<title>Morello — Proforma Generator v1782818457</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -3687,21 +3687,33 @@ function showImportPreview(items) {
 function applyImport() {
   if(!importParsedItems || !importParsedItems.length) return;
   let added = 0, skipped = 0;
+  // Consolidate duplicate AI-parsed lines: same product + same end customer + same note => sum qty into one line
+  const merged = {};
+  const mergedOrder = [];
   importParsedItems.forEach(function(item) {
+    if(!item || !item.product_id) return;
+    const key = item.product_id + '||' + (item.end_customer||'') + '||' + (item.note||'');
+    if(merged[key]) {
+      merged[key].qty += (parseInt(item.qty) || 1);
+    } else {
+      const copy = { product_id: item.product_id, qty: (parseInt(item.qty) || 1), end_customer: item.end_customer || '', note: item.note || '' };
+      merged[key] = copy;
+      mergedOrder.push(copy);
+    }
+  });
+  mergedOrder.forEach(function(item) {
     const catalogItem = findItem(item.product_id);
     if(!catalogItem) { skipped++; return; }
     const lp = getP(catalogItem);
     if(!lp) { skipped++; return; }
     const cbm = CBM_DATA[item.product_id] || 0;
     const qty = parseInt(item.qty) || 1;
-    for(let q = 0; q < qty; q++) {
-      orderItems.push({
-        id: item.product_id, name: catalogItem.name,
-        listPrice: lp, unitPrice: lp, qty: 1,
-        cbm: cbm, bundled: catalogItem.bundled || false,
-        note: item.note || '', endCustomer: item.end_customer || ''
-      });
-    }
+    orderItems.push({
+      id: item.product_id, name: catalogItem.name,
+      listPrice: lp, unitPrice: lp, qty: qty,
+      cbm: cbm, bundled: catalogItem.bundled || false,
+      note: item.note || '', endCustomer: item.end_customer || ''
+    });
     added++;
   });
   renderOrder(); updateTotals(); closeImport(); showTab('order');
