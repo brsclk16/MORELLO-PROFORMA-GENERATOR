@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1782818457</title>
+<title>Morello — Proforma Generator v1782818942</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1221,6 +1221,19 @@ body {
 .cont-bar { height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; margin-top: 6px; overflow: hidden; }
 .cont-bar-fill { height: 100%; background: var(--gold-mid); border-radius: 3px; transition: width .4s ease; }
 
+/* ─── CONTAINER COMPOSITION VIZ ─── */
+.cont-comp-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.cont-comp-bin { margin-bottom: 14px; }
+.cont-comp-bin-label { font-size: 10.5px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.cont-comp-bar { display: flex; width: 100%; height: 28px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); background: #F3F4F6; }
+.cont-comp-seg { height: 100%; transition: width .3s ease; min-width: 1px; border-right: 1px solid rgba(255,255,255,.35); }
+.cont-comp-seg:last-child { border-right: none; }
+.cont-comp-legend { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.cont-comp-legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.cont-comp-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.cont-comp-legend-name { flex: 1; color: var(--accent); }
+.cont-comp-legend-val { color: var(--muted); font-weight: 600; white-space: nowrap; }
+
 /* ─── TAGS / BADGES ─── */
 .tag {
   display: inline-flex;
@@ -1886,33 +1899,14 @@ body {
             <span style="font-size:12px;color:var(--muted);">Total Order CBM:</span>
             <span style="font-size:18px;font-weight:700;color:var(--gold);" id="cont-cbm-display">0.00 m³</span>
             <span style="font-size:11px;color:var(--muted);">·</span>
-            <span style="font-size:11px;color:var(--muted);">20HC = 25m³ · 40HC = 67m³ · 40HQ = 76m³</span>
+            <span style="font-size:11px;color:var(--muted);">20DC = 33.2m³ · 40HC = 76m³ · Std TIR = 79m³ · Mega TIR = 100m³</span>
           </div>
-          <div class="cont-grid">
-            <div class="cont-box" id="cont-20hc">
-              <div class="cont-type">20HC</div>
-              <div class="cont-count" id="cont-20hc-n">—</div>
-              <div class="cont-unit">containers</div>
-              <div class="cont-bar-wrap"><div class="cont-bar" id="cont-20hc-bar" style="width:0%;background:var(--gold);"></div></div>
-              <div class="cont-fill" id="cont-20hc-fill" style="color:var(--gold);">0%</div>
-            </div>
-            <div class="cont-box" id="cont-40hc">
-              <div class="cont-type">40HC</div>
-              <div class="cont-count" id="cont-40hc-n">—</div>
-              <div class="cont-unit">containers</div>
-              <div class="cont-bar-wrap"><div class="cont-bar" id="cont-40hc-bar" style="width:0%;background:var(--gold);"></div></div>
-              <div class="cont-fill" id="cont-40hc-fill" style="color:var(--gold);">0%</div>
-            </div>
-            <div class="cont-box" id="cont-40hq">
-              <div class="cont-type">40HQ</div>
-              <div class="cont-count" id="cont-40hq-n">—</div>
-              <div class="cont-unit">containers</div>
-              <div class="cont-bar-wrap"><div class="cont-bar" id="cont-40hq-bar" style="width:0%;background:var(--gold);"></div></div>
-              <div class="cont-fill" id="cont-40hq-fill" style="color:var(--gold);">0%</div>
-            </div>
-          </div>
+          <div class="cont-grid" id="cont-vehicle-grid"></div>
           <div style="margin-top:14px;" id="cont-recommendation"></div>
         </div>
+      </div>
+      <div class="card" id="cont-comp-card" style="display:none;">
+        <div class="card-body" id="cont-composition"></div>
       </div>
       <div class="card" style="background:var(--gold-light);border-color:var(--gold);">
         <div class="card-body" style="font-size:11px;color:var(--muted);line-height:1.8;">
@@ -1920,6 +1914,7 @@ body {
         </div>
       </div>
     </div>
+
 
 
     <!-- CUSTOMERS TAB -->
@@ -2351,7 +2346,14 @@ body {
       </div>
       
       <div style="text-align:center;color:var(--muted);font-size:11px;margin:8px 0;">— veya —</div>
-      
+
+      <!-- Voice input -->
+      <button class="btn btn-ghost" id="voice-import-btn" onclick="toggleVoiceImport()" style="width:100%;font-size:12px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span id="voice-import-icon">🎤</span> <span id="voice-import-label">Sesli Sipariş (TR)</span>
+      </button>
+
+      <div style="text-align:center;color:var(--muted);font-size:11px;margin:8px 0;">— veya —</div>
+
       <!-- Text input -->
       <textarea class="import-textarea" id="import-text" placeholder="Sipariş listesini buraya yapıştır...
 Örnek:
@@ -2461,20 +2463,100 @@ function updateContainer(cbmOverride) {
   });
   const rec=document.getElementById('cont-recommendation');
   if(!rec) return;
-  if(totalCBM<=0){rec.innerHTML='';return;}
+  if(totalCBM<=0){rec.innerHTML='';const cc=document.getElementById('cont-comp-card');if(cc)cc.style.display='none';return;}
   var bestStr='';
+  var targetVehicle, targetCount;
   if(bestV){
     const rem=(bestV.m3-totalCBM).toFixed(2);
     bestStr='<span style="color:#059669;font-weight:700;">Best: 1x '+bestV.label+'</span> — '+bestF.toFixed(0)+'% full — '+rem+' m\u00b3 remaining';
+    targetVehicle=bestV; targetCount=1;
   } else {
     const cheapest=VEHICLES.reduce(function(a,b){return Math.ceil(totalCBM/a.m3)<=Math.ceil(totalCBM/b.m3)?a:b;});
     const n=Math.ceil(totalCBM/cheapest.m3);
     const avgF=(totalCBM/(n*cheapest.m3)*100).toFixed(0);
     bestStr='<span style="color:var(--gold);font-weight:700;">'+n+'x '+cheapest.label+' needed</span> — avg '+avgF+'% fill';
+    targetVehicle=cheapest; targetCount=n;
   }
   var sofaLine='';
   if(isSofa){sofaLine='<div style="margin-top:4px;font-size:10px;color:#666;">~'+(totalCBM/3.619).toFixed(1)+' sets (3+3+1 equivalent)</div>';}
   rec.innerHTML='<div style="padding:10px 14px;background:var(--surface2);border-radius:var(--r);font-size:11px;">'+bestStr+sofaLine+'</div>';
+  renderContainerComposition(targetVehicle, isSofa);
+}
+
+function pickContColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+  const hue = Math.abs(hash) % 360;
+  return 'hsl(' + hue + ',62%,52%)';
+}
+
+function renderContainerComposition(targetVehicle, isSofa) {
+  const card = document.getElementById('cont-comp-card');
+  const el = document.getElementById('cont-composition');
+  if (!card || !el) return;
+  if (!targetVehicle || !orderItems.length) { card.style.display = 'none'; return; }
+
+  const items = orderItems.map(function(i) {
+    const unitCbm = isSofa ? getSofaUnitCBM(i.id) : (i.cbm || 0);
+    return { id: i.id, name: i.name, cbm: unitCbm * i.qty };
+  }).filter(function(i) { return i.cbm > 0.0001; })
+    .sort(function(a, b) { return b.cbm - a.cbm; });
+
+  if (!items.length) { card.style.display = 'none'; return; }
+
+  const cap = targetVehicle.m3;
+  const MAX_BINS = 6;
+  const bins = [{ used: 0, segs: [] }];
+  items.forEach(function(item) {
+    let remaining = item.cbm;
+    let guard = 0;
+    while (remaining > 0.0005 && guard < 50) {
+      guard++;
+      let current = bins[bins.length - 1];
+      const space = cap - current.used;
+      if (space <= 0.0005) {
+        if (bins.length >= MAX_BINS) break;
+        current = { used: 0, segs: [] };
+        bins.push(current);
+        continue;
+      }
+      const take = Math.min(space, remaining);
+      current.segs.push({ id: item.id, name: item.name, cbm: take, color: pickContColor(item.id) });
+      current.used += take;
+      remaining -= take;
+    }
+  });
+
+  let binsHtml = bins.map(function(bin, idx) {
+    const fillPct = (bin.used / cap * 100).toFixed(0);
+    const segs = bin.segs.map(function(s) {
+      const w = (s.cbm / cap * 100).toFixed(2);
+      return '<div class="cont-comp-seg" style="width:' + w + '%;background:' + s.color + ';" title="' + s.name + ' \u2014 ' + s.cbm.toFixed(2) + ' m\u00b3"></div>';
+    }).join('');
+    return '<div class="cont-comp-bin">'
+      + '<div class="cont-comp-bin-label">' + targetVehicle.label + ' #' + (idx + 1) + ' \u2014 %' + fillPct + ' dolu</div>'
+      + '<div class="cont-comp-bar">' + segs + '</div>'
+      + '</div>';
+  }).join('');
+
+  const legendMap = {};
+  bins.forEach(function(bin) {
+    bin.segs.forEach(function(s) {
+      if (!legendMap[s.id]) legendMap[s.id] = { name: s.name, cbm: 0, color: s.color };
+      legendMap[s.id].cbm += s.cbm;
+    });
+  });
+  const totalAll = Object.values(legendMap).reduce(function(a, b) { return a + b.cbm; }, 0);
+  const legendHtml = Object.values(legendMap).sort(function(a, b) { return b.cbm - a.cbm; }).map(function(l) {
+    const pct = (l.cbm / totalAll * 100).toFixed(1);
+    return '<div class="cont-comp-legend-row"><span class="cont-comp-swatch" style="background:' + l.color + ';"></span>'
+      + '<span class="cont-comp-legend-name">' + l.name + '</span>'
+      + '<span class="cont-comp-legend-val">' + l.cbm.toFixed(2) + ' m\u00b3 \u00b7 %' + pct + '</span></div>';
+  }).join('');
+
+  el.innerHTML = '<div class="cont-comp-title">\ud83d\udce6 Container Composition \u2014 ' + targetVehicle.label + ' (' + cap + ' m\u00b3)</div>'
+    + binsHtml + '<div class="cont-comp-legend">' + legendHtml + '</div>';
+  card.style.display = 'block';
 }
 
 
@@ -3536,6 +3618,69 @@ function showImport() {
 
 function closeImport() {
   document.getElementById('import-overlay').style.display = 'none';
+  stopVoiceImport();
+}
+
+// ============================================================
+// VOICE IMPORT (Web Speech API - Turkish, on-device transcription)
+// ============================================================
+let voiceRecognition = null;
+let voiceListening = false;
+
+function toggleVoiceImport() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showToast('Tarayıcın sesli girişi desteklemiyor (Chrome kullan)');
+    return;
+  }
+  if (voiceListening) { stopVoiceImport(); return; }
+
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'tr-TR';
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+
+  const icon = document.getElementById('voice-import-icon');
+  const label = document.getElementById('voice-import-label');
+  const btn = document.getElementById('voice-import-btn');
+  const ta = document.getElementById('import-text');
+  const baseText = ta.value ? ta.value.replace(/\s*$/, '\n') : '';
+
+  voiceRecognition.onstart = function () {
+    voiceListening = true;
+    if (icon) icon.textContent = '🔴';
+    if (label) label.textContent = 'Dinliyorum... (durdurmak için tıkla)';
+    if (btn) btn.style.borderColor = '#EF4444';
+  };
+
+  voiceRecognition.onresult = function (e) {
+    let finalText = '';
+    let interimText = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript + ' ';
+      else interimText += e.results[i][0].transcript;
+    }
+    ta.value = baseText + finalText + interimText;
+  };
+
+  voiceRecognition.onerror = function (e) {
+    if (e.error !== 'no-speech') showToast('Sesli giriş hatası: ' + e.error);
+  };
+
+  voiceRecognition.onend = function () {
+    voiceListening = false;
+    if (icon) icon.textContent = '🎤';
+    if (label) label.textContent = 'Sesli Sipariş (TR)';
+    if (btn) btn.style.borderColor = '';
+  };
+
+  voiceRecognition.start();
+}
+
+function stopVoiceImport() {
+  if (voiceRecognition && voiceListening) {
+    try { voiceRecognition.stop(); } catch (e) {}
+  }
 }
 
 function handleImportDrop(e) {
@@ -3592,9 +3737,16 @@ async function runImportParse() {
     'KATALOG:\n' + catalogList + '\n\n' +
     'KURALLAR:\n' +
     'GARDOLAP/DOLAP/GARDROBE -> WARD, SIFONYER -> DRESS, KOMODIN -> NIGHT\n' +
-    'SEHPA -> COF, SANDALYE/CHAIR -> CHR, KARYOLA -> BED, KONSOL -> CONS\n' +
+    'SEHPA -> COF, SANDALYE/CHAIR -> CHR, KONSOL -> CONS\n' +
     'IKILI/2LI/TWO SEATER -> 2S, TEKLI/BERGERE/BERJER -> BRG, UCLU/3LU/THREE SEATER -> 3S\n' +
-    'KOLTUK/KOLTUK TAKIMI/SOFA SET -> sofa serisi\n' +
+    'KOLTUK/KOLTUK TAKIMI/SOFA SET -> sofa serisi\n\n' +
+    'KARYOLA / BEDSTEAD KURALLARI (onemli, dikkatli uygula):\n' +
+    '- "[SERI] karyola 160x200" veya "[SERI] bedstead 160x200" veya "[SERI] karyola 160" -> [SERI]-BED-160\n' +
+    '- "[SERI] karyola 180x200" veya "[SERI] bedstead 180x200" veya "[SERI] karyola 180" -> [SERI]-BED\n' +
+    '- "[SERI] karyola" / "[SERI] bedstead" (boyut SOYLENMEDEN) -> [SERI]-BED (180x200 varsayilan)\n' +
+    '- "[SERI] yatak odasi" / "[SERI] yatak odasi seti" / "[SERI] yatak odasi takimi" / "[SERI] bedroom" / "[SERI] bedroom set" -> [SERI]-BED-SET (tam set: karyola+gardolap+2 komodin+sifonyer). "Yatak odasi" kelimesi gectiginde ve karyola/komodin/gardolap gibi TEK bir parca acikca belirtilmediyse, DAIMA SET olarak algila.\n' +
+    '- Boyut yazimi farkli sekillerde gelebilir: "160x200", "160\u00d7200", "160 x 200", "160 carpi 200", "160cm" -> hepsi ayni, 160 olarak algila\n' +
+    '- Ses tanimadan gelen metinde sayilar bazen yazi ile de gelebilir (orn: "yuz altmis carpi iki yuz" = 160x200) -> sayiya cevirip ayni mantikla esle\n\n' +
     'TESHIR = teşhir/showroom (Son Alici olarak yaz)\n\n' +
     'CIKTI: Sadece JSON array, baska hicbir sey yazma:\n' +
     '[{"product_id":"ROMA-COF","qty":1,"end_customer":"Valentin Todorov","note":""}]';
