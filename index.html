@@ -5030,11 +5030,68 @@ function closePL() { document.getElementById('pl-overlay').style.display='none';
 // COMMERCIAL INVOICE
 // ============================================================
 function showCI() {
-  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
-  const {totalQty,totalVal}=getDocTotals(); const sym=getCurrencySym(); const priceTerm=getPriceTerm();
-  let rows=buildDocRows(true);
-  rows+='<tr class="doc-total"><td><strong>TOTAL</strong></td><td class="c"><strong>'+totalQty+'</strong></td><td class="c"><strong>'+priceTerm+'</strong></td><td class="r"><strong>'+sym+totalVal.toFixed(2)+'</strong></td></tr>';
-  document.getElementById('ci-print').innerHTML=getPfLogoHtml()+'<div class="doc-main-title" style="margin-top:8px;">COMMERCIAL INVOICE</div><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div></div><div class="doc-meta"><div>DATE &nbsp;&nbsp;&nbsp;&nbsp; <strong>'+getDocDate()+'</strong></div><div>INV NO &nbsp; <strong>'+getINVNo()+'</strong></div></div></div><div class="doc-parties"><div><div class="doc-party-lbl">SELLER</div><div class="doc-party-body">'+SELLER_INFO+'</div></div><div><div class="doc-party-lbl">BUYER</div><div class="doc-party-body">'+(getBuyerBlock()||'\u2014')+'</div></div></div><table class="doc-table"><thead><tr><th style="width:45%;text-align:left;">TYPE OF GOODS</th><th>QUANTITY</th><th>UNIT PRICE</th><th>TOTAL PRICE</th></tr></thead><tbody>'+rows+'</tbody></table><div class="doc-footer">'+infoRow('PAYMENT:','CASH AGAINST GOODS')+infoRow('BANK:','T\u00dcRK\u0130YE \u0130\u015e BANKASI A.\u015e. \u0130NEGOL OSB \u015eUBES\u0130 \u2014 IBAN: TR52 0006 4000 0022 2480 0012 20 \u2014 SWIFT: ISBKTRIS')+infoRow('TERMS:','BY VESSEL')+'</div>';
+  if(!orderItems.length) { showToast('Önce ürün ekleyin'); return; }
+  const {totalQty,totalVal}=getDocTotals();
+  const sym=getCurrencySym(); const priceTerm=getPriceTerm();
+  const piNo=document.getElementById('piNumber')?.value||'';
+  const buyerCo=document.getElementById('buyerCompany')?.value||'';
+  const buyerCt=document.getElementById('buyerContact')?.value||'';
+  const buyerAd=document.getElementById('buyerAddress')?.value||'';
+  const buyerCn=document.getElementById('buyerCountry')?.value||'';
+  let rows='';
+  orderItems.forEach(item=>{
+    rows+='<tr>'
+      +'<td>'+item.name+(item.note?' <span style="font-size:9px;color:#888;">('+item.note+')</span>':'')+'</td>'
+      +'<td class="c">'+item.qty+'</td>'
+      +'<td class="c">'+sym+item.unitPrice.toFixed(2)+'</td>'
+      +'<td class="r">'+sym+(item.unitPrice*item.qty).toFixed(2)+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('ci-print').innerHTML=
+    '<div class="doc-paper">'
+    +'<div class="doc-hdr">'
+      +'<div class="doc-hdr-left">'+getPfLogoHtml()+'</div>'
+      +'<div class="doc-hdr-right">'
+        +'<div class="doc-title">Commercial Invoice</div>'
+        +'<div class="doc-ref-block">'
+          +(piNo?'<div>INV No &nbsp; <strong>'+getINVNo()+'</strong></div>':'')
+          +'<div>Date &nbsp;&nbsp;&nbsp;&nbsp; <strong>'+getDocDate()+'</strong></div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="doc-parties-grid">'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Seller</div>'
+        +'<div class="doc-party-name">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcR\u00dcNLER\u0130</div>'
+        +'<div class="doc-party-detail">\u0130neg\u00f6l / Bursa, T\u00fcrkiye<br>Tel: +90 224 714 13 03<br>export@morellomobilya.com</div>'
+      +'</div>'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Buyer</div>'
+        +(buyerCo?'<div class="doc-party-name">'+buyerCo+'</div>':'<div class="doc-party-name" style="color:#bbb;font-style:italic;">\u2014</div>')
+        +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<table class="doc-table">'
+      +'<thead><tr>'
+        +'<th style="width:46%;text-align:left;">Type of Goods</th>'
+        +'<th style="width:10%;">Qty</th>'
+        +'<th style="width:18%;">Unit Price</th>'
+        +'<th style="width:18%;">Total Price</th>'
+      +'</tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr>'
+        +'<td><strong>TOTAL</strong></td>'
+        +'<td class="c"><strong>'+totalQty+'</strong></td>'
+        +'<td class="c" style="font-size:10px;color:#666;">'+priceTerm+'</td>'
+        +'<td class="r"><strong>'+sym+totalVal.toFixed(2)+'</strong></td>'
+      +'</tr></tfoot>'
+    +'</table>'
+    +'<div class="doc-footer-box">'
+      +'<div class="doc-footer-row"><span class="doc-footer-key">Payment:</span><span>Cash Against Goods</span></div>'
+      +'<div class="doc-footer-row"><span class="doc-footer-key">Bank:</span><span>T\u00dcRK\u0130YE \u0130\u015e BANKASI A.\u015e. \u0130NEGOL OSB \u015eUBES\u0130 \u2014 IBAN: TR52 0006 4000 0022 2480 0012 20 \u2014 SWIFT: ISBKTRIS</span></div>'
+      +'<div class="doc-footer-row"><span class="doc-footer-key">Terms:</span><span>By Vessel</span></div>'
+    +'</div>'
+    +'</div>';
   document.getElementById('ci-overlay').style.display='block'; window.scrollTo(0,0);
 }
 function closeCI() { document.getElementById('ci-overlay').style.display='none'; }
@@ -5043,12 +5100,75 @@ function closeCI() { document.getElementById('ci-overlay').style.display='none';
 // CEKI LISTESI
 // ============================================================
 function showCeki() {
-  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
-  const {totalPkgs,totalGross,totalNet}=getDocTotals(); const s=getShipBlock();
-  let rows=buildDocRows(false);
-  rows+='<tr class="doc-total"><td><strong>TOPLAM :</strong></td><td></td><td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td><td class="c"><strong>'+(totalGross?totalGross.toFixed(2):'\u2014')+'</strong></td><td class="c"><strong>'+(totalNet?totalNet.toFixed(2):'\u2014')+'</strong></td></tr>';
-  const footer=[['L\u0130MAN',s.pol],['GEM\u0130 ADI',s.vessel],['ACENTE',s.agent],['KONTEYNER NO',s.container],['NOT',s.note]].filter(r=>r[1]).map(r=>infoRow(r[0],r[1])).join('');
-  document.getElementById('ceki-print').innerHTML=getPfLogoHtml()+'<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><div class="doc-main-title">\u00c7EK\u0130 L\u0130STES\u0130</div><div class="doc-meta">TAR\u0130H &nbsp; <strong>'+getDocDate()+'</strong></div></div><div class="doc-parties"><div><div class="doc-party-lbl">SATICI :</div><div class="doc-party-body">'+SELLER_INFO+'</div></div><div><div class="doc-party-lbl">ALICI</div><div class="doc-party-body">'+(getBuyerBlock()||'\u2014')+'</div></div></div><table class="doc-table"><thead><tr><th style="width:40%;text-align:left;">MAL TANIMI</th><th>MAL M\u0130KTARI</th><th>PAKET ADED\u0130</th><th>BR\u00dcT KG</th><th>NET KG</th></tr></thead><tbody>'+rows+'</tbody></table>'+(footer?'<div class="doc-footer">'+footer+'</div>':'');
+  if(!orderItems.length) { showToast('Önce ürün ekleyin'); return; }
+  const {totalPkgs,totalGross,totalNet}=getDocTotals();
+  const s=getShipBlock();
+  const piNo=document.getElementById('piNumber')?.value||'';
+  const buyerCo=document.getElementById('buyerCompany')?.value||'';
+  const buyerCt=document.getElementById('buyerContact')?.value||'';
+  const buyerAd=document.getElementById('buyerAddress')?.value||'';
+  const buyerCn=document.getElementById('buyerCountry')?.value||'';
+  let rows='';
+  orderItems.forEach(item=>{
+    const pd=PACKAGE_DATA[item.id];
+    const pkgs=pd?Math.ceil(pd.pkgs*item.qty):'\u2014';
+    const gross=pd?(pd.kg*item.qty).toFixed(2):'\u2014';
+    const net=pd?(pd.kg*item.qty - Math.ceil(pd.pkgs*item.qty)*0.5).toFixed(2):'\u2014';
+    rows+='<tr>'
+      +'<td>'+item.name+(item.note?' <span style="font-size:9px;color:#888;">('+item.note+')</span>':'')+'</td>'
+      +'<td class="c">'+item.qty+'</td>'
+      +'<td class="c"><strong>'+pkgs+'</strong></td>'
+      +'<td class="c">'+gross+'</td>'
+      +'<td class="c">'+net+'</td>'
+      +'</tr>';
+  });
+  const shipRows=[['Liman',s.pol],['Gemi Adı',s.vessel],['Acente',s.agent],['Konteyner No',s.container],['Not',s.note]]
+    .filter(r=>r[1])
+    .map(r=>'<div class="doc-footer-row"><span class="doc-footer-key">'+r[0]+':</span><span>'+r[1]+'</span></div>')
+    .join('');
+  document.getElementById('ceki-print').innerHTML=
+    '<div class="doc-paper">'
+    +'<div class="doc-hdr">'
+      +'<div class="doc-hdr-left">'+getPfLogoHtml()+'</div>'
+      +'<div class="doc-hdr-right">'
+        +'<div class="doc-title">\u00c7eki Listesi</div>'
+        +'<div class="doc-ref-block">'
+          +(piNo?'<div>Ref &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>'+piNo+'</strong></div>':'')
+          +'<div>Tarih &nbsp;&nbsp; <strong>'+getDocDate()+'</strong></div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="doc-parties-grid">'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Sat\u0131c\u0131</div>'
+        +'<div class="doc-party-name">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcR\u00dcNLER\u0130</div>'
+        +'<div class="doc-party-detail">\u0130neg\u00f6l / Bursa, T\u00fcrkiye<br>Tel: +90 224 714 13 03</div>'
+      +'</div>'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Al\u0131c\u0131</div>'
+        +(buyerCo?'<div class="doc-party-name">'+buyerCo+'</div>':'<div class="doc-party-name" style="color:#bbb;font-style:italic;">\u2014</div>')
+        +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<table class="doc-table">'
+      +'<thead><tr>'
+        +'<th style="width:42%;text-align:left;">Mal Tan\u0131m\u0131</th>'
+        +'<th style="width:10%;">Miktar</th>'
+        +'<th style="width:10%;">Paket</th>'
+        +'<th style="width:14%;">Br\u00fct KG</th>'
+        +'<th style="width:14%;">Net KG</th>'
+      +'</tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr>'
+        +'<td><strong>TOPLAM</strong></td>'
+        +'<td></td>'
+        +'<td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td>'
+        +'<td class="c">'+(totalGross?totalGross.toFixed(2):'\u2014')+'</td>'
+        +'<td class="c">'+(totalNet?totalNet.toFixed(2):'\u2014')+'</td>'
+      +'</tr></tfoot>'
+    +'</table>'
+    +(shipRows?'<div class="doc-footer-box">'+shipRows+'</div>':'')
+    +'</div>';
   document.getElementById('ceki-overlay').style.display='block'; window.scrollTo(0,0);
 }
 function closeCeki() { document.getElementById('ceki-overlay').style.display='none'; }
@@ -5057,11 +5177,89 @@ function closeCeki() { document.getElementById('ceki-overlay').style.display='no
 // TALIMAT
 // ============================================================
 function showTalimat() {
-  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
-  const {totalPkgs,totalGross,totalNet}=getDocTotals(); const s=getShipBlock(); const buyer=getBuyerBlock();
-  let rows=buildDocRows(false);
-  rows+='<tr class="doc-total"><td><strong>TOPLAM :</strong></td><td></td><td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td><td class="c"><strong>'+(totalGross?totalGross.toFixed(2):'\u2014')+'</strong></td><td class="c"><strong>'+(totalNet?totalNet.toFixed(2):'\u2014')+'</strong></td></tr>';
-  document.getElementById('talimat-print').innerHTML=getPfLogoHtml()+'<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><div class="doc-main-title">Y\u00dcKLEME TAL\u0130MATI</div><div class="doc-meta">TAR\u0130H &nbsp; <strong>'+getDocDate()+'</strong></div></div><div class="doc-parties"><div><div class="doc-party-lbl">BENEFICIARY / SATICI</div><div class="doc-party-body">'+SELLER_INFO+'</div></div><div><div class="doc-party-lbl">APPLICANT / ALICI</div><div class="doc-party-body">'+(buyer||'\u2014')+'</div>'+(buyer?'<div class="doc-party-lbl" style="margin-top:10px;">NOTIFY</div><div class="doc-party-body">'+buyer+'</div>':'')+'</div></div><table class="doc-table"><thead><tr><th style="width:40%;text-align:left;">MAL TANIMI / TYPE OF GOODS</th><th>M\u0130KTAR</th><th>PAKET</th><th>BR\u00dcT KG</th><th>NET KG</th></tr></thead><tbody>'+rows+'</tbody></table><div class="doc-footer" style="margin-top:14px;">'+infoRow('GEM\u0130 ADI',s.vessel)+infoRow('Y\u00dcKLEME L\u0130MANI',s.pol)+infoRow('BO\u015eALTMA L\u0130MANI',s.pod)+infoRow('ACENTE',s.agent)+infoRow('KONTEYNER NO',s.container)+infoRow('GT\u0130P KODU',s.gtip)+infoRow('TESL\u0130M \u015eEKL\u0130',s.terms||getPriceTerm())+(s.partial?infoRow('Y\u00dcKLEME T\u0130P\u0130',s.partial):'')+(s.note?infoRow('NOT',s.note):'')+'<div style="margin-top:8px;">'+infoRow('TOPLAM A\u011eIRLIK',(totalGross?totalGross.toFixed(2)+' KG':''))+infoRow('NET A\u011eIRLIK',(totalNet?totalNet.toFixed(2)+' KG':''))+infoRow('TOPLAM PAKET',String(totalPkgs||''))+'</div></div>';
+  if(!orderItems.length) { showToast('Önce ürün ekleyin'); return; }
+  const {totalPkgs,totalGross,totalNet}=getDocTotals();
+  const s=getShipBlock();
+  const piNo=document.getElementById('piNumber')?.value||'';
+  const buyerCo=document.getElementById('buyerCompany')?.value||'';
+  const buyerCt=document.getElementById('buyerContact')?.value||'';
+  const buyerAd=document.getElementById('buyerAddress')?.value||'';
+  const buyerCn=document.getElementById('buyerCountry')?.value||'';
+  let rows='';
+  orderItems.forEach(item=>{
+    const pd=PACKAGE_DATA[item.id];
+    const pkgs=pd?Math.ceil(pd.pkgs*item.qty):'\u2014';
+    const gross=pd?(pd.kg*item.qty).toFixed(2):'\u2014';
+    const net=pd?(pd.kg*item.qty - Math.ceil(pd.pkgs*item.qty)*0.5).toFixed(2):'\u2014';
+    rows+='<tr>'
+      +'<td>'+item.name+(item.note?' <span style="font-size:9px;color:#888;">('+item.note+')</span>':'')+'</td>'
+      +'<td class="c">'+item.qty+'</td>'
+      +'<td class="c"><strong>'+pkgs+'</strong></td>'
+      +'<td class="c">'+gross+'</td>'
+      +'<td class="c">'+net+'</td>'
+      +'</tr>';
+  });
+  const buyer=buyerCo||'\u2014';
+  const buyerDetail=(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'');
+  document.getElementById('talimat-print').innerHTML=
+    '<div class="doc-paper">'
+    +'<div class="doc-hdr">'
+      +'<div class="doc-hdr-left">'+getPfLogoHtml()+'</div>'
+      +'<div class="doc-hdr-right">'
+        +'<div class="doc-title">Y\u00fckleme Talimat\u0131</div>'
+        +'<div class="doc-ref-block">'
+          +(piNo?'<div>Ref &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>'+piNo+'</strong></div>':'')
+          +'<div>Tarih &nbsp;&nbsp; <strong>'+getDocDate()+'</strong></div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="doc-parties-grid">'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Beneficiary / Sat\u0131c\u0131</div>'
+        +'<div class="doc-party-name">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcR\u00dcNLER\u0130</div>'
+        +'<div class="doc-party-detail">\u0130neg\u00f6l / Bursa, T\u00fcrkiye<br>Tel: +90 224 714 13 03</div>'
+      +'</div>'
+      +'<div class="doc-party-box">'
+        +'<div class="doc-party-label">Applicant / Al\u0131c\u0131 &amp; Notify</div>'
+        +(buyerCo?'<div class="doc-party-name">'+buyerCo+'</div>':'<div class="doc-party-name" style="color:#bbb;font-style:italic;">\u2014</div>')
+        +'<div class="doc-party-detail">'+buyerDetail+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<table class="doc-table">'
+      +'<thead><tr>'
+        +'<th style="width:42%;text-align:left;">Mal Tan\u0131m\u0131 / Type of Goods</th>'
+        +'<th style="width:10%;">Miktar</th>'
+        +'<th style="width:10%;">Paket</th>'
+        +'<th style="width:14%;">Br\u00fct KG</th>'
+        +'<th style="width:14%;">Net KG</th>'
+      +'</tr></thead>'
+      +'<tbody>'+rows+'</tbody>'
+      +'<tfoot><tr>'
+        +'<td><strong>TOPLAM</strong></td>'
+        +'<td></td>'
+        +'<td class="c"><strong>'+(totalPkgs||'\u2014')+'</strong></td>'
+        +'<td class="c">'+(totalGross?totalGross.toFixed(2):'\u2014')+'</td>'
+        +'<td class="c">'+(totalNet?totalNet.toFixed(2):'\u2014')+'</td>'
+      +'</tr></tfoot>'
+    +'</table>'
+    +'<div class="doc-footer-box">'
+      +(s.vessel?'<div class="doc-footer-row"><span class="doc-footer-key">Gemi Ad\u0131:</span><span>'+s.vessel+'</span></div>':'')
+      +(s.pol?'<div class="doc-footer-row"><span class="doc-footer-key">Y\u00fckleme Liman\u0131:</span><span>'+s.pol+'</span></div>':'')
+      +(s.pod?'<div class="doc-footer-row"><span class="doc-footer-key">Bo\u015faltma Liman\u0131:</span><span>'+s.pod+'</span></div>':'')
+      +(s.agent?'<div class="doc-footer-row"><span class="doc-footer-key">Acente:</span><span>'+s.agent+'</span></div>':'')
+      +(s.container?'<div class="doc-footer-row"><span class="doc-footer-key">Konteyner No:</span><span>'+s.container+'</span></div>':'')
+      +(s.gtip?'<div class="doc-footer-row"><span class="doc-footer-key">GT\u0130P Kodu:</span><span>'+s.gtip+'</span></div>':'')
+      +'<div class="doc-footer-row"><span class="doc-footer-key">Teslim \u015eekli:</span><span>'+(s.terms||getPriceTerm())+'</span></div>'
+      +'<div class="doc-footer-row"><span class="doc-footer-key">Toplam A\u011f\u0131rl\u0131k:</span><span>'+(totalGross?totalGross.toFixed(2)+' KG':'\u2014')+'</span></div>'
+      +'<div class="doc-footer-row"><span class="doc-footer-key">Toplam Paket:</span><span>'+(totalPkgs||'\u2014')+'</span></div>'
+      +(s.note?'<div class="doc-footer-row"><span class="doc-footer-key">Not:</span><span>'+s.note+'</span></div>':'')
+    +'</div>'
+    +'<div class="doc-sigs">'
+      +'<div class="doc-sig-line">Haz\u0131rlayan<br><span style="font-size:9px;">Selina Mobilya</span></div>'
+      +'<div class="doc-sig-line">Teslim Eden</div>'
+      +'<div class="doc-sig-line">Onaylayan</div>'
+    +'</div>'
+    +'</div>';
   document.getElementById('talimat-overlay').style.display='block'; window.scrollTo(0,0);
 }
 function closeTalimat() { document.getElementById('talimat-overlay').style.display='none'; }
