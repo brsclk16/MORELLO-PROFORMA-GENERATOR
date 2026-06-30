@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1782821936</title>
+<title>Morello — Proforma Generator v1782822328</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -3529,6 +3529,7 @@ const CATALOG = {
 // ============================================================
 let currency = 'EUR';
 let orderItems = []; // {id,name,listPrice,unitPrice,qty,cbm,bundled}
+let loadedFxLock = null; // {eurTry, usdTry, lockedAt} - set when a saved proforma's locked FX rate is loaded
 
 
 const NOTE_TEMPLATES = [
@@ -3622,7 +3623,7 @@ function showCustDetail(companyName) {
       const realIdx = hist.findIndex(function(x){ return x.pi===h.pi && x.date===h.date; });
       const sc = stClass[h.status||'Draft'] || 'st-draft';
       return '<div class="cdm-hist-row" onclick="loadHistory('+realIdx+');closeCustDetail();showTab(\'order\')">' +
-        '<span class="cdm-pi">'+h.pi+'</span>' +
+        '<span class="cdm-pi" '+(h.fx&&h.currency!=='TRY'?'title="Kayıt anındaki kur: 1'+h.currency+'='+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'₺"':'')+'>'+h.pi+'</span>' +
         '<span class="cdm-date">'+h.date+'</span>' +
         '<button class="status-badge '+sc+'" onclick="event.stopPropagation();cycleStatus('+realIdx+',event)" style="font-size:9px;">'+( h.status||'Draft')+'</button>' +
         (h.cbm&&h.cbm!='0.00'?'<span style="font-size:10px;color:var(--muted);">'+h.cbm+' m³</span>':'') +
@@ -4430,7 +4431,7 @@ function updateTotals() {
   updateContainer(cbm);
 }
 
-function clearOrder() { if(!confirm('Clear all order lines?')) return; orderItems=[]; renderOrder(); showToast('Order cleared'); }
+function clearOrder() { if(!confirm('Clear all order lines?')) return; orderItems=[]; loadedFxLock=null; renderOrder(); showToast('Order cleared'); }
 
 // ============================================================
 // DISCOUNT
@@ -4696,11 +4697,13 @@ function saveToHistory() {
   const sym = currency==='EUR'?'€':'$';
   const hist = getHistory();
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
-  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value }, shipment:getShipBlock() });
+  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
   if(hist.length>50) hist.splice(50);
+  loadedFxLock = hist[0].fx;
   saveHistory(hist);
   saveHistoryToCloud(hist[0]);
-  renderHistory(); showToast(u('toast_saved')+' '+pi);
+  const lockedRateShown = currency==='USD' ? hist[0].fx.usdTry : hist[0].fx.eurTry;
+  renderHistory(); showToast(u('toast_saved')+' '+pi+(currency!=='TRY'?' · Kur kilitlendi: 1'+currency+'='+lockedRateShown.toFixed(2)+'₺':''));
 }
 
 
@@ -4884,7 +4887,7 @@ function renderHistory() {
           <span class="hist-pi">${h.pi}</span>
           ${isTrashView ? '' : '<button class="status-badge '+stCls+'" onclick="cycleStatus('+realIdx+',event)">'+(h.status||'Draft')+'</button>'}
         </div>
-        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}</div>
+        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''}</div>
       </div>
       <div class="hist-total">${h.total}</div>
       <div class="hist-actions">${actionsHtml}</div>`;
@@ -4907,13 +4910,15 @@ function loadHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; }
   loadShipDraft(h.shipment || {});
-  renderOrder(); buildCatalog(); showTab('order'); showToast('✓ Loaded: '+h.pi);
+  loadedFxLock = h.fx || null;
+  renderOrder(); buildCatalog(); showTab('order'); showToast('✓ Loaded: '+h.pi+(h.fx?' · Kilitli kur: 1'+h.currency+'='+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'₺':''));
 }
 
 function reorderFromHistory(i) {
   const h=getHistory()[i]; if(!h) return;
   if(!confirm(`"${h.pi}" siparişini temel alarak yeni bir taslak oluşturulsun mu? Yeni bir PI numarası atanacak, eski kayıt değişmeyecek.`)) return;
   orderItems=JSON.parse(JSON.stringify(h.items));
+  loadedFxLock = null; // fresh draft locks its own rate on next save
   // Reset prices to current list price / re-link package & cbm data in case catalog changed since
   orderItems.forEach(function(it){
     const cat = findItem(it.id);
@@ -5089,6 +5094,15 @@ function buildContainerHTML(furnitureCBM) {
 // ============================================================
 // PROFORMA PRINT
 // ============================================================
+function getLockedFX() {
+  if(loadedFxLock) return loadedFxLock;
+  return {
+    eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53,
+    usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46,
+    lockedAt: null
+  };
+}
+
 function showPrint() {
   if(!orderItems.length) { showToast('Add products first'); return; }
   const pfLang = document.getElementById('pfLang')?.value||'en';
@@ -5108,6 +5122,7 @@ function showPrint() {
   const buyerCn = document.getElementById('buyerCountry')?.value||'';
   const buyerPh = document.getElementById('buyerPhone')?.value||'';
   const buyerEm = document.getElementById('buyerEmail')?.value||'';
+  const fxLock = getLockedFX();
 
   let listTotal=0, grandTotal=0, cbm=0;
   let rows='';
@@ -5199,6 +5214,8 @@ function showPrint() {
       +'<div class="pf-tot-row"><span>'+t.deposit+'</span><span>'+sym+deposit.toFixed(2)+'</span></div>'
       +'<div class="pf-tot-row"><span>'+t.balance+'</span><span>'+sym+balance.toFixed(2)+'</span></div>'
       +'<div class="pf-tot-row"><span>'+t.cbmTotal+'</span><span>'+cbm.toFixed(2)+' m\u00b3</span></div>'
+      +(cur!=='TRY'?'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>Kur ('+(fxLock.lockedAt?'kayıt anı':'şu an')+')</span><span>1 '+cur+' = '+(cur==='EUR'?fxLock.eurTry:fxLock.usdTry).toFixed(2)+' ₺</span></div>'
+        +'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>₺ Karşılığı</span><span>₺'+(grandTotal*(cur==='EUR'?fxLock.eurTry:fxLock.usdTry)).toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>':'')
     +'</div></div>'
     +buildContainerHTML(cbm)
     +'<div class="pf-bank"><div class="pf-bank-title">'+t.bankTitle+'</div>'
