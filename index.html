@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1782823952</title>
+<title>Morello — Proforma Generator v1782914072</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -2340,18 +2340,44 @@ body {
 <!-- CUSTOMER MODAL -->
 <div class="modal-overlay" id="custModal">
   <div class="modal">
-    <h3>➕ New Customer</h3>
+    <h3 id="custModalTitle">➕ New Customer</h3>
     <div class="frow"><label>Company Name *</label><input type="text" id="mc-company" placeholder="Company Name"></div>
     <div class="frow"><label>Contact Person</label><input type="text" id="mc-contact" placeholder="Contact Person"></div>
     <div class="frow"><label>Country</label><input type="text" id="mc-country" placeholder="Country"></div>
     <div class="frow"><label>Phone</label><input type="text" id="mc-phone" placeholder="+XXX XXX XXX"></div>
     <div class="frow"><label>Email</label><input type="email" id="mc-email" placeholder="email@company.com"></div>
     <div class="frow"><label>Address</label><input type="text" id="mc-address" placeholder="Address"></div>
-    <div class="frow"><label>Default Discount %</label><input type="number" id="mc-discount" placeholder="0" min="0" max="100" step="0.5"></div>
-    <div class="frow"><label>Not (EXW tercih, fuar tarihi vb.)</label><input type="text" id="mc-note" placeholder="Özel not…"></div>
+
+    <div style="margin:14px 0 6px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;">⚡ Varsayılan Ayarlar (otomatik uygulanır)</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;">
+      <div class="frow"><label>Para Birimi</label>
+        <select id="mc-currency">
+          <option value="">— seç —</option>
+          <option value="EUR">EUR €</option>
+          <option value="USD">USD $</option>
+          <option value="TRY">TRY ₺</option>
+        </select>
+      </div>
+      <div class="frow"><label>Dil</label>
+        <select id="mc-lang">
+          <option value="">— seç —</option>
+          <option value="en">English</option>
+          <option value="tr">Türkçe</option>
+          <option value="fr">Français</option>
+          <option value="ar">العربية</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </div>
+      <div class="frow"><label>İndirim %</label><input type="number" id="mc-discount" placeholder="0" min="0" max="100" step="0.5"></div>
+      <div class="frow"><label>İncoterm</label><input type="text" id="mc-incoterm" placeholder="FOB Gemlik"></div>
+      <div class="frow"><label>Ödeme Koşulu</label><input type="text" id="mc-payment" placeholder="30% Deposit, 70% Before Loading"></div>
+      <div class="frow"><label>Lead Time</label><input type="text" id="mc-leadtime" placeholder="45 Days"></div>
+    </div>
+    <div class="frow"><label>Not</label><input type="text" id="mc-note" placeholder="Özel not, fuar tarihi vb."></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeCustModal()">Cancel</button>
-      <button class="btn btn-gold" onclick="saveCustomer()">Save Customer</button>
+      <button class="btn btn-gold" id="custModalSaveBtn" onclick="saveCustomer()">Save Customer</button>
     </div>
   </div>
 </div>
@@ -4642,6 +4668,9 @@ function renderCustomers() {
     }
     const noteVal=c.note||'';
     const noteDisplay=noteVal?`<div class="cust-note-row">📝 ${noteVal.slice(0,40)}${noteVal.length>40?'…':''}</div>`:'';
+    const defaultsBadge = c.source==='saved' && (getCustomers()[c.savedIdx]?.defaults) 
+      ? Object.keys(getCustomers()[c.savedIdx].defaults||{}).length > 0 
+        ? '<span class="disc-profile-badge" title="Varsayılan ayarlar mevcut" style="background:#5B21B6;color:#fff;">⚡</span>' : '' : '';
     card.innerHTML=`
       <div class="cust-card-top">
         <div class="cust-flag">${c.flag||'🏳️'}</div>
@@ -4657,7 +4686,8 @@ function renderCustomers() {
         <span class="last-activity ${laClass}">${laTxt}</span>
         <span class="cust-lang-badge">${langLabels[c.lang]||'EN'} · ${c.currency||'USD'}</span>
         ${c.discount>0?`<span class="disc-profile-badge">%${c.discount}</span>`:''}
-        ${c.source==='saved'?`<button class="cust-del-btn" onclick="editCustNote(${c.savedIdx})" title="Not ekle">✏</button>`:''}
+        ${defaultsBadge}
+        ${c.source==='saved'?`<button class="cust-del-btn" title="Düzenle" onclick="openEditCustomer(${c.savedIdx})">✏</button>`:''}
         ${delBtn}
       </div>`;
     grid.appendChild(card);
@@ -4671,8 +4701,37 @@ function renderCustomers() {
   list.appendChild(grid);
 }
 
-function openNewCustomer() { document.getElementById('custModal').classList.add('open'); ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-discount','mc-note'].forEach(id=>document.getElementById(id).value=''); }
-function closeCustModal() { document.getElementById('custModal').classList.remove('open'); }
+const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime'];
+let editingCustomerIdx = null;
+
+function openNewCustomer() {
+  editingCustomerIdx = null;
+  document.getElementById('custModalTitle').textContent = '➕ New Customer';
+  document.getElementById('custModalSaveBtn').textContent = 'Save Customer';
+  CUST_MODAL_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('custModal').classList.add('open');
+}
+function openEditCustomer(i) {
+  const c = getCustomers()[i]; if(!c) return;
+  editingCustomerIdx = i;
+  document.getElementById('custModalTitle').textContent = '✏️ Müşteri Düzenle';
+  document.getElementById('custModalSaveBtn').textContent = 'Güncelle';
+  document.getElementById('mc-company').value   = c.company   || '';
+  document.getElementById('mc-contact').value   = c.contact   || '';
+  document.getElementById('mc-country').value   = c.country   || '';
+  document.getElementById('mc-phone').value     = c.phone     || '';
+  document.getElementById('mc-email').value     = c.email     || '';
+  document.getElementById('mc-address').value   = c.address   || '';
+  document.getElementById('mc-discount').value  = c.discount  || '';
+  document.getElementById('mc-note').value      = c.note      || '';
+  document.getElementById('mc-currency').value  = c.defaults?.currency  || '';
+  document.getElementById('mc-lang').value      = c.defaults?.lang      || '';
+  document.getElementById('mc-incoterm').value  = c.defaults?.incoterm  || '';
+  document.getElementById('mc-payment').value   = c.defaults?.payment   || '';
+  document.getElementById('mc-leadtime').value  = c.defaults?.leadTime  || '';
+  document.getElementById('custModal').classList.add('open');
+}
+function closeCustModal() { document.getElementById('custModal').classList.remove('open'); editingCustomerIdx=null; }
 
 function normalizeCompanyName(s) {
   return (s||'').toLowerCase()
@@ -4715,34 +4774,80 @@ function saveCustomer() {
   const company = document.getElementById('mc-company').value.trim();
   if(!company) { showToast('Company name required'); return; }
   const custs = getCustomers();
-  const similar = findSimilarCustomer(company, custs);
-  if(similar) {
-    const proceed = confirm('"'+company+'" firması "'+similar.company+'" ile çok benzer görünüyor — zaten kayıtlı olabilir.\n\nYine de YENİ ayrı kayıt olarak eklemek istiyor musun?\n(İptal = eklemekten vazgeç, mevcut kaydı kullan)');
-    if(!proceed) { showToast('Eklenmedi — mevcut kayıt: '+similar.company); return; }
+
+  // Duplicate check — only on new entry
+  if(editingCustomerIdx === null) {
+    const similar = findSimilarCustomer(company, custs);
+    if(similar) {
+      const proceed = confirm('"'+company+'" firması "'+similar.company+'" ile çok benzer görünüyor — zaten kayıtlı olabilir.\n\nYine de YENİ ayrı kayıt olarak eklemek istiyor musun?\n(İptal = eklemekten vazgeç, mevcut kaydı kullan)');
+      if(!proceed) { showToast('Eklenmedi — mevcut kayıt: '+similar.company); return; }
+    }
   }
-  const disc=parseFloat(document.getElementById('mc-discount').value)||0;
-  const note=document.getElementById('mc-note')?.value||'';
-  custs.push({company, contact:document.getElementById('mc-contact').value, country:document.getElementById('mc-country').value, phone:document.getElementById('mc-phone').value, email:document.getElementById('mc-email').value, address:document.getElementById('mc-address').value, discount:disc, note});
-  saveCustomers(custs);
-  closeCustModal(); renderCustomers(); showToast(u('toast_cust_saved')+' '+company);
+
+  const disc = parseFloat(document.getElementById('mc-discount').value)||0;
+  const obj = {
+    company,
+    contact:  document.getElementById('mc-contact').value.trim(),
+    country:  document.getElementById('mc-country').value.trim(),
+    phone:    document.getElementById('mc-phone').value.trim(),
+    email:    document.getElementById('mc-email').value.trim(),
+    address:  document.getElementById('mc-address').value.trim(),
+    discount: disc,
+    note:     document.getElementById('mc-note').value.trim(),
+    defaults: {
+      currency: document.getElementById('mc-currency').value  || null,
+      lang:     document.getElementById('mc-lang').value      || null,
+      incoterm: document.getElementById('mc-incoterm').value.trim() || null,
+      payment:  document.getElementById('mc-payment').value.trim()  || null,
+      leadTime: document.getElementById('mc-leadtime').value.trim() || null,
+    }
+  };
+  // Remove null defaults to keep object clean
+  Object.keys(obj.defaults).forEach(k=>{ if(!obj.defaults[k]) delete obj.defaults[k]; });
+
+  if(editingCustomerIdx !== null) {
+    custs[editingCustomerIdx] = { ...custs[editingCustomerIdx], ...obj };
+    saveCustomers(custs);
+    closeCustModal(); renderCustomers(); showToast('✓ Güncellendi: '+company);
+  } else {
+    custs.push(obj);
+    saveCustomers(custs);
+    closeCustModal(); renderCustomers(); showToast(u('toast_cust_saved')+' '+company);
+  }
 }
 
 function loadCustomer(i) {
   const c = getCustomers()[i]; if(!c) return;
-  document.getElementById('buyerCompany').value=c.company||'';
-  document.getElementById('buyerContact').value=c.contact||'';
-  document.getElementById('buyerCountry').value=c.country||'';
-  document.getElementById('buyerPhone').value=c.phone||'';
-  document.getElementById('buyerEmail').value=c.email||'';
-  document.getElementById('buyerAddress').value=c.address||'';
-  if(c.discount>0) {
-    document.getElementById('discVal').value=c.discount;
-    orderItems.forEach(i=>{ i.unitPrice=parseFloat((i.listPrice*(1-c.discount/100)).toFixed(2)); });
+  document.getElementById('buyerCompany').value  = c.company  || '';
+  document.getElementById('buyerContact').value  = c.contact  || '';
+  document.getElementById('buyerCountry').value  = c.country  || '';
+  document.getElementById('buyerPhone').value    = c.phone    || '';
+  document.getElementById('buyerEmail').value    = c.email    || '';
+  document.getElementById('buyerAddress').value  = c.address  || '';
+
+  const d = c.defaults || {};
+  const applied = [];
+
+  // Currency
+  if(d.currency) { setCurrency(d.currency); applied.push(d.currency); }
+  // Language
+  if(d.lang) { const el=document.getElementById('pfLang'); if(el) { el.value=d.lang; applied.push(d.lang.toUpperCase()); } }
+  // Incoterm / price term
+  if(d.incoterm) { const el=document.getElementById('pfPriceTerm'); if(el) { el.value=d.incoterm; applied.push(d.incoterm); } }
+  // Payment terms
+  if(d.payment) { const el=document.getElementById('pfPayment'); if(el) el.value=d.payment; }
+  // Lead time
+  if(d.leadTime) { const el=document.getElementById('pfLeadTime'); if(el) el.value=d.leadTime; }
+  // Discount
+  if(c.discount > 0) {
+    document.getElementById('discVal').value = c.discount;
+    orderItems.forEach(it=>{ it.unitPrice=parseFloat((it.listPrice*(1-c.discount/100)).toFixed(2)); });
     renderOrder();
-    showToast('⚡ Loaded: '+c.company+' · %'+c.discount+' discount applied');
-  } else {
-    showToast('✓ Loaded: '+c.company);
+    applied.push('%'+c.discount+' indirim');
   }
+
+  const summary = applied.length ? ' · ⚡ '+applied.join(' · ') : '';
+  showToast('✓ Yüklendi: '+c.company+summary);
   showTab('order');
 }
 
@@ -4775,9 +4880,21 @@ function saveCurrentAsCust() {
   const custs=getCustomers();
   const existing=custs.findIndex(c=>c.company.toLowerCase()===company.toLowerCase());
   const disc=parseFloat(document.getElementById('discVal').value)||0;
-  const obj={company, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, discount:disc};
-  if(existing>=0) { custs[existing]=obj; saveCustomers(custs); showToast(u('toast_cust_updated')+' '+company); }
-  else { custs.push(obj); saveCustomers(custs); showToast(u('toast_cust_saved')+' '+company); }
+  const currentDefaults = {
+    currency: currency||null,
+    lang:     document.getElementById('pfLang')?.value||null,
+    incoterm: document.getElementById('pfPriceTerm')?.value||null,
+    payment:  document.getElementById('pfPayment')?.value||null,
+    leadTime: document.getElementById('pfLeadTime')?.value||null,
+  };
+  Object.keys(currentDefaults).forEach(k=>{ if(!currentDefaults[k]) delete currentDefaults[k]; });
+  const obj={company, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, discount:disc, defaults:currentDefaults};
+  if(existing>=0) {
+    custs[existing]={...custs[existing], ...obj};
+    saveCustomers(custs); showToast(u('toast_cust_updated')+' '+company+' (varsayılanlar güncellendi)');
+  } else {
+    custs.push(obj); saveCustomers(custs); showToast(u('toast_cust_saved')+' '+company);
+  }
   renderCustomers();
 }
 
