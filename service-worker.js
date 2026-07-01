@@ -1,8 +1,9 @@
 // Morello PWA Service Worker
-const CACHE_NAME = 'morello-v2';
+const CACHE_NAME = 'morello-v3';
 const ASSETS = [
   '/MORELLO-PROFORMA-GENERATOR/',
   '/MORELLO-PROFORMA-GENERATOR/index.html',
+  '/MORELLO-PROFORMA-GENERATOR/imgs.js',
 ];
 
 // Install: cache core assets
@@ -29,14 +30,12 @@ self.addEventListener('activate', function(e) {
 
 // Fetch: network first, fallback to cache
 self.addEventListener('fetch', function(e) {
-  // Skip non-GET and cross-origin requests
   if(e.request.method !== 'GET') return;
   if(!e.request.url.startsWith(self.location.origin)) return;
 
   e.respondWith(
     fetch(e.request)
       .then(function(response) {
-        // Cache successful responses
         if(response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(function(cache){
@@ -46,7 +45,6 @@ self.addEventListener('fetch', function(e) {
         return response;
       })
       .catch(function() {
-        // Network failed → serve from cache
         return caches.match(e.request).then(function(cached){
           return cached || caches.match('/MORELLO-PROFORMA-GENERATOR/index.html');
         });
