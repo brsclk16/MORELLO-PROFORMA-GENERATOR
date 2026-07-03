@@ -82,6 +82,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .appr-done .msg { font-size: 15px; font-weight: 700; color: #059669; }
 .appr-done .sm { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
+/* Fabric variant selector */
+.fab-row { padding: 0 14px 12px; }
+.fab-lbl { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.fab-opts { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.fab-opt { flex-shrink: 0; border: 2px solid var(--border); border-radius: 10px; padding: 5px; background: #fff; cursor: pointer; text-align: center; min-width: 62px; }
+.fab-opt.sel { border-color: var(--cherry); background: #FDF4F8; }
+.fab-swatch { width: 48px; height: 34px; border-radius: 6px; margin: 0 auto 4px; background-size: cover; background-position: center; border: 1px solid rgba(0,0,0,.08); }
+.fab-name { font-size: 9px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.fab-opt.sel .fab-name { color: var(--cherry); }
+
+/* Expired screen */
+.expired-wrap { padding: 70px 28px; text-align: center; }
+.expired-wrap .ei { font-size: 52px; margin-bottom: 16px; }
+.expired-wrap h2 { font-size: 18px; margin-bottom: 10px; }
+.expired-wrap p { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+.expired-wrap a { display: inline-flex; align-items: center; gap: 8px; background: #25D366; color: #fff; padding: 13px 24px; border-radius: 26px; font-size: 14px; font-weight: 700; text-decoration: none; }
+
 .err-wrap { padding: 60px 24px; text-align: center; color: var(--muted); }
 .err-wrap .ei { font-size: 44px; margin-bottom: 14px; opacity: .4; }
 
@@ -103,11 +120,25 @@ if(typeof IMGS === 'undefined') window.IMGS = {};
 const SUPA_URL = 'https://etwanruohujctvkjvxzw.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d2FucnVvaHVqY3R2a2p2eHp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA0NzAsImV4cCI6MjA5Nzc4NjQ3MH0.aErGOAe7s7Ge5Nq5tRXi0EhOOU23EpCC4cCpth_oPsU';
 
+// Telegram notify config — fill after creating bot via @BotFather (see setup notes)
+const TG_BOT_TOKEN = '';   // e.g. '7123456789:AAH...'
+const TG_CHAT_ID   = '';   // e.g. '123456789'
+
+function tgNotify(text) {
+  if(!TG_BOT_TOKEN || !TG_CHAT_ID) return;
+  try {
+    fetch('https://api.telegram.org/bot'+TG_BOT_TOKEN+'/sendMessage', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: text, parse_mode: 'HTML' })
+    }).catch(function(){});
+  } catch(e) {}
+}
+
 const T = {
-  en: { items:'Products', terms:'Terms', totals:'Summary', listTotal:'List Total', discount:'Discount', grand:'GRAND TOTAL', deposit:'Deposit (30%)', balance:'Balance (70%)', validUntil:'Validity', payment:'Payment', delivery:'Price Term', leadTime:'Lead Time', ask:'Ask a Question', prepared:'This proforma invoice was prepared by Morello Mobilya — Inegol / Bursa / Turkiye', qty:'pcs', unit:'unit', buyer:'Prepared for', approve:'Approve', apprTitle:'Approve this Proforma', apprSub:'By entering your name and confirming, you indicate acceptance of this proforma invoice and its terms.', apprName:'Your full name', apprConfirm:'Confirm Approval', apprCancel:'Cancel', apprDoneMsg:'Proforma Approved', apprDoneSub:'Thank you! The seller has been notified.', approved:'Approved' },
-  tr: { items:'Ürünler', terms:'Şartlar', totals:'Özet', listTotal:'Liste Toplamı', discount:'İndirim', grand:'GENEL TOPLAM', deposit:'Kapora (30%)', balance:'Bakiye (70%)', validUntil:'Geçerlilik', payment:'Ödeme', delivery:'Teslim Şekli', leadTime:'Termin', ask:'Soru Sor', prepared:'Bu proforma fatura Morello Mobilya tarafından hazırlanmıştır — İnegöl / Bursa / Türkiye', qty:'adet', unit:'birim', buyer:'Sayın', approve:'Onayla', apprTitle:'Proformayı Onayla', apprSub:'Adınızı yazıp onayladığınızda bu proforma faturayı ve şartlarını kabul etmiş sayılırsınız.', apprName:'Ad Soyad', apprConfirm:'Onayı Gönder', apprCancel:'Vazgeç', apprDoneMsg:'Proforma Onaylandı', apprDoneSub:'Teşekkürler! Satıcıya bildirim iletildi.', approved:'Onaylandı' },
-  fr: { items:'Produits', terms:'Conditions', totals:'Résumé', listTotal:'Total Liste', discount:'Remise', grand:'TOTAL GÉNÉRAL', deposit:'Acompte (30%)', balance:'Solde (70%)', validUntil:'Validité', payment:'Paiement', delivery:'Incoterm', leadTime:'Délai', ask:'Poser une Question', prepared:'Cette facture proforma a été préparée par Morello Mobilya — Inegol / Bursa / Turquie', qty:'pcs', unit:'unité', buyer:'Préparé pour', approve:'Approuver', apprTitle:'Approuver cette Proforma', apprSub:'En saisissant votre nom et en confirmant, vous acceptez cette facture proforma et ses conditions.', apprName:'Votre nom complet', apprConfirm:'Confirmer', apprCancel:'Annuler', apprDoneMsg:'Proforma Approuvée', apprDoneSub:'Merci ! Le vendeur a été notifié.', approved:'Approuvée' },
-  ar: { items:'المنتجات', terms:'الشروط', totals:'الملخص', listTotal:'إجمالي القائمة', discount:'خصم', grand:'الإجمالي الكلي', deposit:'دفعة مقدمة (30%)', balance:'الرصيد (70%)', validUntil:'الصلاحية', payment:'الدفع', delivery:'شرط التسليم', leadTime:'مدة التسليم', ask:'اطرح سؤالاً', prepared:'تم إعداد هذه الفاتورة الأولية من قبل موريلو موبيليا — إينегول / بورصة / تركيا', qty:'قطعة', unit:'وحدة', buyer:'مُعد لـ', approve:'الموافقة', apprTitle:'الموافقة على الفاتورة الأولية', apprSub:'بإدخال اسمك والتأكيد، فإنك تشير إلى قبول هذه الفاتورة الأولية وشروطها.', apprName:'الاسم الكامل', apprConfirm:'تأكيد الموافقة', apprCancel:'إلغاء', apprDoneMsg:'تمت الموافقة', apprDoneSub:'شكراً! تم إخطار البائع.', approved:'تمت الموافقة' }
+  en: { items:'Products', terms:'Terms', totals:'Summary', listTotal:'List Total', discount:'Discount', grand:'GRAND TOTAL', deposit:'Deposit (30%)', balance:'Balance (70%)', validUntil:'Validity', payment:'Payment', delivery:'Price Term', leadTime:'Lead Time', ask:'Ask a Question', prepared:'This proforma invoice was prepared by Morello Mobilya — Inegol / Bursa / Turkiye', qty:'pcs', unit:'unit', buyer:'Prepared for', approve:'Approve', apprTitle:'Approve this Proforma', apprSub:'By entering your name and confirming, you indicate acceptance of this proforma invoice and its terms.', apprName:'Your full name', apprConfirm:'Confirm Approval', apprCancel:'Cancel', apprDoneMsg:'Proforma Approved', apprDoneSub:'Thank you! The seller has been notified.', approved:'Approved', expTitle:'This Offer Has Expired', expSub:'The validity period of this proforma has ended. Prices may have changed — please contact us for an updated offer.', expBtn:'Contact Us', chooseFabric:'Choose color', fabricRequired:'Please select a color for every product before approving.' },
+  tr: { items:'Ürünler', terms:'Şartlar', totals:'Özet', listTotal:'Liste Toplamı', discount:'İndirim', grand:'GENEL TOPLAM', deposit:'Kapora (30%)', balance:'Bakiye (70%)', validUntil:'Geçerlilik', payment:'Ödeme', delivery:'Teslim Şekli', leadTime:'Termin', ask:'Soru Sor', prepared:'Bu proforma fatura Morello Mobilya tarafından hazırlanmıştır — İnegöl / Bursa / Türkiye', qty:'adet', unit:'birim', buyer:'Sayın', approve:'Onayla', apprTitle:'Proformayı Onayla', apprSub:'Adınızı yazıp onayladığınızda bu proforma faturayı ve şartlarını kabul etmiş sayılırsınız.', apprName:'Ad Soyad', apprConfirm:'Onayı Gönder', apprCancel:'Vazgeç', apprDoneMsg:'Proforma Onaylandı', apprDoneSub:'Teşekkürler! Satıcıya bildirim iletildi.', approved:'Onaylandı', expTitle:'Bu Teklifin Süresi Doldu', expSub:'Bu proformanın geçerlilik süresi sona erdi. Fiyatlar değişmiş olabilir — güncel teklif için bizimle iletişime geçin.', expBtn:'İletişime Geç', chooseFabric:'Renk seçin', fabricRequired:'Onaylamadan önce lütfen her ürün için renk seçin.' },
+  fr: { items:'Produits', terms:'Conditions', totals:'Résumé', listTotal:'Total Liste', discount:'Remise', grand:'TOTAL GÉNÉRAL', deposit:'Acompte (30%)', balance:'Solde (70%)', validUntil:'Validité', payment:'Paiement', delivery:'Incoterm', leadTime:'Délai', ask:'Poser une Question', prepared:'Cette facture proforma a été préparée par Morello Mobilya — Inegol / Bursa / Turquie', qty:'pcs', unit:'unité', buyer:'Préparé pour', approve:'Approuver', apprTitle:'Approuver cette Proforma', apprSub:'En saisissant votre nom et en confirmant, vous acceptez cette facture proforma et ses conditions.', apprName:'Votre nom complet', apprConfirm:'Confirmer', apprCancel:'Annuler', apprDoneMsg:'Proforma Approuvée', apprDoneSub:'Merci ! Le vendeur a été notifié.', approved:'Approuvée', expTitle:'Cette Offre a Expiré', expSub:'La période de validité de cette proforma est terminée. Les prix peuvent avoir changé — contactez-nous pour une offre à jour.', expBtn:'Nous Contacter', chooseFabric:'Choisir la couleur', fabricRequired:'Veuillez sélectionner une couleur pour chaque produit avant d\'approuver.' },
+  ar: { items:'المنتجات', terms:'الشروط', totals:'الملخص', listTotal:'إجمالي القائمة', discount:'خصم', grand:'الإجمالي الكلي', deposit:'دفعة مقدمة (30%)', balance:'الرصيد (70%)', validUntil:'الصلاحية', payment:'الدفع', delivery:'شرط التسليم', leadTime:'مدة التسليم', ask:'اطرح سؤالاً', prepared:'تم إعداد هذه الفاتورة الأولية من قبل موريلو موبيليا — إينегول / بورصة / تركيا', qty:'قطعة', unit:'وحدة', buyer:'مُعد لـ', approve:'الموافقة', apprTitle:'الموافقة على الفاتورة الأولية', apprSub:'بإدخال اسمك والتأكيد، فإنك تشير إلى قبول هذه الفاتورة الأولية وشروطها.', apprName:'الاسم الكامل', apprConfirm:'تأكيد الموافقة', apprCancel:'إلغاء', apprDoneMsg:'تمت الموافقة', apprDoneSub:'شكراً! تم إخطار البائع.', approved:'تمت الموافقة', expTitle:'انتهت صلاحية هذا العرض', expSub:'انتهت فترة صلاحية هذه الفاتورة الأولية. قد تكون الأسعار قد تغيرت — يرجى التواصل معنا للحصول على عرض محدث.', expBtn:'تواصل معنا', chooseFabric:'اختر اللون', fabricRequired:'يرجى اختيار لون لكل منتج قبل الموافقة.' }
 };
 
 function decodePayload() {
@@ -126,6 +157,12 @@ function trackView(pi, buyer) {
       headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ pi: pi, buyer: buyer || null, ua: navigator.userAgent.slice(0,180) })
     }).catch(function(){});
+    // First view on this device → notify once
+    const k = 'viewed_'+pi;
+    if(!localStorage.getItem(k)) {
+      localStorage.setItem(k, '1');
+      tgNotify('👁 <b>Proforma görüntülendi</b>\n'+(buyer||'')+' — <b>'+(pi||'')+'</b>');
+    }
   } catch(e) {}
 }
 
@@ -143,13 +180,41 @@ function render() {
   if(isRTL) document.body.dir = 'rtl';
   const sym = d.cur === 'TRY' ? '₺' : d.cur === 'EUR' ? '€' : '$';
 
+  // ── EXPIRY GATE ──
+  if(d.exp) {
+    const expDate = new Date(d.exp + 'T23:59:59');
+    if(!isNaN(expDate) && new Date() > expDate) {
+      const waPhoneX = (d.wph||'902247141303').replace(/[^0-9]/g,'');
+      const waMsgX = encodeURIComponent((d.pi||'Proforma')+' — güncel teklif istiyorum / requesting updated offer');
+      app.innerHTML = '<div class="hero"><div class="logo">M<span>O</span>RELLO</div><div class="sub">mobilya · furniture</div><div class="pi-badge">'+esc(d.pi||'')+'</div></div>'
+        + '<div class="expired-wrap"><div class="ei">⏳</div><h2>'+t.expTitle+'</h2><p>'+t.expSub+'</p>'
+        + '<a href="https://wa.me/'+waPhoneX+'?text='+waMsgX+'">'+t.expBtn+'</a></div>';
+      trackView(d.pi, d.buyer);
+      return;
+    }
+  }
+
+  const hasFabrics = Array.isArray(d.fab) && d.fab.length > 0;
+  window.FAB_SELECTIONS = window.FAB_SELECTIONS || {};
+
   const listTotal = d.items.reduce(function(s,i){ return s + i.lp*i.q; }, 0);
   const grand = d.items.reduce(function(s,i){ return s + i.up*i.q; }, 0);
   const saving = listTotal - grand;
 
   let itemsHtml = '';
-  d.items.forEach(function(it) {
+  d.items.forEach(function(it, itemIdx) {
     const img = IMGS[it.id];
+    let fabHtml = '';
+    if(hasFabrics) {
+      const opts = d.fab.map(function(f, fi){
+        const sw = f.img ? 'background-image:url('+f.img+');' : 'background:'+(f.hex||'#D8D2C8')+';';
+        return '<div class="fab-opt" data-item="'+itemIdx+'" data-fab="'+fi+'" onclick="selectFab(this)">'
+          + '<div class="fab-swatch" style="'+sw+'"></div>'
+          + '<div class="fab-name">'+esc(f.name||f.code||'')+'</div>'
+          + '</div>';
+      }).join('');
+      fabHtml = '<div class="fab-row"><div class="fab-lbl">'+t.chooseFabric+'</div><div class="fab-opts">'+opts+'</div></div>';
+    }
     itemsHtml += '<div class="item-card">'
       + '<div class="item-img-wrap">' + (img ? '<img src="'+img+'" alt="">' : '<span class="noimg">🪑</span>') + '</div>'
       + '<div class="item-body">'
@@ -159,7 +224,9 @@ function render() {
           + '<div class="item-price">'+sym+(it.up*it.q).toFixed(2)+'</div>'
           + (it.q>1?'<div class="item-unit">'+sym+it.up.toFixed(2)+' / '+t.unit+'</div>':'')
         + '</div>'
-      + '</div></div>';
+      + '</div>'
+      + fabHtml
+      + '</div>';
   });
 
   const termRows = [
@@ -211,7 +278,28 @@ function render() {
 }
 
 let PAYLOAD_CACHE = null;
-function openApprove() { document.getElementById('appr-overlay').classList.add('open'); setTimeout(function(){ document.getElementById('appr-name').focus(); }, 150); }
+function selectFab(el) {
+  const itemIdx = el.dataset.item, fabIdx = el.dataset.fab;
+  document.querySelectorAll('.fab-opt[data-item="'+itemIdx+'"]').forEach(function(o){ o.classList.remove('sel'); });
+  el.classList.add('sel');
+  window.FAB_SELECTIONS[itemIdx] = parseInt(fabIdx);
+}
+
+function openApprove() {
+  const d = PAYLOAD_CACHE || decodePayload();
+  const t = T[d.lang] || T.en;
+  // If fabrics defined, require a selection per item
+  if(Array.isArray(d.fab) && d.fab.length > 0) {
+    for(let i = 0; i < d.items.length; i++) {
+      if(window.FAB_SELECTIONS[i] === undefined) {
+        alert(t.fabricRequired);
+        return;
+      }
+    }
+  }
+  document.getElementById('appr-overlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('appr-name').focus(); }, 150);
+}
 function closeApprove() { document.getElementById('appr-overlay').classList.remove('open'); }
 
 function submitApprove() {
@@ -222,15 +310,29 @@ function submitApprove() {
   const btn = document.getElementById('appr-submit');
   btn.disabled = true; btn.textContent = '…';
   const grand = d.items.reduce(function(s,i){ return s + i.up*i.q; }, 0);
+
+  // Collect fabric selections if any
+  let selections = null;
+  if(Array.isArray(d.fab) && d.fab.length > 0) {
+    selections = d.items.map(function(it, i){
+      const f = d.fab[window.FAB_SELECTIONS[i]];
+      return { item: it.n, fabric: f ? (f.code || f.name) : null };
+    });
+  }
+
   fetch(SUPA_URL + '/rest/v1/proforma_approvals', {
     method: 'POST',
     headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ pi: d.pi, buyer: d.buyer || null, approver_name: name, total: grand.toFixed(2)+' '+d.cur, ua: navigator.userAgent.slice(0,180) })
+    body: JSON.stringify({ pi: d.pi, buyer: d.buyer || null, approver_name: name, total: grand.toFixed(2)+' '+d.cur, ua: navigator.userAgent.slice(0,180), selections: selections })
   }).then(function(r){
     if(!r.ok) throw new Error('insert failed');
     document.getElementById('appr-sheet').innerHTML = '<div class="appr-done"><div class="big">✅</div><div class="msg">'+t.apprDoneMsg+'</div><div class="sm">'+t.apprDoneSub+'</div></div>';
     markApproved(t);
     try { localStorage.setItem('appr_'+d.pi, name); } catch(e) {}
+    // Telegram notify — approval
+    let selTxt = '';
+    if(selections) selTxt = '\n' + selections.map(function(s){ return '• '+s.item+' → <b>'+s.fabric+'</b>'; }).join('\n');
+    tgNotify('✅ <b>ONAY GELDİ</b>\n'+(d.buyer||'')+' — <b>'+d.pi+'</b>\nOnaylayan: '+name+'\nTutar: '+grand.toFixed(2)+' '+d.cur+selTxt);
     setTimeout(closeApprove, 2600);
   }).catch(function(){
     btn.disabled = false; btn.textContent = t.apprConfirm;
