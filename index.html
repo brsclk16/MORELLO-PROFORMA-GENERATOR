@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783000361</title>
+<title>Morello — Proforma Generator v1783061537</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1743,6 +1743,27 @@ body {
   font-weight: 600;
   text-align: center;
 }
+
+/* ─── TRUCK CONTAINER VISUAL ─── */
+.pf-truck-section { margin: 14px 0; page-break-inside: avoid; }
+.pf-truck-title { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+.pf-truck-wrap { display: flex; align-items: center; gap: 16px; }
+.pf-truck-vis { flex-shrink: 0; }
+.pf-truck-info { flex: 1; font-size: 10px; color: #444; }
+.pf-truck-info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.pf-truck-info-row span:first-child { color: #888; }
+.pf-truck-info-row span:last-child { font-weight: 700; color: #222; }
+
+/* ─── TECHNICAL INFORMATION TABLE ─── */
+.pf-tech-section { margin: 14px 0; page-break-inside: avoid; }
+.pf-tech-title { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 6px; border-bottom: 1.5px solid #E5E5E5; padding-bottom: 4px; }
+.pf-tech-table { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+.pf-tech-table th { padding: 5px 5px; background: #F5F5F5; font-weight: 700; text-align: center; color: #555; border: 1px solid #E5E5E5; font-size: 7.5px; letter-spacing: .3px; white-space: nowrap; }
+.pf-tech-table th.l { text-align: left; }
+.pf-tech-table td { padding: 4px 5px; border: 1px solid #EBEBEB; text-align: center; color: #333; vertical-align: middle; }
+.pf-tech-table td.l { text-align: left; font-weight: 500; }
+.pf-tech-table tr:nth-child(even) td { background: #FAFAFA; }
+.pf-tech-table tfoot td { font-weight: 700; background: #F0F0F0; border-top: 2px solid #CCC; }
 
 /* ─── PROFORMA BANK & NOTES ─── */
 .pf-bank {
@@ -5411,7 +5432,7 @@ function buildContainerHTML(furnitureCBM) {
     boxes+='<div class="pf-cont-box" style="border-color:'+borderColor+';background:'+bgColor+';">'
       +'<div class="pf-cont-type">'+v.label+'</div>'
       +'<div class="pf-cont-count" style="color:'+fillColor+';">'+n+'</div>'
-      +'<div class="pf-cont-m3">'+v.m3+' m³</div>'
+      +'<div class="pf-cont-m3">'+v.m3+' m\u00b3</div>'
       +'<div class="pf-cont-bar-wrap"><div class="pf-cont-bar" style="width:'+fill.toFixed(0)+'%;background:'+fillColor+';"></div></div>'
       +'<div class="pf-cont-fill" style="color:'+fillColor+';">'+fill.toFixed(0)+'% full</div>'
       +'</div>';
@@ -5427,8 +5448,98 @@ function buildContainerHTML(furnitureCBM) {
     +'<div class="pf-cont-title">Container &amp; Vehicle Requirements</div>'
     +'<div class="pf-cont-grid">'+boxes+'</div>'
     +'<div class="pf-cont-best" style="background:'+bestBg+';color:'+bestColor+';">'
-    +'✓ Recommended: '+bn+'× '+best.label+' — '+bfill+'% full — '+brem+' m³ free'
+    +'\u2713 Recommended: '+bn+'\u00d7 '+best.label+' \u2014 '+bfill+'% full \u2014 '+brem+' m\u00b3 free'
+    +'</div></div>'
+    + buildTruckHTML(pfCBM, best)
+    + buildTechTableHTML();
+}
+
+function buildTruckHTML(cbm, bestVehicle) {
+  if(!cbm || !bestVehicle) return '';
+  const cap = bestVehicle.m3;
+  const fillPct = Math.min(100, cbm / cap * 100);
+  const fp = fillPct.toFixed(0);
+  const totalKg = orderItems.reduce(function(s,i){ const pd = PACKAGE_DATA[i.id]; return s + (pd ? pd.kg*i.qty : 0); }, 0);
+  const MAX_KG = bestVehicle.label.includes('TIR') ? 24000 : 28600;
+  const kgPct = Math.min(100, totalKg / MAX_KG * 100).toFixed(0);
+  const fillColor = fillPct >= 80 ? '#059669' : fillPct >= 50 ? '#E8931A' : '#DC2626';
+  const bodyX = 36, bodyY = 10, bodyW = 138, bodyH = 54;
+  const fillW = Math.round(bodyW * fillPct / 100);
+  const svg = '<svg width="180" height="80" viewBox="0 0 180 80" xmlns="http://www.w3.org/2000/svg">'
+    +'<ellipse cx="90" cy="74" rx="80" ry="5" fill="rgba(0,0,0,.08)"/>'
+    +'<rect x="4" y="24" width="30" height="40" rx="4" fill="#2D3748"/>'
+    +'<rect x="6" y="26" width="18" height="12" rx="2" fill="#90CDF4" opacity=".8"/>'
+    +'<rect x="4" y="54" width="30" height="8" fill="#1A202C" rx="1"/>'
+    +'<circle cx="16" cy="66" r="7" fill="#1A202C"/><circle cx="16" cy="66" r="4" fill="#4A5568"/>'
+    +'<rect x="'+bodyX+'" y="'+bodyY+'" width="'+bodyW+'" height="'+bodyH+'" rx="3" fill="#E2E8F0" stroke="#CBD5E0" stroke-width="1"/>'
+    +'<rect x="'+bodyX+'" y="'+bodyY+'" width="'+fillW+'" height="'+bodyH+'" rx="3" fill="'+fillColor+'" opacity=".85"/>'
+    +'<text x="'+(bodyX+bodyW/2)+'" y="'+(bodyY+bodyH/2+5)+'" text-anchor="middle" font-size="16" font-weight="700" fill="#fff" font-family="Arial,sans-serif">'+fp+'%</text>'
+    +'<line x1="'+(bodyX+Math.round(bodyW*.25))+'" y1="'+bodyY+'" x2="'+(bodyX+Math.round(bodyW*.25))+'" y2="'+(bodyY+bodyH)+'" stroke="#CBD5E0" stroke-width=".5" opacity=".5"/>'
+    +'<line x1="'+(bodyX+Math.round(bodyW*.5))+'" y1="'+bodyY+'" x2="'+(bodyX+Math.round(bodyW*.5))+'" y2="'+(bodyY+bodyH)+'" stroke="#CBD5E0" stroke-width=".5" opacity=".5"/>'
+    +'<line x1="'+(bodyX+Math.round(bodyW*.75))+'" y1="'+bodyY+'" x2="'+(bodyX+Math.round(bodyW*.75))+'" y2="'+(bodyY+bodyH)+'" stroke="#CBD5E0" stroke-width=".5" opacity=".5"/>'
+    +'<circle cx="110" cy="66" r="7" fill="#1A202C"/><circle cx="110" cy="66" r="4" fill="#4A5568"/>'
+    +'<circle cx="160" cy="66" r="7" fill="#1A202C"/><circle cx="160" cy="66" r="4" fill="#4A5568"/>'
+    +'</svg>';
+  return '<div class="pf-truck-section">'
+    +'<div class="pf-truck-title">Container Progress</div>'
+    +'<div class="pf-truck-wrap">'
+      +'<div class="pf-truck-vis">'+svg+'</div>'
+      +'<div class="pf-truck-info">'
+        +'<div class="pf-truck-info-row"><span>Vehicle</span><span>'+bestVehicle.label+'</span></div>'
+        +'<div class="pf-truck-info-row"><span>Volume</span><span>'+cbm.toFixed(2)+' / '+cap+' m\u00b3 ('+fp+'%)</span></div>'
+        +(totalKg>0?'<div class="pf-truck-info-row"><span>Weight</span><span>'+totalKg.toLocaleString()+' / '+MAX_KG.toLocaleString()+' kg ('+kgPct+'%)</span></div>':'')
+        +'<div class="pf-truck-info-row"><span>Free space</span><span>'+(cap-cbm).toFixed(2)+' m\u00b3 remaining</span></div>'
+      +'</div>'
     +'</div></div>';
+}
+
+function buildTechTableHTML() {
+  const items = orderItems;
+  if(!items.length) return '';
+  const totalQty  = items.reduce(function(s,i){ return s+i.qty; }, 0);
+  const totalCBM  = items.reduce(function(s,i){ return s+(i.cbm||0)*i.qty; }, 0);
+  const totalKg   = items.reduce(function(s,i){ const pd=PACKAGE_DATA[i.id]; return s+(pd?pd.kg*i.qty:0); }, 0);
+  const totalPkgs = items.reduce(function(s,i){ const pd=PACKAGE_DATA[i.id]; return s+(pd?pd.pkgs*i.qty:0); }, 0);
+  let rows = '';
+  items.forEach(function(item, idx) {
+    const pd  = PACKAGE_DATA[item.id] || {};
+    const cbmU = item.cbm || 0;
+    rows += '<tr>'
+      +'<td>'+(idx+1)+'</td>'
+      +'<td class="l">'+item.name+'</td>'
+      +'<td>'+item.qty+'</td>'
+      +'<td>'+(cbmU>0?cbmU.toFixed(3):'-')+'</td>'
+      +'<td>'+(cbmU>0?(cbmU*item.qty).toFixed(3):'-')+'</td>'
+      +'<td>'+(pd.kg||'-')+'</td>'
+      +'<td>'+(pd.kg?(pd.kg*item.qty):'-')+'</td>'
+      +'<td>'+(pd.pkgs||'-')+'</td>'
+      +'<td>'+(pd.pkgs?(pd.pkgs*item.qty):'-')+'</td>'
+      +'</tr>';
+  });
+  return '<div class="pf-tech-section">'
+    +'<div class="pf-tech-title">Technical Information</div>'
+    +'<table class="pf-tech-table"><thead><tr>'
+      +'<th style="width:20px;">#</th>'
+      +'<th class="l">Product</th>'
+      +'<th>Qty<br><small>pcs</small></th>'
+      +'<th>Unit Vol.<br><small>m\u00b3</small></th>'
+      +'<th>Total Vol.<br><small>m\u00b3</small></th>'
+      +'<th>Unit Wt.<br><small>kg</small></th>'
+      +'<th>Total Wt.<br><small>kg</small></th>'
+      +'<th>Unit Pkg<br><small>pcs</small></th>'
+      +'<th>Total Pkg<br><small>pcs</small></th>'
+    +'</tr></thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr>'
+      +'<td></td><td class="l">Total</td>'
+      +'<td>'+totalQty+'</td>'
+      +'<td>-</td>'
+      +'<td>'+totalCBM.toFixed(3)+'</td>'
+      +'<td>-</td>'
+      +'<td>'+(totalKg>0?totalKg:'-')+'</td>'
+      +'<td>-</td>'
+      +'<td>'+(totalPkgs>0?totalPkgs:'-')+'</td>'
+      +'</tr></tfoot>'
+    +'</table></div>';
 }
 
 // ============================================================
