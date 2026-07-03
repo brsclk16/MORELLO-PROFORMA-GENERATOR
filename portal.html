@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Morello Mobilya — Müşteri Portalı</title>
+<style>
+:root { --cherry:#74113D; --gold:#B8935A; --text:#2A2622; --muted:#8A8479; --border:#E8E2D8; --bg:#FAF8F4; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); }
+.hero { background:linear-gradient(160deg,#1F1B17 0%,#33291F 100%); color:#fff; padding:30px 20px 26px; text-align:center; }
+.hero .logo { font-family:Georgia,serif; font-size:26px; font-weight:700; letter-spacing:6px; }
+.hero .logo span { color:var(--gold); }
+.hero .sub { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:3px; }
+.hero .cust { margin-top:16px; font-size:16px; font-weight:700; }
+.hero .portal-lbl { font-size:10px; color:rgba(255,255,255,.5); letter-spacing:1.5px; text-transform:uppercase; margin-top:4px; }
+.wrap { max-width:560px; margin:0 auto; padding:18px 16px 40px; }
+.pi-card { display:block; background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; text-decoration:none; color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.04); transition:transform .1s; }
+.pi-card:active { transform:scale(.985); }
+.pi-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.pi-no { font-size:14px; font-weight:800; color:var(--cherry); }
+.pi-status { font-size:9px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:3px 10px; border-radius:12px; }
+.st-draft { background:#F3F4F6; color:#6B7280; }
+.st-sent { background:#DBEAFE; color:#1D4ED8; }
+.st-confirmed { background:#D1FAE5; color:#047857; }
+.st-production { background:#FEF3C7; color:#B45309; }
+.st-shipped { background:#EDE9FE; color:#6D28D9; }
+.pi-bottom { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+.pi-total { font-weight:700; color:var(--text); }
+.pi-open { font-size:11px; color:var(--gold); font-weight:700; margin-top:8px; }
+.err-wrap { padding:70px 24px; text-align:center; color:var(--muted); }
+.err-wrap .ei { font-size:44px; margin-bottom:14px; opacity:.4; }
+.foot { text-align:center; font-size:10px; color:var(--muted); padding:8px 20px 30px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div id="app"><div class="err-wrap"><div class="ei">⏳</div>Yükleniyor…</div></div>
+<script>
+function decode() {
+  try {
+    const h = location.hash.slice(1);
+    if(!h) return null;
+    return JSON.parse(decodeURIComponent(escape(atob(h.replace(/-/g,'+').replace(/_/g,'/')))));
+  } catch(e) { return null; }
+}
+function esc(s){ return String(s||'').replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
+function stClass(s){ return 'st-'+String(s||'draft').toLowerCase(); }
+
+function render() {
+  const d = decode();
+  const app = document.getElementById('app');
+  if(!d || !Array.isArray(d.pis) || !d.pis.length) {
+    app.innerHTML = '<div class="err-wrap"><div class="ei">🏠</div>Portal bulunamadı veya link hatalı.</div>';
+    return;
+  }
+  const cards = d.pis.map(function(p){
+    return '<a class="pi-card" href="'+p.link+'">'
+      +'<div class="pi-top"><span class="pi-no">'+esc(p.pi)+'</span><span class="pi-status '+stClass(p.status)+'">'+esc(p.status)+'</span></div>'
+      +'<div class="pi-bottom"><span>'+esc(p.date)+'</span><span class="pi-total">'+esc(p.total)+'</span></div>'
+      +'<div class="pi-open">Görüntüle / View →</div>'
+      +'</a>';
+  }).join('');
+  app.innerHTML = '<div class="hero">'
+    +'<div class="logo">M<span>O</span>RELLO</div><div class="sub">mobilya · furniture</div>'
+    +'<div class="cust">'+esc(d.customer)+'</div><div class="portal-lbl">Müşteri Portalı · Customer Portal</div>'
+    +'</div>'
+    +'<div class="wrap">'+cards+'</div>'
+    +'<div class="foot">Morello Mobilya — İnegöl / Bursa / Türkiye<br>Bu portal '+esc(d.generated||'')+' tarihinde oluşturulmuştur.</div>';
+}
+render();
+window.addEventListener('hashchange', render);
+</script>
+</body>
+</html>
