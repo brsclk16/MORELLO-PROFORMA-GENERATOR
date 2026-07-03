@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783061537</title>
+<title>Morello — Proforma Generator v1783064778</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1923,6 +1923,7 @@ body {
     <button id="btn-clear" class="btn btn-outline btn-sm" onclick="clearOrder()">🗑 Clear</button>
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
+    <button class="btn btn-outline btn-sm" onclick="shareProformaLink()" title="Müşteriye gönderilecek web-proforma linki oluştur ve kopyala" style="background:linear-gradient(135deg,#0E7B5A,#16A374);border-color:#0E7B5A;color:#fff;">🔗 Link</button>
     <button class="btn btn-outline btn-sm" onclick="showPackingList()">📋 Packing List</button>
     <button class="btn btn-outline btn-sm" onclick="showCI()">💼 C.Invoice</button>
     <button class="btn btn-outline btn-sm" onclick="showCeki()">📄 Çeki</button>
@@ -2200,6 +2201,7 @@ body {
         </div>
         <div class="card-body">
           <div class="report-grid" id="report-stats"></div>
+          <div id="report-funnel" style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:var(--r);"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
               <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🏆 En Çok Satan Ürünler</div>
@@ -5248,13 +5250,14 @@ function renderHistory() {
           <span class="hist-pi">${h.pi}</span>
           ${isTrashView ? '' : '<button class="status-badge '+stCls+'" onclick="cycleStatus('+realIdx+',event)">'+(h.status||'Draft')+'</button>'}
         </div>
-        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''}</div>
+        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span></div>
       </div>
       <div class="hist-total">${h.total}</div>
       <div class="hist-actions">${actionsHtml}</div>`;
     ul.appendChild(row);
   });
   list.appendChild(ul);
+  refreshViewBadges();
 }
 
 function loadHistory(i) {
@@ -5903,6 +5906,118 @@ function clearShipDraft() {
   SHIP_FIELD_IDS.forEach(function(id){ const el=document.getElementById(id); if(el) el.value = (id==='ship-partial' ? 'Not Allowed' : ''); });
   try { localStorage.removeItem('morello_ship_draft'); } catch(e){}
 }
+// ============================================================
+// SHAREABLE WEB PROFORMA LINK + VIEW TRACKING
+// ============================================================
+function buildShareLink() {
+  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return null; }
+  const payload = {
+    pi:     document.getElementById('piNumber')?.value || '',
+    date:   document.getElementById('pfDate')?.value || '',
+    buyer:  document.getElementById('buyerCompany')?.value || '',
+    country:document.getElementById('buyerCountry')?.value || '',
+    cur:    currency,
+    lang:   document.getElementById('pfLang')?.value || 'en',
+    term:   document.getElementById('pfPriceTerm')?.value || '',
+    pay:    document.getElementById('pfPayment')?.value || '',
+    lead:   document.getElementById('pfLeadTime')?.value || '',
+    valid:  document.getElementById('pfValidity')?.value || '',
+    wph:    '902247141303',
+    items:  orderItems.map(function(i){ return { id:i.id, n:i.name, q:i.qty, up:i.unitPrice, lp:i.listPrice }; })
+  };
+  const json = JSON.stringify(payload);
+  const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/view.html#'+b64;
+}
+
+function shareProformaLink() {
+  const link = buildShareLink();
+  if(!link) return;
+  navigator.clipboard.writeText(link).then(function(){
+    showToast('\ud83d\udd17 Link kopyaland\u0131! WhatsApp\'a yap\u0131\u015ft\u0131rabilirsin');
+  }).catch(function(){
+    prompt('Linki kopyala:', link);
+  });
+}
+
+function shareProformaLinkWA() {
+  const link = buildShareLink();
+  if(!link) return;
+  const pi = document.getElementById('piNumber')?.value || '';
+  const phone = (document.getElementById('buyerPhone')?.value || '').replace(/[^0-9]/g,'');
+  const msg = encodeURIComponent('Merhaba,\n\n*'+pi+'* numaral\u0131 proforman\u0131z\u0131 a\u015fa\u011f\u0131daki linkten inceleyebilirsiniz:\n\n'+link+'\n\nSorular\u0131n\u0131z i\u00e7in bu mesaj\u0131 yan\u0131tlayabilirsiniz.');
+  window.open('https://wa.me/'+(phone||'')+'?text='+msg, '_blank');
+}
+
+let viewCountsCache = null;
+async function fetchViewCounts() {
+  try {
+    const rows = await supaFetch('/rest/v1/proforma_views?select=pi&limit=1000');
+    if(!Array.isArray(rows)) return {};
+    const counts = {};
+    rows.forEach(function(r){ if(r.pi) counts[r.pi] = (counts[r.pi]||0)+1; });
+    viewCountsCache = counts;
+    return counts;
+  } catch(e) { return {}; }
+}
+
+async function refreshViewBadges() {
+  const counts = await fetchViewCounts();
+  document.querySelectorAll('[data-view-pi]').forEach(function(el){
+    const n = counts[el.dataset.viewPi] || 0;
+    el.textContent = n > 0 ? '\ud83d\udc41 '+n : '';
+    el.title = n > 0 ? n+' kez g\u00f6r\u00fcnt\u00fclendi' : '';
+  });
+}
+
+// ============================================================
+// CONVERSION FUNNEL (Reports tab)
+// ============================================================
+function renderFunnel(hist) {
+  const el = document.getElementById('report-funnel');
+  if(!el) return;
+  const stages = ['Draft','Sent','Confirmed','Production','Shipped'];
+  const stageColors = ['#9CA3AF','#60A5FA','#34D399','#FBBF24','#A78BFA'];
+  const counts = {}, values = {};
+  stages.forEach(function(s){ counts[s]=0; values[s]=0; });
+  hist.forEach(function(h){
+    if(h.trashed) return;
+    const st = h.status || 'Draft';
+    if(counts[st] === undefined) return;
+    counts[st]++;
+    const num = parseFloat(String(h.total).replace(/[^0-9.]/g,'')) || 0;
+    values[st] += num;
+  });
+  const reach = {};
+  let running = 0;
+  for(let i = stages.length-1; i >= 0; i--) { running += counts[stages[i]]; reach[stages[i]] = running; }
+  const totalPIs = reach['Draft'] || 1;
+  const confirmedPlus = reach['Confirmed'] || 0;
+  const sentPlus = reach['Sent'] || 0;
+  const convRate = sentPlus > 0 ? (confirmedPlus / sentPlus * 100).toFixed(0) : '\u2014';
+
+  let bars = '';
+  stages.forEach(function(s, i){
+    const pct = Math.max(4, reach[s] / totalPIs * 100);
+    bars += '<div style="margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:3px;">'
+        + '<span style="font-weight:600;color:var(--text);">'+s+'</span>'
+        + '<span style="color:var(--muted);">'+reach[s]+' PI \u00b7 '+counts[s]+' \u015fu an</span>'
+      + '</div>'
+      + '<div style="height:18px;background:var(--surface2);border-radius:9px;overflow:hidden;">'
+        + '<div style="height:100%;width:'+pct.toFixed(1)+'%;background:'+stageColors[i]+';border-radius:9px;transition:width .5s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:9px;font-weight:700;">'+(reach[s]>0?Math.round(reach[s]/totalPIs*100)+'%':'')+'</div>'
+      + '</div></div>';
+  });
+
+  el.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">\ud83d\udd3b D\u00f6n\u00fc\u015f\u00fcm Hunisi</div>'
+    + bars
+    + '<div style="display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">'
+      + '<div style="flex:1;text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--gold);">'+convRate+'%</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Sent \u2192 Confirmed</div></div>'
+      + '<div style="flex:1;text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--accent);">'+totalPIs+'</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Toplam PI</div></div>'
+      + '<div style="flex:1;text-align:center;"><div style="font-size:20px;font-weight:800;color:#A78BFA;">'+(reach['Shipped']||0)+'</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Sevk Edildi</div></div>'
+    + '</div>';
+}
+
 function buildShipInfoBoxHtml() {
   const s = getShipBlock();
   const rows = [
@@ -6339,6 +6454,7 @@ function filterHistByPeriod(hist,period) { if(period==='all') return hist; const
 function parseAmount(s) { return parseFloat((s||'').replace(/[^0-9.]/g,''))||0; }
 function renderReport(period) {
   const hist=filterHistByPeriod(getHistory(),period||reportPeriod);
+  renderFunnel(hist);
   const se=document.getElementById('report-stats'); if(!se) return;
   const total=hist.reduce((s,h)=>s+parseAmount(h.total),0); const avg=hist.length?total/hist.length:0;
   const cur=(hist[0]?.currency)||'EUR'; const sym=cur==='TRY'?'\u20ba':cur==='EUR'?'\u20ac':'$';
