@@ -63,6 +63,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .cta-total .val { font-size: 18px; font-weight: 800; color: var(--cherry); }
 .cta-btn { flex-shrink: 0; display: flex; align-items: center; gap: 7px; background: #25D366; color: #fff; border: none; padding: 12px 18px; border-radius: 26px; font-size: 13.5px; font-weight: 700; cursor: pointer; text-decoration: none; }
 .cta-btn:active { transform: scale(.97); }
+.cta-approve { background: var(--cherry); }
+.cta-approve:disabled { background: #A8A29C; cursor: default; }
+
+/* Approval modal */
+.appr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; align-items: flex-end; justify-content: center; }
+.appr-overlay.open { display: flex; }
+.appr-sheet { background: #fff; width: 100%; max-width: 560px; border-radius: 20px 20px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); }
+.appr-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+.appr-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.appr-inp { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-family: inherit; outline: none; margin-bottom: 12px; }
+.appr-inp:focus { border-color: var(--gold); }
+.appr-btn { width: 100%; padding: 14px; background: var(--cherry); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.appr-btn:disabled { background: #A8A29C; }
+.appr-cancel { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: none; font-size: 13px; margin-top: 6px; cursor: pointer; }
+.appr-done { text-align: center; padding: 12px 0; }
+.appr-done .big { font-size: 44px; margin-bottom: 10px; }
+.appr-done .msg { font-size: 15px; font-weight: 700; color: #059669; }
+.appr-done .sm { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
 .err-wrap { padding: 60px 24px; text-align: center; color: var(--muted); }
 .err-wrap .ei { font-size: 44px; margin-bottom: 14px; opacity: .4; }
@@ -86,10 +104,10 @@ const SUPA_URL = 'https://etwanruohujctvkjvxzw.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d2FucnVvaHVqY3R2a2p2eHp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA0NzAsImV4cCI6MjA5Nzc4NjQ3MH0.aErGOAe7s7Ge5Nq5tRXi0EhOOU23EpCC4cCpth_oPsU';
 
 const T = {
-  en: { items:'Products', terms:'Terms', totals:'Summary', listTotal:'List Total', discount:'Discount', grand:'GRAND TOTAL', deposit:'Deposit (30%)', balance:'Balance (70%)', validUntil:'Validity', payment:'Payment', delivery:'Price Term', leadTime:'Lead Time', ask:'Ask a Question', prepared:'This proforma invoice was prepared by Morello Mobilya — Inegol / Bursa / Turkiye', qty:'pcs', unit:'unit', buyer:'Prepared for' },
-  tr: { items:'Ürünler', terms:'Şartlar', totals:'Özet', listTotal:'Liste Toplamı', discount:'İndirim', grand:'GENEL TOPLAM', deposit:'Kapora (30%)', balance:'Bakiye (70%)', validUntil:'Geçerlilik', payment:'Ödeme', delivery:'Teslim Şekli', leadTime:'Termin', ask:'Soru Sor', prepared:'Bu proforma fatura Morello Mobilya tarafından hazırlanmıştır — İnegöl / Bursa / Türkiye', qty:'adet', unit:'birim', buyer:'Sayın' },
-  fr: { items:'Produits', terms:'Conditions', totals:'Résumé', listTotal:'Total Liste', discount:'Remise', grand:'TOTAL GÉNÉRAL', deposit:'Acompte (30%)', balance:'Solde (70%)', validUntil:'Validité', payment:'Paiement', delivery:'Incoterm', leadTime:'Délai', ask:'Poser une Question', prepared:'Cette facture proforma a été préparée par Morello Mobilya — Inegol / Bursa / Turquie', qty:'pcs', unit:'unité', buyer:'Préparé pour' },
-  ar: { items:'المنتجات', terms:'الشروط', totals:'الملخص', listTotal:'إجمالي القائمة', discount:'خصم', grand:'الإجمالي الكلي', deposit:'دفعة مقدمة (30%)', balance:'الرصيد (70%)', validUntil:'الصلاحية', payment:'الدفع', delivery:'شرط التسليم', leadTime:'مدة التسليم', ask:'اطرح سؤالاً', prepared:'تم إعداد هذه الفاتورة الأولية من قبل موريلو موبيليا — إينегول / بورصة / تركيا', qty:'قطعة', unit:'وحدة', buyer:'مُعد لـ' }
+  en: { items:'Products', terms:'Terms', totals:'Summary', listTotal:'List Total', discount:'Discount', grand:'GRAND TOTAL', deposit:'Deposit (30%)', balance:'Balance (70%)', validUntil:'Validity', payment:'Payment', delivery:'Price Term', leadTime:'Lead Time', ask:'Ask a Question', prepared:'This proforma invoice was prepared by Morello Mobilya — Inegol / Bursa / Turkiye', qty:'pcs', unit:'unit', buyer:'Prepared for', approve:'Approve', apprTitle:'Approve this Proforma', apprSub:'By entering your name and confirming, you indicate acceptance of this proforma invoice and its terms.', apprName:'Your full name', apprConfirm:'Confirm Approval', apprCancel:'Cancel', apprDoneMsg:'Proforma Approved', apprDoneSub:'Thank you! The seller has been notified.', approved:'Approved' },
+  tr: { items:'Ürünler', terms:'Şartlar', totals:'Özet', listTotal:'Liste Toplamı', discount:'İndirim', grand:'GENEL TOPLAM', deposit:'Kapora (30%)', balance:'Bakiye (70%)', validUntil:'Geçerlilik', payment:'Ödeme', delivery:'Teslim Şekli', leadTime:'Termin', ask:'Soru Sor', prepared:'Bu proforma fatura Morello Mobilya tarafından hazırlanmıştır — İnegöl / Bursa / Türkiye', qty:'adet', unit:'birim', buyer:'Sayın', approve:'Onayla', apprTitle:'Proformayı Onayla', apprSub:'Adınızı yazıp onayladığınızda bu proforma faturayı ve şartlarını kabul etmiş sayılırsınız.', apprName:'Ad Soyad', apprConfirm:'Onayı Gönder', apprCancel:'Vazgeç', apprDoneMsg:'Proforma Onaylandı', apprDoneSub:'Teşekkürler! Satıcıya bildirim iletildi.', approved:'Onaylandı' },
+  fr: { items:'Produits', terms:'Conditions', totals:'Résumé', listTotal:'Total Liste', discount:'Remise', grand:'TOTAL GÉNÉRAL', deposit:'Acompte (30%)', balance:'Solde (70%)', validUntil:'Validité', payment:'Paiement', delivery:'Incoterm', leadTime:'Délai', ask:'Poser une Question', prepared:'Cette facture proforma a été préparée par Morello Mobilya — Inegol / Bursa / Turquie', qty:'pcs', unit:'unité', buyer:'Préparé pour', approve:'Approuver', apprTitle:'Approuver cette Proforma', apprSub:'En saisissant votre nom et en confirmant, vous acceptez cette facture proforma et ses conditions.', apprName:'Votre nom complet', apprConfirm:'Confirmer', apprCancel:'Annuler', apprDoneMsg:'Proforma Approuvée', apprDoneSub:'Merci ! Le vendeur a été notifié.', approved:'Approuvée' },
+  ar: { items:'المنتجات', terms:'الشروط', totals:'الملخص', listTotal:'إجمالي القائمة', discount:'خصم', grand:'الإجمالي الكلي', deposit:'دفعة مقدمة (30%)', balance:'الرصيد (70%)', validUntil:'الصلاحية', payment:'الدفع', delivery:'شرط التسليم', leadTime:'مدة التسليم', ask:'اطرح سؤالاً', prepared:'تم إعداد هذه الفاتورة الأولية من قبل موريلو موبيليا — إينегول / بورصة / تركيا', qty:'قطعة', unit:'وحدة', buyer:'مُعد لـ', approve:'الموافقة', apprTitle:'الموافقة على الفاتورة الأولية', apprSub:'بإدخال اسمك والتأكيد، فإنك تشير إلى قبول هذه الفاتورة الأولية وشروطها.', apprName:'الاسم الكامل', apprConfirm:'تأكيد الموافقة', apprCancel:'إلغاء', apprDoneMsg:'تمت الموافقة', apprDoneSub:'شكراً! تم إخطار البائع.', approved:'تمت الموافقة' }
 };
 
 function decodePayload() {
@@ -113,6 +131,7 @@ function trackView(pi, buyer) {
 
 function render() {
   const d = decodePayload();
+  PAYLOAD_CACHE = d;
   const app = document.getElementById('app');
   if(!d || !d.items || !d.items.length) {
     app.innerHTML = '<div class="err-wrap"><div class="ei">📄</div>Proforma bulunamadı veya link hatalı.<br>Lütfen size gönderilen linki kontrol edin.</div>';
@@ -172,13 +191,69 @@ function render() {
     + '<div class="footer-note">'+t.prepared+'</div>'
     + '<div class="sticky-cta">'
       + '<div class="cta-total"><div class="lbl">'+t.grand+'</div><div class="val">'+sym+grand.toFixed(2)+'</div></div>'
-      + '<a class="cta-btn" href="'+waHref+'" target="_blank" rel="noopener">'
+      + '<button class="cta-btn cta-approve" id="approve-btn" onclick="openApprove()">✓ '+t.approve+'</button>'
+      + '<a class="cta-btn" href="'+waHref+'" target="_blank" rel="noopener" title="'+t.ask+'">'
         + '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'
-        + t.ask
       + '</a>'
+    + '</div>'
+    + '<div class="appr-overlay" id="appr-overlay">'
+      + '<div class="appr-sheet" id="appr-sheet">'
+        + '<div class="appr-title">'+t.apprTitle+'</div>'
+        + '<div class="appr-sub">'+t.apprSub+'</div>'
+        + '<input class="appr-inp" id="appr-name" type="text" placeholder="'+t.apprName+'" autocomplete="name">'
+        + '<button class="appr-btn" id="appr-submit" onclick="submitApprove()">'+t.apprConfirm+'</button>'
+        + '<button class="appr-cancel" onclick="closeApprove()">'+t.apprCancel+'</button>'
+      + '</div>'
     + '</div>';
 
   trackView(d.pi, d.buyer);
+  checkAlreadyApproved(d.pi);
+}
+
+let PAYLOAD_CACHE = null;
+function openApprove() { document.getElementById('appr-overlay').classList.add('open'); setTimeout(function(){ document.getElementById('appr-name').focus(); }, 150); }
+function closeApprove() { document.getElementById('appr-overlay').classList.remove('open'); }
+
+function submitApprove() {
+  const d = PAYLOAD_CACHE || decodePayload();
+  const t = T[d.lang] || T.en;
+  const name = document.getElementById('appr-name').value.trim();
+  if(!name || name.length < 3) { document.getElementById('appr-name').style.borderColor = '#DC2626'; return; }
+  const btn = document.getElementById('appr-submit');
+  btn.disabled = true; btn.textContent = '…';
+  const grand = d.items.reduce(function(s,i){ return s + i.up*i.q; }, 0);
+  fetch(SUPA_URL + '/rest/v1/proforma_approvals', {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ pi: d.pi, buyer: d.buyer || null, approver_name: name, total: grand.toFixed(2)+' '+d.cur, ua: navigator.userAgent.slice(0,180) })
+  }).then(function(r){
+    if(!r.ok) throw new Error('insert failed');
+    document.getElementById('appr-sheet').innerHTML = '<div class="appr-done"><div class="big">✅</div><div class="msg">'+t.apprDoneMsg+'</div><div class="sm">'+t.apprDoneSub+'</div></div>';
+    markApproved(t);
+    try { localStorage.setItem('appr_'+d.pi, name); } catch(e) {}
+    setTimeout(closeApprove, 2600);
+  }).catch(function(){
+    btn.disabled = false; btn.textContent = t.apprConfirm;
+    alert('Connection error — please try again / Bağlantı hatası — tekrar deneyin');
+  });
+}
+
+function markApproved(t) {
+  const b = document.getElementById('approve-btn');
+  if(b) { b.disabled = true; b.textContent = '✓ '+t.approved; }
+}
+
+function checkAlreadyApproved(pi) {
+  const d = PAYLOAD_CACHE || decodePayload();
+  const t = T[(d&&d.lang)] || T.en;
+  // local check (same device)
+  try { if(localStorage.getItem('appr_'+pi)) { markApproved(t); return; } } catch(e) {}
+  // remote check
+  fetch(SUPA_URL + '/rest/v1/proforma_approvals?pi=eq.'+encodeURIComponent(pi)+'&select=id&limit=1', {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
+  }).then(function(r){ return r.json(); }).then(function(rows){
+    if(Array.isArray(rows) && rows.length) markApproved(t);
+  }).catch(function(){});
 }
 
 function esc(s) { return String(s||'').replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
