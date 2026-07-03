@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783081735</title>
+<title>Morello — Proforma Generator v1783082608</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1921,6 +1921,8 @@ body {
     <button id="btn-logout" onclick="doLogout()" style="display:none;padding:2px 10px;font-size:10px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;color:#fff;cursor:pointer;">⎋ Çıkış</button>
     <button class="btn btn-outline btn-sm" onclick="showImport()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-color:#5B21B6;color:#fff;">🤖 Import</button>
     <button id="btn-clear" class="btn btn-outline btn-sm" onclick="clearOrder()">🗑 Clear</button>
+    <button class="btn btn-outline btn-sm" onclick="showTemplates()" title="Kayıtlı sipariş şablonları">📐 Şablonlar</button>
+    <button class="btn btn-outline btn-sm" onclick="saveAsTemplate()" title="Mevcut siparişi şablon olarak kaydet">📐+</button>
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
     <button class="btn btn-outline btn-sm" onclick="shareProformaLink()" title="Müşteriye gönderilecek web-proforma linki oluştur ve kopyala" style="background:linear-gradient(135deg,#0E7B5A,#16A374);border-color:#0E7B5A;color:#fff;">🔗 Link</button>
@@ -2683,7 +2685,10 @@ Snejana Raleva - 1 adet Istanbul Gardolap"></textarea>
         <div class="cdm-name" id="cdm-name">—</div>
         <div class="cdm-meta" id="cdm-meta">—</div>
       </div>
-      <button class="cdm-close" onclick="closeCustDetail()">×</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="copyPortalLink(document.getElementById('cdm-name').textContent)" title="Müşterinin tüm proformalarını içeren portal linki oluştur ve kopyala">🏠 Portal Linki</button>
+        <button class="cdm-close" onclick="closeCustDetail()">×</button>
+      </div>
     </div>
     <div class="cdm-body">
       <div class="cdm-stats" id="cdm-stats"></div>
@@ -5261,9 +5266,10 @@ function renderHistory() {
     const stLabels=['Draft','Sent','Confirmed','Production','Shipped'];
     const stIdx=stLabels.indexOf(h.status||'Draft');
     const stCls=stClass[stIdx>=0?stIdx:0];
+    const canDeposit = !isTrashView && (h.approval || ['Confirmed','Production','Shipped'].includes(h.status));
     const actionsHtml = isTrashView
       ? '<button class="hist-load-btn" onclick="restoreHistory('+realIdx+')">♻ Geri Al</button><button class="hist-del-btn" onclick="permanentlyDeleteHistory('+realIdx+')">Kalıcı Sil</button>'
-      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
+      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button>'+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
     row.innerHTML=`
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -5650,6 +5656,7 @@ function showPrint() {
       +'<div><div class="pf-title"'+(isRTL?' dir="rtl"':'')+'>'+t.title+'</div>'
         +'<div class="pf-title-meta">PI NO: <strong>'+pi+'</strong></div>'
         +'<div class="pf-title-meta">'+pfDate+'</div>'
+        +buildQRHtml()
       +'</div>'
     +'</div>'
     +'<div class="pf-parties">'
@@ -5929,6 +5936,52 @@ function clearShipDraft() {
 // ============================================================
 // SHAREABLE WEB PROFORMA LINK + VIEW TRACKING
 // ============================================================
+// Fabric/color options shown to customer on web proforma.
+// Fill when fabric photos+codes are ready: {code:'ANT-01', name:'Antrasit', hex:'#3A3A3C'} or {code:'..', name:'..', img:'https://...jpg'}
+const FABRIC_OPTIONS = [];
+
+function computeExpiryDate() {
+  // Parse "30 Days" style validity into a concrete date from the PI date
+  const validity = document.getElementById('pfValidity')?.value || '';
+  const m = validity.match(/(\d+)/);
+  if(!m) return undefined;
+  const days = parseInt(m[1]);
+  if(!days || days > 365) return undefined;
+  const base = document.getElementById('pfDate')?.value ? new Date(document.getElementById('pfDate').value) : new Date();
+  base.setDate(base.getDate() + days);
+  return base.toISOString().split('T')[0];
+}
+
+function buildQRHtml() {
+  const link = buildShareLinkSilent();
+  if(!link) return '';
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=90x90&margin=1&data='+encodeURIComponent(link);
+  return '<div style="margin-top:8px;text-align:right;"><img src="'+qrUrl+'" width="72" height="72" style="border:1px solid #E5E5E5;border-radius:4px;" alt="QR"><div style="font-size:6.5px;color:#999;margin-top:2px;letter-spacing:.5px;">SCAN FOR ONLINE VERSION</div></div>';
+}
+
+function buildShareLinkSilent() {
+  // Same as buildShareLink but without toast (safe inside doc builders)
+  if(!orderItems.length) return null;
+  try {
+    const payload = {
+      pi: document.getElementById('piNumber')?.value || '',
+      date: document.getElementById('pfDate')?.value || '',
+      buyer: document.getElementById('buyerCompany')?.value || '',
+      country: document.getElementById('buyerCountry')?.value || '',
+      cur: currency, lang: document.getElementById('pfLang')?.value || 'en',
+      term: document.getElementById('pfPriceTerm')?.value || '',
+      pay: document.getElementById('pfPayment')?.value || '',
+      lead: document.getElementById('pfLeadTime')?.value || '',
+      valid: document.getElementById('pfValidity')?.value || '',
+      wph: '902247141303',
+      exp: computeExpiryDate(),
+      fab: (typeof FABRIC_OPTIONS !== 'undefined' && FABRIC_OPTIONS.length) ? FABRIC_OPTIONS : undefined,
+      items: orderItems.map(function(i){ return { id:i.id, n:i.name, q:i.qty, up:i.unitPrice, lp:i.listPrice }; })
+    };
+    return 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/view.html#'+btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  } catch(e) { return null; }
+}
+
 function buildShareLink() {
   if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return null; }
   const payload = {
@@ -5943,6 +5996,8 @@ function buildShareLink() {
     lead:   document.getElementById('pfLeadTime')?.value || '',
     valid:  document.getElementById('pfValidity')?.value || '',
     wph:    '902247141303',
+    exp:    computeExpiryDate(),
+    fab:    (typeof FABRIC_OPTIONS !== 'undefined' && FABRIC_OPTIONS.length) ? FABRIC_OPTIONS : undefined,
     items:  orderItems.map(function(i){ return { id:i.id, n:i.name, q:i.qty, up:i.unitPrice, lp:i.listPrice }; })
   };
   const json = JSON.stringify(payload);
@@ -6057,7 +6112,7 @@ let approvalsSyncedOnce = false;
 async function syncApprovals() {
   let rows = [];
   try {
-    rows = await supaFetch('/rest/v1/proforma_approvals?select=pi,approver_name,created_at&order=created_at.desc&limit=200');
+    rows = await supaFetch('/rest/v1/proforma_approvals?select=pi,approver_name,created_at,selections&order=created_at.desc&limit=200');
   } catch(e) { return; }
   if(!Array.isArray(rows) || !rows.length) return;
   const approvedPIs = {};
@@ -6069,7 +6124,7 @@ async function syncApprovals() {
     const appr = approvedPIs[h.pi];
     if(!appr) return;
     if(!h.approval) {
-      h.approval = { name: appr.approver_name, at: appr.created_at };
+      h.approval = { name: appr.approver_name, at: appr.created_at, selections: appr.selections||null };
       if(h.status==='Draft' || h.status==='Sent' || !h.status) h.status = 'Confirmed';
       newApprovals.push(h.pi);
     }
@@ -6081,6 +6136,143 @@ async function syncApprovals() {
     if(histTab && histTab.classList.contains('active')) setTimeout(renderHistory, 100);
   }
   approvalsSyncedOnce = true;
+}
+
+// ============================================================
+// DEPOSIT INVOICE (auto after approval)
+// ============================================================
+function showDepositInvoice(histIdx) {
+  const h = getHistory()[histIdx];
+  if(!h) return;
+  const sym = h.currency==='TRY'?'\u20ba':h.currency==='EUR'?'\u20ac':'$';
+  const totalNum = parseFloat(String(h.total).replace(/[^0-9.]/g,'')) || 0;
+  const deposit = totalNum * 0.30;
+  const balance = totalNum - deposit;
+  const today = new Date().toLocaleDateString('en-GB');
+  const apprLine = h.approval ? '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:10.5px;color:#065F46;">\u2713 Approved by <strong>'+h.approval.name+'</strong> on '+new Date(h.approval.at).toLocaleString('en-GB')+'</div>' : '';
+
+  const itemRows = (h.items||[]).map(function(it, i){
+    return '<tr><td style="padding:6px 8px;border-bottom:1px solid #EBEBEB;">'+(i+1)+'</td><td style="padding:6px 8px;border-bottom:1px solid #EBEBEB;">'+it.name+'</td><td style="padding:6px 8px;border-bottom:1px solid #EBEBEB;text-align:center;">'+it.qty+'</td><td style="padding:6px 8px;border-bottom:1px solid #EBEBEB;text-align:right;">'+sym+(it.unitPrice*it.qty).toFixed(2)+'</td></tr>';
+  }).join('');
+
+  const html = '<div style="max-width:700px;margin:0 auto;padding:36px;background:#fff;color:#222;font-family:-apple-system,Segoe UI,sans-serif;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px;">'
+      +'<div><div style="font-family:Georgia,serif;font-size:24px;font-weight:700;letter-spacing:4px;">M<span style="color:#B8935A;">O</span>RELLO</div><div style="font-size:8px;letter-spacing:2px;color:#999;text-transform:uppercase;">mobilya \u00b7 furniture</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:16px;font-weight:800;color:#74113D;">DEPOSIT INVOICE</div><div style="font-size:10px;color:#666;margin-top:4px;">Ref: '+h.pi+'-DEP<br>Date: '+today+'</div></div>'
+    +'</div>'
+    +apprLine
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;font-size:10.5px;">'
+      +'<div><div style="font-size:8px;font-weight:700;letter-spacing:1px;color:#999;text-transform:uppercase;margin-bottom:4px;">Seller</div>SELINA MOBILYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.<br>Yenicek\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / Bursa</div>'
+      +'<div><div style="font-size:8px;font-weight:700;letter-spacing:1px;color:#999;text-transform:uppercase;margin-bottom:4px;">Buyer</div>'+(h.buyer_data?.company||h.buyer||'')+'<br>'+(h.buyer_data?.country||'')+'</div>'
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:18px;"><thead><tr style="background:#F5F5F5;"><th style="padding:6px 8px;text-align:left;width:24px;">#</th><th style="padding:6px 8px;text-align:left;">Product</th><th style="padding:6px 8px;text-align:center;">Qty</th><th style="padding:6px 8px;text-align:right;">Total</th></tr></thead><tbody>'+itemRows+'</tbody></table>'
+    +'<div style="display:flex;justify-content:flex-end;"><div style="width:300px;font-size:11px;">'
+      +'<div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid #EBEBEB;"><span>Order Total ('+h.pi+')</span><span>'+sym+totalNum.toFixed(2)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:9px 12px;background:#74113D;color:#fff;font-weight:800;font-size:13px;"><span>DEPOSIT DUE (30%)</span><span>'+sym+deposit.toFixed(2)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:7px 12px;color:#888;"><span>Balance before loading (70%)</span><span>'+sym+balance.toFixed(2)+'</span></div>'
+    +'</div></div>'
+    +'<div style="margin-top:22px;padding:12px 16px;background:#F8F8F8;border:1px solid #E5E5E5;border-radius:6px;font-size:10px;line-height:1.7;">'
+      +'<div style="font-size:8px;font-weight:700;letter-spacing:1px;color:#999;text-transform:uppercase;margin-bottom:5px;">Payment Instructions</div>'
+      +'Please transfer the deposit amount referencing <strong>'+h.pi+'</strong> to the bank account stated on the proforma invoice. Production begins upon receipt of deposit.'
+    +'</div>'
+    +'<div style="margin-top:26px;text-align:center;font-size:8.5px;color:#AAA;">This document was generated automatically upon customer approval \u00b7 Morello Mobilya Export Department</div>'
+  +'</div>';
+
+  document.getElementById('all-docs-print').innerHTML = '<div class="all-docs-page">'+html+'</div>';
+  document.getElementById('all-docs-overlay').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// ORDER TEMPLATES
+// ============================================================
+function getTemplates() { try { return JSON.parse(localStorage.getItem('morello_templates')||'[]'); } catch(e){ return []; } }
+function saveTemplates(arr) { localStorage.setItem('morello_templates', JSON.stringify(arr)); }
+
+function saveAsTemplate() {
+  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
+  const name = prompt('\u015eablon ad\u0131 (\u00f6rn: "Ralica Standart Konteyner"):');
+  if(!name || !name.trim()) return;
+  const tpls = getTemplates();
+  tpls.push({ name: name.trim(), createdAt: new Date().toISOString(), currency: currency, items: orderItems.map(function(i){ return { id:i.id, qty:i.qty }; }) });
+  saveTemplates(tpls);
+  showToast('\ud83d\udcd0 \u015eablon kaydedildi: '+name.trim());
+}
+
+function showTemplates() {
+  const tpls = getTemplates();
+  const modal = document.createElement('div');
+  modal.id = 'tpl-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10700;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  const rows = tpls.length ? tpls.map(function(t, i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border-light);">'
+      +'<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--text);">'+t.name+'</div><div style="font-size:10px;color:var(--muted);">'+t.items.length+' kalem \u00b7 '+t.currency+' \u00b7 '+new Date(t.createdAt).toLocaleDateString('tr-TR')+'</div></div>'
+      +'<button class="hist-load-btn" onclick="loadTemplate('+i+')">Y\u00fckle</button>'
+      +'<button class="hist-del-btn" onclick="deleteTemplate('+i+')">\u00d7</button></div>';
+  }).join('') : '<div style="padding:24px;text-align:center;color:var(--muted);font-size:11.5px;">Hen\u00fcz \u015fablon yok.<br>Sipari\u015fi olu\u015fturup "\u015eablon Kaydet" ile ba\u015flayabilirsin.</div>';
+  modal.innerHTML = '<div style="background:var(--surface);border-radius:var(--r);width:380px;max-width:92vw;max-height:70vh;overflow-y:auto;box-shadow:var(--shadow-lg);">'
+    +'<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--text);">\ud83d\udcd0 Sipari\u015f \u015eablonlar\u0131</div>'
+      +'<button onclick="document.getElementById(\'tpl-modal\').remove()" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--muted);">\u00d7</button></div>'
+    +rows+'</div>';
+  document.body.appendChild(modal);
+}
+
+function loadTemplate(i) {
+  const t = getTemplates()[i]; if(!t) return;
+  if(orderItems.length && !confirm('Mevcut sipari\u015f satırlar\u0131n\u0131n \u00fczerine \u015fablon eklensin mi? (\u0130ptal = vazge\u00e7)')) return;
+  let added = 0, skipped = 0;
+  t.items.forEach(function(ti){
+    const cat = findItem(ti.id);
+    if(!cat) { skipped++; return; }
+    const lp = getP(cat);
+    if(lp == null) { skipped++; return; }
+    orderItems.push({ id:ti.id, name:cat.name, listPrice:lp, unitPrice:lp, qty:ti.qty||1, cbm:CBM_DATA[ti.id]||0, bundled:cat.bundled||false, note:'', endCustomer:'' });
+    added++;
+  });
+  renderOrder(); showTab('order');
+  const m = document.getElementById('tpl-modal'); if(m) m.remove();
+  showToast('\ud83d\udcd0 '+t.name+': '+added+' kalem y\u00fcklendi'+(skipped?' \u00b7 '+skipped+' atland\u0131':''));
+}
+
+function deleteTemplate(i) {
+  if(!confirm('\u015eablon silinsin mi?')) return;
+  const tpls = getTemplates(); tpls.splice(i,1); saveTemplates(tpls);
+  const m = document.getElementById('tpl-modal'); if(m) m.remove();
+  showTemplates();
+}
+
+// ============================================================
+// CUSTOMER PORTAL LINK
+// ============================================================
+function buildPortalLink(companyName) {
+  const hist = getHistory().filter(function(h){
+    if(h.trashed) return false;
+    const b = (h.buyer||'').toLowerCase(), n = (companyName||'').toLowerCase();
+    return b.includes(n.slice(0,10)) || n.includes(b.slice(0,10));
+  });
+  if(!hist.length) { showToast('Bu m\u00fc\u015fteriye ait proforma yok'); return null; }
+  const list = hist.map(function(h){
+    // Rebuild individual share link from stored data
+    const payload = {
+      pi: h.pi, date: (h.settings?.date)||h.date, buyer: h.buyer_data?.company||h.buyer, country: h.buyer_data?.country||'',
+      cur: h.currency, lang: 'en', term: h.settings?.priceTerm||'', pay: h.settings?.payment||'', lead: h.settings?.leadTime||'',
+      valid: h.settings?.validity||'', wph: '902247141303',
+      items: (h.items||[]).map(function(i){ return { id:i.id, n:i.name, q:i.qty, up:i.unitPrice, lp:i.listPrice }; })
+    };
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    return { pi: h.pi, date: h.date, total: h.total, status: h.status||'Draft', link: 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/view.html#'+b64 };
+  });
+  const portalPayload = { customer: companyName, generated: new Date().toISOString().split('T')[0], pis: list };
+  const b64p = btoa(unescape(encodeURIComponent(JSON.stringify(portalPayload)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/portal.html#'+b64p;
+}
+
+function copyPortalLink(companyName) {
+  const link = buildPortalLink(companyName);
+  if(!link) return;
+  navigator.clipboard.writeText(link).then(function(){ showToast('\ud83c\udfe0 Portal linki kopyaland\u0131: '+companyName); }).catch(function(){ prompt('Linki kopyala:', link); });
 }
 
 // ============================================================
