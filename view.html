@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Morello Mobilya — Proforma</title>
+<style>
+:root {
+  --cherry: #74113D;
+  --gold: #B8935A;
+  --gold-light: #F7F1E8;
+  --text: #2A2622;
+  --muted: #8A8479;
+  --border: #E8E2D8;
+  --bg: #FAF8F4;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 84px; }
+
+.hero { background: linear-gradient(160deg, #1F1B17 0%, #33291F 100%); color: #fff; padding: 28px 20px 24px; text-align: center; }
+.hero .logo { font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 700; letter-spacing: 6px; }
+.hero .logo span { color: var(--gold); }
+.hero .sub { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 3px; }
+.hero .pi-badge { display: inline-block; margin-top: 14px; background: rgba(184,147,90,.18); border: 1px solid rgba(184,147,90,.4); color: var(--gold); font-size: 12px; font-weight: 700; padding: 5px 16px; border-radius: 20px; letter-spacing: 1px; }
+.hero .date { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 8px; }
+
+.section { padding: 18px 16px; }
+.section-title { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+
+.buyer-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.buyer-name { font-size: 15px; font-weight: 700; }
+.buyer-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.item-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+.item-img-wrap { width: 100%; height: 150px; background: #F4F0E9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.item-img-wrap img { max-width: 90%; max-height: 90%; object-fit: contain; }
+.item-img-wrap .noimg { font-size: 40px; opacity: .3; }
+.item-body { padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.item-name { font-size: 13.5px; font-weight: 600; line-height: 1.35; flex: 1; }
+.item-meta { text-align: right; flex-shrink: 0; }
+.item-qty { font-size: 11px; color: var(--muted); }
+.item-price { font-size: 15px; font-weight: 700; color: var(--cherry); margin-top: 2px; }
+.item-unit { font-size: 10px; color: var(--muted); }
+
+.terms-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 4px 16px; }
+.term-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.term-row:last-child { border-bottom: none; }
+.term-row .k { color: var(--muted); }
+.term-row .v { font-weight: 600; text-align: right; }
+
+.totals-card { background: #fff; border: 1.5px solid var(--gold); border-radius: 14px; padding: 4px 16px; }
+.tot-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.tot-row:last-child { border-bottom: none; }
+.tot-row.grand { font-size: 17px; font-weight: 800; color: var(--cherry); }
+.tot-row .saving { color: #059669; }
+
+.footer-note { padding: 16px 20px 8px; text-align: center; font-size: 10.5px; color: var(--muted); line-height: 1.7; }
+
+.sticky-cta { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--border); padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; box-shadow: 0 -4px 20px rgba(0,0,0,.08); z-index: 100; }
+.cta-total { flex: 1; }
+.cta-total .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.cta-total .val { font-size: 18px; font-weight: 800; color: var(--cherry); }
+.cta-btn { flex-shrink: 0; display: flex; align-items: center; gap: 7px; background: #25D366; color: #fff; border: none; padding: 12px 18px; border-radius: 26px; font-size: 13.5px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.cta-btn:active { transform: scale(.97); }
+
+.err-wrap { padding: 60px 24px; text-align: center; color: var(--muted); }
+.err-wrap .ei { font-size: 44px; margin-bottom: 14px; opacity: .4; }
+
+@media (min-width: 640px) {
+  .content-wrap { max-width: 560px; margin: 0 auto; }
+  .sticky-cta { max-width: 560px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; border: 1px solid var(--border); border-bottom: none; }
+}
+</style>
+</head>
+<body>
+<div class="content-wrap" id="app">
+  <div class="err-wrap"><div class="ei">⏳</div>Yükleniyor…</div>
+</div>
+
+<script src="imgs.js"></script>
+<script>
+if(typeof IMGS === 'undefined') window.IMGS = {};
+
+const SUPA_URL = 'https://etwanruohujctvkjvxzw.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d2FucnVvaHVqY3R2a2p2eHp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA0NzAsImV4cCI6MjA5Nzc4NjQ3MH0.aErGOAe7s7Ge5Nq5tRXi0EhOOU23EpCC4cCpth_oPsU';
+
+const T = {
+  en: { items:'Products', terms:'Terms', totals:'Summary', listTotal:'List Total', discount:'Discount', grand:'GRAND TOTAL', deposit:'Deposit (30%)', balance:'Balance (70%)', validUntil:'Validity', payment:'Payment', delivery:'Price Term', leadTime:'Lead Time', ask:'Ask a Question', prepared:'This proforma invoice was prepared by Morello Mobilya — Inegol / Bursa / Turkiye', qty:'pcs', unit:'unit', buyer:'Prepared for' },
+  tr: { items:'Ürünler', terms:'Şartlar', totals:'Özet', listTotal:'Liste Toplamı', discount:'İndirim', grand:'GENEL TOPLAM', deposit:'Kapora (30%)', balance:'Bakiye (70%)', validUntil:'Geçerlilik', payment:'Ödeme', delivery:'Teslim Şekli', leadTime:'Termin', ask:'Soru Sor', prepared:'Bu proforma fatura Morello Mobilya tarafından hazırlanmıştır — İnegöl / Bursa / Türkiye', qty:'adet', unit:'birim', buyer:'Sayın' },
+  fr: { items:'Produits', terms:'Conditions', totals:'Résumé', listTotal:'Total Liste', discount:'Remise', grand:'TOTAL GÉNÉRAL', deposit:'Acompte (30%)', balance:'Solde (70%)', validUntil:'Validité', payment:'Paiement', delivery:'Incoterm', leadTime:'Délai', ask:'Poser une Question', prepared:'Cette facture proforma a été préparée par Morello Mobilya — Inegol / Bursa / Turquie', qty:'pcs', unit:'unité', buyer:'Préparé pour' },
+  ar: { items:'المنتجات', terms:'الشروط', totals:'الملخص', listTotal:'إجمالي القائمة', discount:'خصم', grand:'الإجمالي الكلي', deposit:'دفعة مقدمة (30%)', balance:'الرصيد (70%)', validUntil:'الصلاحية', payment:'الدفع', delivery:'شرط التسليم', leadTime:'مدة التسليم', ask:'اطرح سؤالاً', prepared:'تم إعداد هذه الفاتورة الأولية من قبل موريلو موبيليا — إينегول / بورصة / تركيا', qty:'قطعة', unit:'وحدة', buyer:'مُعد لـ' }
+};
+
+function decodePayload() {
+  try {
+    const hash = location.hash.slice(1);
+    if(!hash) return null;
+    const json = decodeURIComponent(escape(atob(hash.replace(/-/g,'+').replace(/_/g,'/'))));
+    return JSON.parse(json);
+  } catch(e) { console.error('decode fail', e); return null; }
+}
+
+function trackView(pi, buyer) {
+  try {
+    fetch(SUPA_URL + '/rest/v1/proforma_views', {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ pi: pi, buyer: buyer || null, ua: navigator.userAgent.slice(0,180) })
+    }).catch(function(){});
+  } catch(e) {}
+}
+
+function render() {
+  const d = decodePayload();
+  const app = document.getElementById('app');
+  if(!d || !d.items || !d.items.length) {
+    app.innerHTML = '<div class="err-wrap"><div class="ei">📄</div>Proforma bulunamadı veya link hatalı.<br>Lütfen size gönderilen linki kontrol edin.</div>';
+    return;
+  }
+
+  const t = T[d.lang] || T.en;
+  const isRTL = d.lang === 'ar';
+  if(isRTL) document.body.dir = 'rtl';
+  const sym = d.cur === 'TRY' ? '₺' : d.cur === 'EUR' ? '€' : '$';
+
+  const listTotal = d.items.reduce(function(s,i){ return s + i.lp*i.q; }, 0);
+  const grand = d.items.reduce(function(s,i){ return s + i.up*i.q; }, 0);
+  const saving = listTotal - grand;
+
+  let itemsHtml = '';
+  d.items.forEach(function(it) {
+    const img = IMGS[it.id];
+    itemsHtml += '<div class="item-card">'
+      + '<div class="item-img-wrap">' + (img ? '<img src="'+img+'" alt="">' : '<span class="noimg">🪑</span>') + '</div>'
+      + '<div class="item-body">'
+        + '<div class="item-name">'+esc(it.n)+'</div>'
+        + '<div class="item-meta">'
+          + '<div class="item-qty">'+it.q+' '+t.qty+'</div>'
+          + '<div class="item-price">'+sym+(it.up*it.q).toFixed(2)+'</div>'
+          + (it.q>1?'<div class="item-unit">'+sym+it.up.toFixed(2)+' / '+t.unit+'</div>':'')
+        + '</div>'
+      + '</div></div>';
+  });
+
+  const termRows = [
+    [t.delivery, d.term], [t.payment, d.pay], [t.leadTime, d.lead], [t.validUntil, d.valid]
+  ].filter(function(r){ return r[1]; })
+   .map(function(r){ return '<div class="term-row"><span class="k">'+r[0]+'</span><span class="v">'+esc(r[1])+'</span></div>'; })
+   .join('');
+
+  const waPhone = (d.wph||'').replace(/[^0-9]/g,'');
+  const waMsg = encodeURIComponent((d.pi||'Proforma')+' hakkında soru sormak istiyorum / I have a question about this proforma.');
+  const waHref = 'https://wa.me/'+(waPhone||'902247141303')+'?text='+waMsg;
+
+  app.innerHTML =
+    '<div class="hero">'
+      + '<div class="logo">M<span>O</span>RELLO</div>'
+      + '<div class="sub">mobilya · furniture</div>'
+      + '<div class="pi-badge">'+esc(d.pi||'')+'</div>'
+      + (d.date?'<div class="date">'+esc(d.date)+'</div>':'')
+    + '</div>'
+    + (d.buyer?'<div class="section"><div class="section-title">'+t.buyer+'</div><div class="buyer-card"><div class="buyer-name">'+esc(d.buyer)+'</div>'+(d.country?'<div class="buyer-sub">'+esc(d.country)+'</div>':'')+'</div></div>':'')
+    + '<div class="section"><div class="section-title">'+t.items+' ('+d.items.length+')</div>'+itemsHtml+'</div>'
+    + (termRows?'<div class="section"><div class="section-title">'+t.terms+'</div><div class="terms-card">'+termRows+'</div></div>':'')
+    + '<div class="section"><div class="section-title">'+t.totals+'</div><div class="totals-card">'
+      + (saving>0.01?'<div class="tot-row"><span>'+t.listTotal+'</span><span>'+sym+listTotal.toFixed(2)+'</span></div><div class="tot-row"><span class="saving">'+t.discount+'</span><span class="saving">− '+sym+saving.toFixed(2)+'</span></div>':'')
+      + '<div class="tot-row grand"><span>'+t.grand+'</span><span>'+sym+grand.toFixed(2)+'</span></div>'
+      + '<div class="tot-row"><span>'+t.deposit+'</span><span>'+sym+(grand*.3).toFixed(2)+'</span></div>'
+      + '<div class="tot-row"><span>'+t.balance+'</span><span>'+sym+(grand*.7).toFixed(2)+'</span></div>'
+    + '</div></div>'
+    + '<div class="footer-note">'+t.prepared+'</div>'
+    + '<div class="sticky-cta">'
+      + '<div class="cta-total"><div class="lbl">'+t.grand+'</div><div class="val">'+sym+grand.toFixed(2)+'</div></div>'
+      + '<a class="cta-btn" href="'+waHref+'" target="_blank" rel="noopener">'
+        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'
+        + t.ask
+      + '</a>'
+    + '</div>';
+
+  trackView(d.pi, d.buyer);
+}
+
+function esc(s) { return String(s||'').replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+
+render();
+window.addEventListener('hashchange', render);
+</script>
+</body>
+</html>
