@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783320928</title>
+<title>Morello — Proforma Generator v1783321158</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1676,14 +1676,17 @@ body {
 .btn-gold:hover { background: var(--gold-mid); }
 
 /* ─── PRINT ─── */
+@page { margin: 0; size: A4; }
 @media print {
   body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay):not(#all-docs-overlay) { display: none !important; }
-  #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay { display: none !important; }
+  #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay, #sticky-bar, #wa-modal, #email-modal, #img-lightbox { display: none !important; }
   #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay, #all-docs-overlay { display: block !important; position: static !important; }
   .print-actions, .doc-actions-bar, .summary-actions { display: none !important; }
-  #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print { margin: 0; padding: 20px; }
+  #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print { margin: 0; padding: 14mm 12mm; }
+  #all-docs-print .all-docs-page { padding: 14mm 12mm; }
   .all-docs-page { page-break-after: always; }
   .all-docs-page:last-child { page-break-after: auto; }
+  .all-docs-page + .all-docs-page { margin-top: 0; border-top: none; padding-top: 14mm; }
 }
 .all-docs-page { background: #fff; }
 .all-docs-page + .all-docs-page { margin-top: 24px; border-top: 2px dashed #ccc; padding-top: 24px; }
