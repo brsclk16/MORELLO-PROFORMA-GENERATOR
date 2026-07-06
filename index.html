@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783321712</title>
+<title>Morello — Proforma Generator v1783324446</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -2057,6 +2057,13 @@ body {
 
     <!-- ORDER TAB -->
     <div class="tab-content active" id="tab-order">
+      <!-- ACTIVITY FEED -->
+      <div class="card" id="activity-feed-card" style="display:none;">
+        <div class="card-hdr" style="cursor:pointer;" onclick="document.getElementById('activity-feed-body').style.display=document.getElementById('activity-feed-body').style.display==='none'?'':'none'">
+          <h3>📊 Aktivite Akışı</h3><span id="activity-feed-count" style="font-size:10px;color:var(--muted);"></span>
+        </div>
+        <div class="card-body" id="activity-feed-body" style="padding:6px 10px;"></div>
+      </div>
       <!-- DISCOUNT -->
       <div class="card">
         <div class="card-hdr"><h3>💰 Global Discount</h3></div>
@@ -2187,6 +2194,24 @@ body {
           <button class="btn btn-gold" onclick="generateAllDocuments()" style="font-size:13px;padding:12px 24px;">📑 Tüm Belgeleri Oluştur (PI + Packing List + C.Invoice + Çeki + Talimat + İrsaliye)</button>
         </div>
       </div>
+      <div class="card">
+        <div class="card-hdr"><h3>🚚 Navlun Teklif Defteri</h3><span style="font-size:10px;color:var(--muted);">Rota bazlı geçmiş fiyatlar — pazarlık kozun</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1.4fr 1fr .8fr .7fr 1fr auto;gap:6px;margin-bottom:12px;align-items:center;">
+            <input type="text" id="fq-route" placeholder="Gemlik → Mogadishu" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;background:var(--bg);color:var(--text);outline:none;">
+            <input type="text" id="fq-forwarder" placeholder="Forwarder" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;background:var(--bg);color:var(--text);outline:none;">
+            <select id="fq-vehicle" style="padding:7px 6px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;background:var(--bg);color:var(--text);outline:none;">
+              <option>40HC</option><option>20DC</option><option>TIR</option><option>Mega TIR</option>
+            </select>
+            <input type="number" id="fq-price" placeholder="2400" style="padding:7px 9px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;background:var(--bg);color:var(--text);outline:none;">
+            <select id="fq-cur" style="padding:7px 6px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;background:var(--bg);color:var(--text);outline:none;">
+              <option>USD</option><option>EUR</option><option>TRY</option>
+            </select>
+            <button class="btn btn-gold btn-sm" onclick="addFreightQuote()">+ Ekle</button>
+          </div>
+          <div id="freight-list"></div>
+        </div>
+      </div>
       <div class="card" style="background:var(--gold-light);border-color:var(--gold);">
         <div class="card-body" style="font-size:11px;color:var(--muted);line-height:1.8;">
           💡 Add products to your order first, then come back here to see container requirements. CBM values are pre-loaded from the Morello measurement sheet.
@@ -2238,6 +2263,7 @@ body {
               <option value="Confirmed">Confirmed</option>
               <option value="Production">Production</option>
               <option value="Shipped">Shipped</option>
+              <option value="Lost">📉 Lost</option>
               <option value="trash">🗑 Çöp</option>
             </select>
             <button class="btn btn-ghost btn-sm" onclick="clearHistory()">🗑 Clear All</button>
@@ -2290,6 +2316,8 @@ body {
           <div id="report-funnel" style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:var(--r);"></div>
           <div id="report-receivables" style="margin-bottom:16px;"></div>
           <div id="report-countries" style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:var(--r);"></div>
+          <div id="report-fxrisk" style="margin-bottom:16px;"></div>
+          <div id="report-lost" style="margin-bottom:16px;"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
               <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🏆 En Çok Satan Ürünler</div>
@@ -2567,6 +2595,7 @@ body {
       <div class="frow"><label>İncoterm</label><input type="text" id="mc-incoterm" placeholder="FOB Gemlik"></div>
       <div class="frow"><label>Ödeme Koşulu</label><input type="text" id="mc-payment" placeholder="30% Deposit, 70% Before Loading"></div>
       <div class="frow"><label>Lead Time</label><input type="text" id="mc-leadtime" placeholder="45 Days"></div>
+      <div class="frow"><label>Kredi Limiti</label><input type="number" id="mc-creditlimit" placeholder="20000" min="0"></div>
     </div>
     <div class="frow"><label>Not</label><input type="text" id="mc-note" placeholder="Özel not, fuar tarihi vb."></div>
     <div class="modal-actions">
@@ -3687,6 +3716,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyCurrencyAccent(currency);
   applyCatView();
   initResizer();
+  setTimeout(renderActivityFeed, 800);
   // Auth check
   checkSession();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
@@ -4709,7 +4739,7 @@ function renderCustomers() {
   list.appendChild(grid);
 }
 
-const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime'];
+const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime','mc-creditlimit'];
 let editingCustomerIdx = null;
 
 function openNewCustomer() {
@@ -4737,6 +4767,7 @@ function openEditCustomer(i) {
   document.getElementById('mc-incoterm').value  = c.defaults?.incoterm  || '';
   document.getElementById('mc-payment').value   = c.defaults?.payment   || '';
   document.getElementById('mc-leadtime').value  = c.defaults?.leadTime  || '';
+  document.getElementById('mc-creditlimit').value = c.creditLimit || '';
   document.getElementById('custModal').classList.add('open');
 }
 function closeCustModal() { document.getElementById('custModal').classList.remove('open'); editingCustomerIdx=null; }
@@ -4801,6 +4832,7 @@ function saveCustomer() {
     email:    document.getElementById('mc-email').value.trim(),
     address:  document.getElementById('mc-address').value.trim(),
     discount: disc,
+    creditLimit: parseFloat(document.getElementById('mc-creditlimit').value) || 0,
     note:     document.getElementById('mc-note').value.trim(),
     defaults: {
       currency: document.getElementById('mc-currency').value  || null,
@@ -4857,6 +4889,7 @@ function loadCustomer(i) {
   const summary = applied.length ? ' · ⚡ '+applied.join(' · ') : '';
   showToast('✓ Yüklendi: '+c.company+summary);
   showTab('order');
+  setTimeout(function(){ checkCreditLimit(c.company); }, 900);
 }
 
 function deleteCustomer(i) {
@@ -5097,21 +5130,21 @@ function renderHistory() {
     // Find real index in full history for cycleStatus/load/delete
     const realIdx=allHist.findIndex(x=>x.pi===h.pi&&x.date===h.date);
     const row=document.createElement('div'); row.className='hist-item';
-    const stClass=['st-draft','st-sent','st-confirmed','st-production','st-shipped'];
-    const stLabels=['Draft','Sent','Confirmed','Production','Shipped'];
+    const stClass=['st-draft','st-sent','st-confirmed','st-production','st-shipped','st-draft'];
+    const stLabels=['Draft','Sent','Confirmed','Production','Shipped','Lost'];
     const stIdx=stLabels.indexOf(h.status||'Draft');
     const stCls=stClass[stIdx>=0?stIdx:0];
     const canDeposit = !isTrashView && (h.approval || ['Confirmed','Production','Shipped'].includes(h.status));
     const actionsHtml = isTrashView
       ? '<button class="hist-load-btn" onclick="restoreHistory('+realIdx+')">♻ Geri Al</button><button class="hist-del-btn" onclick="permanentlyDeleteHistory('+realIdx+')">Kalıcı Sil</button>'
-      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-load-btn" title="Tahsilat / Ödemeler" onclick="showPayments('+realIdx+')">💳</button>'+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
+      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-load-btn" title="Tahsilat / Ödemeler" onclick="showPayments('+realIdx+')">💳</button>'+((h.status!=='Lost'&&h.status!=='Shipped')?'<button class="hist-del-btn" title="Kayıp olarak işaretle" onclick="markAsLost('+realIdx+')">📉</button>':'')+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
     row.innerHTML=`
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span class="hist-pi">${h.pi}</span>
           ${isTrashView ? '' : '<button class="status-badge '+stCls+'" onclick="cycleStatus('+realIdx+',event)">'+(h.status||'Draft')+'</button>'}
         </div>
-        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span>${h.approval?' <span class="hist-cbm" style="color:var(--success);" title="'+h.approval.name+' tarafından onaylandı — '+new Date(h.approval.at).toLocaleString('tr-TR')+'">✅ '+h.approval.name+'</span>':''}${(function(){const tot=piTotalNum(h),paid=piPaidNum(h);if(paid<=0)return '';const rem=tot-paid;return rem>0.01?' <span class="hist-cbm" style="color:var(--warning);" title="Alınan: '+paid.toFixed(0)+' / Kalan: '+rem.toFixed(0)+'">💰 %'+Math.round(paid/tot*100)+'</span>':' <span class="hist-cbm" style="color:var(--success);" title="Tamamı tahsil edildi">💰 ödendi</span>';})()}${/\-R\d+$/.test(h.pi)?' <span class="hist-cbm" style="color:#A78BFA;cursor:pointer;" title="Önceki revizyonla karşılaştır" onclick="event.stopPropagation();showRevisionDiff('+realIdx+')">🔄 diff</span>':''}</div>
+        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span>${h.approval?' <span class="hist-cbm" style="color:var(--success);" title="'+h.approval.name+' tarafından onaylandı — '+new Date(h.approval.at).toLocaleString('tr-TR')+'">✅ '+h.approval.name+'</span>':''}${(function(){const tot=piTotalNum(h),paid=piPaidNum(h);if(paid<=0)return '';const rem=tot-paid;return rem>0.01?' <span class="hist-cbm" style="color:var(--warning);" title="Alınan: '+paid.toFixed(0)+' / Kalan: '+rem.toFixed(0)+'">💰 %'+Math.round(paid/tot*100)+'</span>':' <span class="hist-cbm" style="color:var(--success);" title="Tamamı tahsil edildi">💰 ödendi</span>';})()}${/\-R\d+$/.test(h.pi)?' <span class="hist-cbm" style="color:#A78BFA;cursor:pointer;" title="Önceki revizyonla karşılaştır" onclick="event.stopPropagation();showRevisionDiff('+realIdx+')">🔄 diff</span>':''}${h.status==='Lost'&&h.lostReason?' <span class="hist-cbm" style="color:var(--danger);">📉 '+h.lostReason+'</span>':''}</div>
       </div>
       <div class="hist-total">${h.total}</div>
       <div class="hist-actions">${actionsHtml}</div>`;
@@ -5222,7 +5255,7 @@ function showTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
-  if(tab==='container') updateContainer();
+  if(tab==='container') { updateContainer(); renderFreightQuotes(); }
   if(tab==='catalog-editor') renderCustomProducts();
   if(tab==='history') renderHistory();
   if(tab==='reports') renderReport('all');
@@ -5991,6 +6024,254 @@ async function syncApprovals() {
     if(histTab && histTab.classList.contains('active')) setTimeout(renderHistory, 100);
   }
   approvalsSyncedOnce = true;
+}
+
+// ============================================================
+// ACTIVITY FEED
+// ============================================================
+async function renderActivityFeed() {
+  const card = document.getElementById('activity-feed-card');
+  const body = document.getElementById('activity-feed-body');
+  if(!card || !body) return;
+  const events = [];
+  const now = new Date();
+  const hist = getHistory().filter(function(h){ return !h.trashed; });
+
+  // 1) Expiring/expired Sent PIs
+  hist.forEach(function(h){
+    if((h.status||'Draft') !== 'Sent') return;
+    try {
+      const m = (h.settings?.validity||'').match(/(\d+)/);
+      if(!m || !h.settings?.date) return;
+      const due = new Date(h.settings.date);
+      due.setDate(due.getDate() + parseInt(m[1]));
+      const daysLeft = Math.ceil((due - now) / 86400000);
+      if(daysLeft <= 3) {
+        events.push({ t: due, icon: daysLeft < 0 ? '\ud83d\udd34' : '\u23f3',
+          txt: '<strong>'+h.pi+'</strong> ('+h.buyer+') ge\u00e7erlili\u011fi '+(daysLeft<0?Math.abs(daysLeft)+' g\u00fcn \u00f6nce doldu':daysLeft===0?'bug\u00fcn doluyor':daysLeft+' g\u00fcn sonra doluyor'),
+          cls: daysLeft < 0 ? 'danger' : 'warning' });
+      }
+    } catch(e) {}
+  });
+
+  // 2) Overdue receivables
+  hist.forEach(function(h){
+    const st = h.status||'Draft';
+    if(st==='Draft'||st==='Lost') return;
+    const rem = piTotalNum(h) - piPaidNum(h);
+    if(rem <= 0.01) return;
+    if(st==='Shipped') {
+      const sym = h.currency==='TRY'?'\u20ba':h.currency==='EUR'?'\u20ac':'$';
+      events.push({ t: now, icon: '\ud83d\udcb0', txt: '<strong>'+h.pi+'</strong> ('+h.buyer+') sevk edildi ama '+sym+rem.toFixed(0)+' tahsilat a\u00e7\u0131k', cls: 'danger' });
+    }
+  });
+
+  // 3) Recent views & approvals from Supabase (last 7 days)
+  try {
+    const since = new Date(now - 7*86400000).toISOString();
+    const views = await supaFetch('/rest/v1/proforma_views?select=pi,buyer,created_at&created_at=gte.'+since+'&order=created_at.desc&limit=40');
+    if(Array.isArray(views)) {
+      const grouped = {};
+      views.forEach(function(v){
+        const k = v.pi;
+        if(!grouped[k]) grouped[k] = { count: 0, latest: v.created_at, buyer: v.buyer };
+        grouped[k].count++;
+      });
+      Object.entries(grouped).forEach(function([pi, g]){
+        events.push({ t: new Date(g.latest), icon: '\ud83d\udc41', txt: (g.buyer||'')+' <strong>'+pi+'</strong>\'ye '+g.count+' kez bakt\u0131', cls: 'info' });
+      });
+    }
+    const apprs = await supaFetch('/rest/v1/proforma_approvals?select=pi,buyer,approver_name,created_at&created_at=gte.'+since+'&order=created_at.desc&limit=10');
+    if(Array.isArray(apprs)) {
+      apprs.forEach(function(a){
+        events.push({ t: new Date(a.created_at), icon: '\u2705', txt: '<strong>'+a.approver_name+'</strong> ('+(a.buyer||'')+') <strong>'+a.pi+'</strong>\'yi onaylad\u0131', cls: 'success' });
+      });
+    }
+  } catch(e) {}
+
+  if(!events.length) { card.style.display = 'none'; return; }
+  events.sort(function(a,b){ return b.t - a.t; });
+  const top = events.slice(0, 8);
+  const colorMap = { danger:'var(--danger)', warning:'var(--warning)', success:'var(--success)', info:'#60A5FA' };
+  body.innerHTML = top.map(function(ev){
+    const dt = ev.t instanceof Date && !isNaN(ev.t) ? ev.t.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' '+ev.t.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) : '';
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 6px;border-bottom:1px solid var(--border-light);font-size:11.5px;">'
+      +'<span style="flex-shrink:0;">'+ev.icon+'</span>'
+      +'<span style="flex:1;color:var(--text);">'+ev.txt+'</span>'
+      +'<span style="flex-shrink:0;font-size:9.5px;color:'+(colorMap[ev.cls]||'var(--muted)')+';">'+dt+'</span></div>';
+  }).join('');
+  document.getElementById('activity-feed-count').textContent = events.length+' olay (son 7 g\u00fcn)';
+  card.style.display = '';
+}
+
+// ============================================================
+// FX RISK PANEL (Reports)
+// ============================================================
+function renderFxRisk(hist) {
+  const el = document.getElementById('report-fxrisk');
+  if(!el) return;
+  const curEur = parseFloat(document.getElementById('fx-eur-try')?.value) || 0;
+  const curUsd = parseFloat(document.getElementById('fx-usd-try')?.value) || 0;
+  let totalDelta = 0, rows = [], totalOpenTL = 0;
+  hist.forEach(function(h){
+    if(h.trashed) return;
+    const st = h.status||'Draft';
+    if(st==='Draft'||st==='Lost') return;
+    if(!h.fx || h.currency==='TRY') return;
+    const rem = piTotalNum(h) - piPaidNum(h);
+    if(rem <= 0.01) return;
+    const locked = h.currency==='USD' ? h.fx.usdTry : h.fx.eurTry;
+    const current = h.currency==='USD' ? curUsd : curEur;
+    if(!locked || !current) return;
+    const delta = rem * (current - locked);
+    totalDelta += delta;
+    totalOpenTL += rem * current;
+    const sym = h.currency==='EUR'?'\u20ac':'$';
+    rows.push({ pi: h.pi, rem: rem, sym: sym, locked: locked, current: current, delta: delta });
+  });
+  if(!rows.length) { el.innerHTML = ''; return; }
+  const rowsHtml = rows.sort(function(a,b){ return Math.abs(b.delta)-Math.abs(a.delta); }).slice(0,8).map(function(r){
+    const col = r.delta >= 0 ? 'var(--success)' : 'var(--danger)';
+    return '<div style="display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid var(--border-light);font-size:11px;">'
+      +'<span><strong>'+r.pi+'</strong> \u00b7 '+r.sym+r.rem.toFixed(0)+' a\u00e7\u0131k \u00b7 kilit '+r.locked.toFixed(2)+' \u2192 '+r.current.toFixed(2)+'</span>'
+      +'<span style="font-weight:700;color:'+col+';">'+(r.delta>=0?'+':'')+'\u20ba'+r.delta.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>';
+  }).join('');
+  const tCol = totalDelta >= 0 ? 'var(--success)' : 'var(--danger)';
+  el.innerHTML = '<div style="padding:14px;background:var(--surface2);border-radius:var(--r);">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+      +'<span style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);">\ud83d\udcb1 D\u00f6viz Riski / Kur Fark\u0131</span>'
+      +'<span style="font-size:15px;font-weight:800;color:'+tCol+';">'+(totalDelta>=0?'+':'')+'\u20ba'+totalDelta.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>'
+    +'<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">A\u00e7\u0131k alacaklar bug\u00fcnk\u00fc kurdan tahsil edilirse, kilitli kura g\u00f6re TL fark\u0131. Toplam a\u00e7\u0131k: \u2248\u20ba'+totalOpenTL.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</div>'
+    +rowsHtml+'</div>';
+}
+
+// ============================================================
+// LOST ANALYSIS
+// ============================================================
+const LOST_REASONS = ['Fiyat', 'Rakip', 'Termin', '\u0130leti\u015fim koptu', 'M\u00fc\u015fteri vazge\u00e7ti', 'Di\u011fer'];
+function markAsLost(histIdx) {
+  const hist = getHistory();
+  const h = hist[histIdx];
+  if(!h) return;
+  const opts = LOST_REASONS.map(function(r,i){ return (i+1)+') '+r; }).join('\n');
+  const sel = prompt('Kay\u0131p sebebi se\u00e7 (numara gir):\n'+opts);
+  if(sel === null) return;
+  const i = parseInt(sel) - 1;
+  const reason = LOST_REASONS[i] || sel.trim() || 'Di\u011fer';
+  h.status = 'Lost';
+  h.lostReason = reason;
+  h.lostAt = new Date().toISOString();
+  saveHistory(hist);
+  if(h._supa_id) saveHistoryToCloud(h);
+  renderHistory();
+  showToast('\ud83d\udcc9 '+h.pi+' kay\u0131p olarak i\u015faretlendi: '+reason);
+}
+function renderLostAnalysis(hist) {
+  const el = document.getElementById('report-lost');
+  if(!el) return;
+  const lost = hist.filter(function(h){ return !h.trashed && h.status==='Lost'; });
+  if(!lost.length) { el.innerHTML = ''; return; }
+  const byReason = {};
+  let lostValue = 0;
+  lost.forEach(function(h){
+    const r = h.lostReason || 'Di\u011fer';
+    byReason[r] = (byReason[r]||0) + 1;
+    lostValue += piTotalNum(h);
+  });
+  const maxN = Math.max.apply(null, Object.values(byReason));
+  const bars = Object.entries(byReason).sort(function(a,b){ return b[1]-a[1]; }).map(function([r,n]){
+    return '<div style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:2px;"><span style="color:var(--text);font-weight:600;">'+r+'</span><span style="color:var(--muted);">'+n+' PI</span></div>'
+      +'<div style="height:12px;background:var(--surface2);border-radius:6px;overflow:hidden;"><div style="height:100%;width:'+Math.max(6,n/maxN*100).toFixed(0)+'%;background:var(--danger);opacity:.75;border-radius:6px;"></div></div></div>';
+  }).join('');
+  el.innerHTML = '<div style="padding:14px;background:var(--surface2);border-radius:var(--r);">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:10px;"><span style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);">\ud83d\udcc9 Kay\u0131p Analizi</span>'
+    +'<span style="font-size:11px;color:var(--danger);font-weight:700;">'+lost.length+' PI \u00b7 \u2248'+lostValue.toLocaleString(undefined,{maximumFractionDigits:0})+' kaybedildi</span></div>'
+    +bars+'</div>';
+}
+
+// ============================================================
+// FREIGHT QUOTE BOOK
+// ============================================================
+function getFreightQuotes() { try { return JSON.parse(localStorage.getItem('morello_freight')||'[]'); } catch(e){ return []; } }
+function saveFreightQuotes(a) { localStorage.setItem('morello_freight', JSON.stringify(a)); }
+function addFreightQuote() {
+  const route = document.getElementById('fq-route').value.trim();
+  const price = parseFloat(document.getElementById('fq-price').value);
+  if(!route || !price) { showToast('Rota ve fiyat gerekli'); return; }
+  const quotes = getFreightQuotes();
+  quotes.unshift({ route: route, forwarder: document.getElementById('fq-forwarder').value.trim(), vehicle: document.getElementById('fq-vehicle').value, price: price, cur: document.getElementById('fq-cur').value, date: new Date().toISOString().split('T')[0] });
+  saveFreightQuotes(quotes);
+  document.getElementById('fq-route').value=''; document.getElementById('fq-price').value=''; document.getElementById('fq-forwarder').value='';
+  renderFreightQuotes();
+  showToast('\ud83d\ude9a Navlun teklifi kaydedildi');
+}
+function deleteFreightQuote(i) {
+  const q = getFreightQuotes(); q.splice(i,1); saveFreightQuotes(q); renderFreightQuotes();
+}
+function renderFreightQuotes() {
+  const el = document.getElementById('freight-list');
+  if(!el) return;
+  const quotes = getFreightQuotes();
+  if(!quotes.length) { el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:11px;">Hen\u00fcz navlun teklifi kaydedilmedi.</div>'; return; }
+  // Group by route+vehicle for trend
+  const groups = {};
+  quotes.forEach(function(q, i){
+    const k = q.route.toLowerCase()+'|'+q.vehicle;
+    if(!groups[k]) groups[k] = [];
+    groups[k].push({ ...q, _i: i });
+  });
+  let html = '';
+  Object.values(groups).forEach(function(list){
+    // list is newest-first
+    html += '<div style="margin-bottom:10px;">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;">'+list[0].route+' \u00b7 '+list[0].vehicle+'</div>';
+    list.forEach(function(q, j){
+      const prev = list[j+1];
+      let trend = '';
+      if(prev && prev.cur === q.cur) {
+        const diff = q.price - prev.price;
+        if(Math.abs(diff) > 0.5) trend = ' <span style="color:'+(diff>0?'var(--danger)':'var(--success)')+';font-weight:700;">'+(diff>0?'\u25b2':'\u25bc')+Math.abs(diff).toFixed(0)+'</span>';
+      }
+      const sym = q.cur==='TRY'?'\u20ba':q.cur==='EUR'?'\u20ac':'$';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid var(--border-light);font-size:11px;">'
+        +'<span>'+q.date+(q.forwarder?' \u00b7 '+q.forwarder:'')+'</span>'
+        +'<span style="display:flex;align-items:center;gap:8px;"><strong>'+sym+q.price.toLocaleString()+'</strong>'+trend
+        +'<button class="hist-del-btn" onclick="deleteFreightQuote('+q._i+')">\u00d7</button></span></div>';
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// ============================================================
+// CUSTOMER CREDIT LIMIT
+// ============================================================
+function openReceivableFor(buyerName) {
+  const hist = getHistory();
+  let total = 0, cur = null;
+  hist.forEach(function(h){
+    if(h.trashed) return;
+    const st = h.status||'Draft';
+    if(st==='Draft'||st==='Lost') return;
+    const b = (h.buyer||'').toLowerCase(), n = (buyerName||'').toLowerCase();
+    if(!(b.includes(n.slice(0,10)) || n.includes(b.slice(0,10)))) return;
+    const rem = piTotalNum(h) - piPaidNum(h);
+    if(rem > 0.01) { total += rem; cur = h.currency; }
+  });
+  return { total: total, cur: cur };
+}
+function checkCreditLimit(companyName) {
+  const cust = getCustomers().find(function(x){ return x.company === companyName; });
+  if(!cust || !cust.creditLimit) return;
+  const open = openReceivableFor(companyName);
+  if(open.total <= 0) return;
+  const sym = open.cur==='TRY'?'\u20ba':open.cur==='EUR'?'\u20ac':'$';
+  const pct = open.total / cust.creditLimit * 100;
+  if(pct >= 100) {
+    showToast('\ud83d\udd34 KRED\u0130 L\u0130M\u0130T\u0130 A\u015eILDI: '+companyName+' a\u00e7\u0131k '+sym+open.total.toFixed(0)+' / limit '+sym+cust.creditLimit);
+  } else if(pct >= 75) {
+    showToast('\u26a0\ufe0f Limit uyar\u0131s\u0131: '+companyName+' a\u00e7\u0131k '+sym+open.total.toFixed(0)+' (limitin %'+pct.toFixed(0)+'\u0131)');
+  }
 }
 
 // ============================================================
@@ -6961,6 +7242,8 @@ function renderReport(period) {
   renderFunnel(hist);
   renderCountryDist(hist);
   renderReceivables(hist);
+  renderFxRisk(hist);
+  renderLostAnalysis(hist);
   const se=document.getElementById('report-stats'); if(!se) return;
   const total=hist.reduce((s,h)=>s+parseAmount(h.total),0); const avg=hist.length?total/hist.length:0;
   const cur=(hist[0]?.currency)||'EUR'; const sym=cur==='TRY'?'\u20ba':cur==='EUR'?'\u20ac':'$';
