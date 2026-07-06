@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783321158</title>
+<title>Morello — Proforma Generator v1783321712</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1888,6 +1888,7 @@ body {
 </style>
 <!-- Product images loaded from separate file to keep index.html lean -->
 <script src="imgs.js"></script>
+<script src="catalog.js"></script>
 <script>
   // Safety stub: if imgs.js fails to load (offline first visit), IMGS defaults to {}
   if(typeof IMGS === 'undefined') { window.IMGS = {}; }
@@ -2002,6 +2003,10 @@ body {
       <div class="hdr-dd-menu" style="right:0;left:auto;">
         <button onclick="showTemplates()">📐 Sipariş Şablonları</button>
         <button onclick="saveAsTemplate()">📐 Şablon Olarak Kaydet</button>
+        <button onclick="saveAsRevision()">🔄 Revizyon Olarak Kaydet</button>
+        <div class="hdr-dd-sep"></div>
+        <button onclick="uploadSignature()">✍️ İmza/Kaşe Yükle</button>
+        <button onclick="clearSignature()">✍️ İmzayı Kaldır</button>
         <div class="hdr-dd-sep"></div>
         <button onclick="clearOrder()">🗑 Siparişi Temizle</button>
         <div class="hdr-dd-sep"></div>
@@ -2283,6 +2288,8 @@ body {
         <div class="card-body">
           <div class="report-grid" id="report-stats"></div>
           <div id="report-funnel" style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:var(--r);"></div>
+          <div id="report-receivables" style="margin-bottom:16px;"></div>
+          <div id="report-countries" style="margin-bottom:16px;padding:14px;background:var(--surface2);border-radius:var(--r);"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
               <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🏆 En Çok Satan Ürünler</div>
@@ -2765,6 +2772,7 @@ Snejana Raleva - 1 adet Istanbul Gardolap"></textarea>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="copyPortalLink(document.getElementById('cdm-name').textContent)" title="Müşterinin tüm proformalarını içeren portal linki oluştur ve kopyala">🏠 Portal Linki</button>
+        <button class="btn btn-outline btn-sm" onclick="copyPriceListForCustomer(document.getElementById('cdm-name').textContent)" title="Bu müşteriye özel (iskontolu) fiyat listesi linki kopyala">💲 Fiyat Listesi</button>
         <button class="cdm-close" onclick="closeCustDetail()">×</button>
       </div>
     </div>
@@ -3593,42 +3601,7 @@ const I18N = {
 };
 
 
-const TL_PRICES = {
-  // ROMA BEDROOM
-  'ROMA-WARD': 39800, 'ROMA-NIGHT': 3800, 'ROMA-DRESS': 11300,
-  'ROMA-BED': 17500, 'ROMA-BED-SET': 72600,
-  // ROMA DINING
-  'ROMA-CONS': 17700, 'ROMA-TV': 16900, 'ROMA-TBL': 21000,
-  'ROMA-CHR': 4534, // 27200/6
-  'ROMA-DIN-SET': 67200, 'ROMA-COF': 6200,
-  // ROMA SOFA
-  'ROMA-3S': 29400, 'ROMA-2S': 29400, 'ROMA-BRG': 10300, 'ROMA-SF-SET': 79400,
-  // ISTANBUL BEDROOM
-  'IST-WARD': 38300, 'IST-NIGHT': 3550, 'IST-DRESS': 10500,
-  'IST-BED': 17500, 'IST-BED-SET': 69900,
-  // ISTANBUL DINING
-  'IST-CONS': 17700, 'IST-TV': 16400, 'IST-TBL': 19800,
-  'IST-CHR': 4534, 'IST-DIN-SET': 66200, 'IST-COF': 6200,
-  // ISTANBUL SOFA
-  'IST-3S': 28200, 'IST-2S': 28200, 'IST-BRG': 9925, 'IST-SF-SET': 76250,
-  'IST-CRN': 54800,
-  // LION SOFA
-  'LION-3S': 28200, 'LION-2S': 28200, 'LION-BRG': 9925, 'LION-SF-SET': 76250,
-  'LION-CRN': 54800,
-  // VERONA SOFA
-  'VER-3S': 29400, 'VER-2S': 29400, 'VER-BRG': 10300, 'VER-SF-SET': 79400,
-  // MIRAY SOFA
-  'MIRAY-3S': 25250, 'MIRAY-2S': 25250, 'MIRAY-BRG': 8875, 'MIRAY-SF-SET': 68250,
-  'MIRAY-CRN': 45350,
-  // DIVA SOFA
-  'DIVA-3S': 25250, 'DIVA-2S': 25250, 'DIVA-BRG': 8875, 'DIVA-SF-SET': 68250,
-  // NAPOLI (same as Istanbul pricing)
-  'NAPOLI-WARD': 38300, 'NAPOLI-NIGHT': 3550, 'NAPOLI-DRESS': 10500,
-  'NAPOLI-BED': 17500, 'NAPOLI-BED-SET': 69900,
-  'NAPOLI-CONS': 17700, 'NAPOLI-TBL': 19800, 'NAPOLI-CHR': 4534,
-  'NAPOLI-DIN-SET': 66200, 'NAPOLI-TV': 16400, 'NAPOLI-COF': 6200,
-  'NAPOLI-3S': 28200, 'NAPOLI-2S': 28200, 'NAPOLI-BRG': 9925, 'NAPOLI-SF-SET': 76250,
-};
+/* TL_PRICES loaded from catalog.js */
 
 const PACKAGE_DATA = {"ROMA-WARD": {"pkgs": 8, "kg": 252}, "ROMA-DRESS": {"pkgs": 3, "kg": 65}, "ROMA-NIGHT": {"pkgs": 3, "kg": 45}, "ROMA-BED": {"pkgs": 6, "kg": 149}, "ROMA-BED-SET": {"pkgs": 21, "kg": 526}, "ROMA-CONS": {"pkgs": 3, "kg": 73}, "ROMA-TV": {"pkgs": 3, "kg": 60}, "ROMA-TBL": {"pkgs": 2, "kg": 75}, "ROMA-CHR": {"pkgs": 0.5, "kg": 10}, "ROMA-COF": {"pkgs": 1, "kg": 28}, "ROMA-DIN-SET": {"pkgs": 13, "kg": 311}, "ROMA-3S": {"pkgs": 1, "kg": 85}, "ROMA-2S": {"pkgs": 1, "kg": 75}, "ROMA-BRG": {"pkgs": 1, "kg": 35}, "ROMA-SF-SET": {"pkgs": 4, "kg": 240}, "ROMA-SET-331": {"pkgs": 3, "kg": 205}, "ROMA-SET-221": {"pkgs": 3, "kg": 185}, "ROMA-SET-321": {"pkgs": 3, "kg": 205}, "IST-WARD": {"pkgs": 10, "kg": 278}, "IST-DRESS": {"pkgs": 3, "kg": 65}, "IST-NIGHT": {"pkgs": 3, "kg": 45}, "IST-BED": {"pkgs": 6, "kg": 149}, "IST-BED-SET": {"pkgs": 23, "kg": 553}, "IST-CONS": {"pkgs": 4, "kg": 89}, "IST-TV": {"pkgs": 4, "kg": 69}, "IST-TBL": {"pkgs": 2, "kg": 67}, "IST-CHR": {"pkgs": 0.5, "kg": 9}, "IST-COF": {"pkgs": 1, "kg": 29}, "IST-DIN-SET": {"pkgs": 15, "kg": 271}, "IST-3S": {"pkgs": 1, "kg": 88}, "IST-2S": {"pkgs": 1, "kg": 78}, "IST-BRG": {"pkgs": 1, "kg": 36}, "IST-CRN": {"pkgs": 2, "kg": 165}, "IST-SF-SET": {"pkgs": 4, "kg": 248}, "IST-SET-331": {"pkgs": 3, "kg": 212}, "IST-SET-221": {"pkgs": 3, "kg": 192}, "IST-SET-321": {"pkgs": 3, "kg": 212}, "LION-3S": {"pkgs": 1, "kg": 88}, "LION-2S": {"pkgs": 1, "kg": 78}, "LION-BRG": {"pkgs": 1, "kg": 36}, "LION-CRN": {"pkgs": 2, "kg": 165}, "LION-SF-SET": {"pkgs": 4, "kg": 248}, "LION-SET-331": {"pkgs": 3, "kg": 212}, "LION-SET-221": {"pkgs": 3, "kg": 192}, "LION-SET-321": {"pkgs": 3, "kg": 212}, "VER-3S": {"pkgs": 1, "kg": 85}, "VER-2S": {"pkgs": 1, "kg": 75}, "VER-BRG": {"pkgs": 1, "kg": 35}, "VER-SF-SET": {"pkgs": 4, "kg": 240}, "VER-SET-331": {"pkgs": 3, "kg": 205}, "VER-SET-221": {"pkgs": 3, "kg": 185}, "VER-SET-321": {"pkgs": 3, "kg": 205}, "MIRAY-DRESS": {"pkgs": 3, "kg": 54}, "MIRAY-NIGHT": {"pkgs": 2, "kg": 30}, "MIRAY-BED": {"pkgs": 6, "kg": 154}, "MIRAY-BED-SET": {"pkgs": 23, "kg": 250}, "MIRAY-CONS": {"pkgs": 3, "kg": 70}, "MIRAY-TV": {"pkgs": 3, "kg": 52}, "MIRAY-TBL": {"pkgs": 2, "kg": 50}, "MIRAY-CHR": {"pkgs": 0.5, "kg": 8}, "MIRAY-COF": {"pkgs": 2, "kg": 32}, "MIRAY-DIN-SET": {"pkgs": 13, "kg": 243}, "MIRAY-3S": {"pkgs": 1, "kg": 82}, "MIRAY-2S": {"pkgs": 1, "kg": 72}, "MIRAY-BRG": {"pkgs": 1, "kg": 33}, "MIRAY-CRN": {"pkgs": 2, "kg": 155}, "MIRAY-SF-SET": {"pkgs": 4, "kg": 230}, "MIRAY-SET-331": {"pkgs": 3, "kg": 197}, "MIRAY-SET-221": {"pkgs": 3, "kg": 177}, "MIRAY-SET-321": {"pkgs": 3, "kg": 197}, "ZENA-WARD": {"pkgs": 9, "kg": 344}, "ZENA-DRESS": {"pkgs": 2, "kg": 40}, "ZENA-NIGHT": {"pkgs": 2, "kg": 28}, "ZENA-BED": {"pkgs": 6, "kg": 126}, "ZENA-BED-SET": {"pkgs": 20, "kg": 549}, "ZENA-CONS": {"pkgs": 3, "kg": 69}, "ZENA-TV": {"pkgs": 3, "kg": 58}, "ZENA-TBL": {"pkgs": 2, "kg": 53}, "ZENA-CHR": {"pkgs": 0.5, "kg": 7}, "ZENA-DIN-SET": {"pkgs": 13, "kg": 249}, "ZENA-3S": {"pkgs": 1, "kg": 80}, "ZENA-2S": {"pkgs": 1, "kg": 70}, "ZENA-BRG": {"pkgs": 1, "kg": 32}, "ZENA-SF-SET": {"pkgs": 4, "kg": 224}, "ZENA-SET-331": {"pkgs": 3, "kg": 192}, "ZENA-SET-221": {"pkgs": 3, "kg": 172}, "ZENA-SET-321": {"pkgs": 3, "kg": 192}, "BEYZA-WARD": {"pkgs": 9, "kg": 258}, "BEYZA-DRESS": {"pkgs": 3, "kg": 43}, "BEYZA-NIGHT": {"pkgs": 2, "kg": 30}, "BEYZA-BED": {"pkgs": 6, "kg": 115}, "BEYZA-BED-SET": {"pkgs": 21, "kg": 458}, "BEYZA-CONS": {"pkgs": 3, "kg": 68}, "BEYZA-TV": {"pkgs": 3, "kg": 59}, "BEYZA-TBL": {"pkgs": 2, "kg": 71}, "BEYZA-CHR": {"pkgs": 0.5, "kg": 8}, "BEYZA-COF": {"pkgs": 2, "kg": 32}, "BEYZA-DIN-SET": {"pkgs": 11, "kg": 248}, "BEYZA-3S": {"pkgs": 1, "kg": 82}, "BEYZA-2S": {"pkgs": 1, "kg": 72}, "BEYZA-SGL": {"pkgs": 1, "kg": 33}, "BEYZA-SF-SET": {"pkgs": 4, "kg": 269}, "BEYZA-SET-331": {"pkgs": 3, "kg": 234}, "BEYZA-SET-221": {"pkgs": 3, "kg": 214}, "BEYZA-SET-321": {"pkgs": 3, "kg": 224}, "DIVA-3S": {"pkgs": 1, "kg": 80}, "DIVA-2S": {"pkgs": 1, "kg": 70}, "DIVA-BRG": {"pkgs": 1, "kg": 32}, "DIVA-SF-SET": {"pkgs": 4, "kg": 224}, "DIVA-SET-331": {"pkgs": 3, "kg": 192}, "DIVA-SET-221": {"pkgs": 3, "kg": 172}, "DIVA-SET-321": {"pkgs": 3, "kg": 192}, "LUNA-3S": {"pkgs": 1, "kg": 80}, "LUNA-2S": {"pkgs": 1, "kg": 70}, "LUNA-BRG": {"pkgs": 1, "kg": 32}, "LUNA-SF-SET": {"pkgs": 4, "kg": 224}, "LUNA-SET-331": {"pkgs": 3, "kg": 192}, "LUNA-SET-221": {"pkgs": 3, "kg": 172}, "LUNA-SET-321": {"pkgs": 3, "kg": 192}, "SIDE-3S": {"pkgs": 1, "kg": 85}, "SIDE-2S": {"pkgs": 1, "kg": 75}, "SIDE-BRG": {"pkgs": 1, "kg": 34}, "SIDE-SF-SET": {"pkgs": 4, "kg": 238}, "SIDE-SET-331": {"pkgs": 3, "kg": 204}, "SIDE-SET-221": {"pkgs": 3, "kg": 184}, "SIDE-SET-321": {"pkgs": 3, "kg": 204}, "EFES-3S": {"pkgs": 1, "kg": 82}, "EFES-2S": {"pkgs": 1, "kg": 72}, "EFES-BRG": {"pkgs": 1, "kg": 33}, "EFES-SF-SET": {"pkgs": 4, "kg": 230}, "EFES-SET-331": {"pkgs": 3, "kg": 197}, "EFES-SET-221": {"pkgs": 3, "kg": 177}, "EFES-SET-321": {"pkgs": 3, "kg": 197}, "NAPOLI-WARD": {"pkgs": 10, "kg": 278}, "NAPOLI-DRESS": {"pkgs": 3, "kg": 65}, "NAPOLI-NIGHT": {"pkgs": 3, "kg": 45}, "NAPOLI-BED": {"pkgs": 6, "kg": 149}, "NAPOLI-BED-SET": {"pkgs": 23, "kg": 553}, "NAPOLI-CONS": {"pkgs": 4, "kg": 89}, "NAPOLI-TV": {"pkgs": 4, "kg": 69}, "NAPOLI-TBL": {"pkgs": 2, "kg": 67}, "NAPOLI-CHR": {"pkgs": 0.5, "kg": 9}, "NAPOLI-COF": {"pkgs": 1, "kg": 29}, "NAPOLI-DIN-SET": {"pkgs": 15, "kg": 271}, "NAPOLI-3S": {"pkgs": 1, "kg": 88}, "NAPOLI-2S": {"pkgs": 1, "kg": 78}, "NAPOLI-BRG": {"pkgs": 1, "kg": 36}, "NAPOLI-SF-SET": {"pkgs": 4, "kg": 248}, "NAPOLI-SET-331": {"pkgs": 3, "kg": 212}, "NAPOLI-SET-221": {"pkgs": 3, "kg": 192}, "NAPOLI-SET-321": {"pkgs": 3, "kg": 212}, "ROMA-BED-160": {"pkgs": 6, "kg": 149}, "IST-BED-160": {"pkgs": 6, "kg": 149}, "ZENA-BED-160": {"pkgs": 6, "kg": 126}, "MIRAY-BED-160": {"pkgs": 6, "kg": 154}, "NAPOLI-BED-160": {"pkgs": 6, "kg": 149}, "BEYZA-BED-160": {"pkgs": 6, "kg": 115}};
 
@@ -3640,227 +3613,7 @@ const CBM_DATA={"ROMA-BED": 0.91, "ROMA-BED-160": 0.91, "ROMA-NIGHT": 0.045, "RO
 // ============================================================
 // CATALOG DATA
 // ============================================================
-const CATALOG = {
-  'Bedroom': { icon:'🛏', series: {
-    'ROMA': { badge:'SET', items:[
-      {id:'ROMA-BED',name:'Roma Bedstead with Storage 180×200',eur:335,usd:420},
-      {id:'ROMA-BED-160',name:'Roma Bedstead with Storage 160×200',eur:335,usd:420},
-      {id:'ROMA-NIGHT',name:'Roma Nightstand',eur:70,usd:70},
-      {id:'ROMA-DRESS',name:'Roma Dresser with Mirror',eur:205,usd:220},
-      {id:'ROMA-POUF',name:'Roma Pouf',eur:50,usd:45},
-      {id:'ROMA-WARD',name:'Roma Wardrobe',eur:720,usd:810},
-      {id:'ROMA-BED-SET',name:'Roma Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1500,usd:1590,bundled:true},
-    ]},
-    'ISTANBUL': { badge:'SET', items:[
-      {id:'IST-BED',name:'Istanbul Bedstead 180×200',eur:335,usd:420},
-      {id:'IST-BED-160',name:'Istanbul Bedstead 160×200',eur:335,usd:420},
-      {id:'IST-NIGHT',name:'Istanbul Nightstand',eur:65,usd:70},
-      {id:'IST-DRESS',name:'Istanbul Dresser with Mirror',eur:195,usd:210},
-      {id:'IST-POUF',name:'Istanbul Pouf',eur:50,usd:40},
-      {id:'IST-WARD',name:'Istanbul 5-Door Wardrobe',eur:680,usd:730},
-      {id:'IST-BED-SET',name:'Istanbul Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1440,usd:1500,bundled:true},
-    ]},
-    'ZENA': { badge:'POP', items:[
-      {id:'ZENA-BED',name:'Zena Bedstead 180×200',eur:300,usd:420},
-      {id:'ZENA-BED-160',name:'Zena Bedstead 160×200',eur:300,usd:420},
-      {id:'ZENA-NIGHT',name:'Zena Nightstand',eur:60,usd:60},
-      {id:'ZENA-DRESS',name:'Zena Dresser',eur:175,usd:190},
-      {id:'ZENA-WARD',name:'Zena Wardrobe',eur:640,usd:700},
-      {id:'ZENA-BED-SET',name:'Zena Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1235,usd:1430,bundled:true},
-    ]},
-    'MIRAY': { badge:'NEW', items:[
-      {id:'MIRAY-BED',name:'Miray Bedstead with Storage 180×200',eur:null,usd:420},
-      {id:'MIRAY-BED-160',name:'Miray Bedstead with Storage 160×200',eur:null,usd:420},
-      {id:'MIRAY-NIGHT',name:'Miray Nightstand',eur:null,usd:60},
-      {id:'MIRAY-DRESS',name:'Miray Dresser with Mirror',eur:null,usd:180},
-      {id:'MIRAY-POUF',name:'Miray Pouf',eur:null,usd:40},
-      {id:'MIRAY-CHEST',name:'Miray Chest of Drawers',eur:null,usd:175},
-      {id:'MIRAY-W4',name:'Miray 4-Door Wardrobe',eur:null,usd:550},
-      {id:'MIRAY-W5',name:'Miray 5-Door Wardrobe',eur:null,usd:610},
-      {id:'MIRAY-W6',name:'Miray 6-Door Wardrobe',eur:null,usd:670},
-      {id:'MIRAY-BED-SET',name:'Miray Bedroom Set (6-Door+Bedstead+2 Nightstands+Dresser)',eur:null,usd:1390,bundled:true},
-    ]},
-    'NAPOLİ': { badge:'YENİ', items:[
-      {id:'NAPOLI-BED',name:'Napoli Bedstead 180×200',eur:330,usd:380},
-      {id:'NAPOLI-BED-160',name:'Napoli Bedstead 160×200',eur:330,usd:380},
-      {id:'NAPOLI-NIGHT',name:'Napoli Nightstand',eur:67,usd:77},
-      {id:'NAPOLI-DRESS',name:'Napoli Dresser',eur:198,usd:228},
-      {id:'NAPOLI-WARD',name:'Napoli Wardrobe',eur:723,usd:833},
-      {id:'NAPOLI-BED-SET',name:'Napoli Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1319,usd:1520,bundled:true},
-    ]},
-    'BEYZA': { badge:'USD', items:[
-      {id:'BEYZA-BED',name:'Beyza Bedstead with Storage 180×200',eur:null,usd:420},
-      {id:'BEYZA-BED-160',name:'Beyza Bedstead with Storage 160×200',eur:null,usd:420},
-      {id:'BEYZA-NIGHT',name:'Beyza Nightstand',eur:null,usd:60},
-      {id:'BEYZA-WARD',name:'Beyza Wardrobe',eur:null,usd:700},
-      {id:'BEYZA-DRESS',name:'Beyza Dresser with Mirror',eur:null,usd:190},
-      {id:'BEYZA-POUF',name:'Beyza Pouf',eur:null,usd:40},
-      {id:'BEYZA-BED-SET',name:'Beyza Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:null,usd:1430,bundled:true},
-    ]},
-  }},
-  'Dining Room': { icon:'🍽', series: {
-    'ROMA': { badge:'SET', items:[
-      {id:'ROMA-CONS',name:'Roma Console with Mirror',eur:350,usd:350},
-      {id:'ROMA-TV',name:'Roma TV Unit',eur:290,usd:290},
-      {id:'ROMA-TBL',name:'Roma Dining Table (170–205 cm)',eur:345,usd:330},
-      {id:'ROMA-CHR',name:'Roma Chair',eur:90,usd:90},
-      {id:'ROMA-COF',name:'Roma Coffee Table',eur:105,usd:100},
-      {id:'ROMA-DIN-SET',name:'Roma Dining Set (Table+6 Chairs+Console)',eur:1235,usd:1220,bundled:true},
-    ]},
-    'ISTANBUL': { badge:'SET', items:[
-      {id:'IST-CONS',name:'Istanbul Console with Mirror',eur:350,usd:335},
-      {id:'IST-TV',name:'Istanbul TV Unit',eur:290,usd:275},
-      {id:'IST-TBL',name:'Istanbul Dining Table',eur:345,usd:330},
-      {id:'IST-CHR',name:'Istanbul Chair',eur:90,usd:90},
-      {id:'IST-COF',name:'Istanbul Coffee Table',eur:105,usd:100},
-      {id:'IST-DIN-SET',name:'Istanbul Dining Set (Table+6 Chairs+Console)',eur:1235,usd:1205,bundled:true},
-    ]},
-    'ZENA': { badge:'POP', items:[
-      {id:'ZENA-CONS',name:'Zena Console',eur:305,usd:305},
-      {id:'ZENA-TV',name:'Zena TV Unit',eur:295,usd:295},
-      {id:'ZENA-TBL',name:'Zena Dining Table',eur:325,usd:325},
-      {id:'ZENA-CHR',name:'Zena Chair',eur:70,usd:75},
-      {id:'ZENA-DIN-SET',name:'Zena Dining Set (Table+6 Chairs+Console)',eur:1050,usd:1080,bundled:true},
-    ]},
-    'MIRAY': { badge:'USD', items:[
-      {id:'MIRAY-CONS',name:'Miray Console with Mirror',eur:null,usd:305},
-      {id:'MIRAY-TV',name:'Miray TV Unit',eur:null,usd:295},
-      {id:'MIRAY-TBL',name:'Miray Dining Table (170–205 cm)',eur:null,usd:325},
-      {id:'MIRAY-CHR6',name:'Miray Chair',eur:null,usd:75},
-      {id:'MIRAY-COF',name:'Miray Coffee Table',eur:null,usd:100},
-      {id:'MIRAY-DIN-SET',name:'Miray Dining Set (Table+6 Chairs+Console)',eur:null,usd:1080,bundled:true},
-    ]},
-    'BEYZA': { badge:'USD', items:[
-      {id:'BEYZA-TBL',name:'Beyza Dining Table (170–205 cm)',eur:null,usd:320},
-      {id:'BEYZA-CHR',name:'Beyza Chair',eur:null,usd:90},
-      {id:'BEYZA-CONS',name:'Beyza Console with Mirror',eur:null,usd:305},
-      {id:'BEYZA-TV',name:'Beyza TV Unit',eur:null,usd:250},
-      {id:'BEYZA-COF',name:'Beyza Coffee Table',eur:null,usd:100},
-      {id:'BEYZA-DIN-SET',name:'Beyza Dining Set (Table+6 Chairs+Console)',eur:null,usd:1165,bundled:true},
-    ]},
-    'NAPOLİ': { badge:'YENİ', items:[
-      {id:'NAPOLI-CONS',name:'Napoli Console with Mirror',eur:334,usd:385},
-      {id:'NAPOLI-TV',name:'Napoli TV Unit',eur:309,usd:357},
-      {id:'NAPOLI-TBL',name:'Napoli Dining Table (170–205 cm)',eur:374,usd:430},
-      {id:'NAPOLI-CHR',name:'Napoli Chair',eur:86,usd:99},
-      {id:'NAPOLI-COF',name:'Napoli Coffee Table',eur:117,usd:135},
-      {id:'NAPOLI-DIN-SET',name:'Napoli Dining Set (Table+6 Chairs+Console)',eur:1249,usd:1439,bundled:true},
-    ]},
-  }},
-  'Sofa Set': { icon:'🛋', series: {
-    'ROMA': { badge:'EUR', items:[
-      {id:'ROMA-3S',name:'Roma Three Seater',eur:580,usd:615},
-      {id:'ROMA-2S',name:'Roma Two Seater (190 cm)',eur:580,usd:615},
-      {id:'ROMA-BRG',name:'Roma Bergere',eur:205,usd:180},
-      {id:'ROMA-SF-SET',name:'Roma Sofa Set (2×Three Seater+2×Bergere)',eur:1570,usd:1590,bundled:true},
-      {id:'ROMA-SET-331',name:'Roma Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
-      {id:'ROMA-SET-221',name:'Roma Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
-      {id:'ROMA-SET-321',name:'Roma Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
-    ]},
-    'ISTANBUL': { badge:'SET', items:[
-      {id:'IST-3S',name:'Istanbul Three Seater',eur:550,usd:575},
-      {id:'IST-2S',name:'Istanbul Two Seater (190 cm)',eur:550,usd:575},
-      {id:'IST-BRG',name:'Istanbul Bergere',eur:205,usd:175},
-      {id:'IST-CRN',name:'Istanbul Corner Sofa',eur:1080,usd:1020},
-      {id:'IST-SF-SET',name:'Istanbul Sofa Set (2×Three Seater+2×Bergere)',eur:1510,usd:1500,bundled:true},
-      {id:'IST-SET-331',name:'Istanbul Sofa Set (2×Three Seater+1×Bergere)',eur:1510,usd:1500,bundled:true},
-      {id:'IST-SET-221',name:'Istanbul Sofa Set (2×Two Seater+1×Bergere)',eur:1510,usd:1500,bundled:true},
-      {id:'IST-SET-321',name:'Istanbul Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1510,usd:1500,bundled:true},
-    ]},
-    'LION': { badge:'HOT', items:[
-      {id:'LION-3S',name:'Lion Three Seater',eur:580,usd:575},
-      {id:'LION-2S',name:'Lion Two Seater (190 cm)',eur:580,usd:575},
-      {id:'LION-BRG',name:'Lion Bergere',eur:205,usd:175},
-      {id:'LION-CRN',name:'Lion Corner Sofa',eur:1080,usd:1020},
-      {id:'LION-SF-SET',name:'Lion Sofa Set (2×Three Seater+2×Bergere)',eur:1570,usd:1500,bundled:true},
-      {id:'LION-SET-331',name:'Lion Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
-      {id:'LION-SET-221',name:'Lion Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
-      {id:'LION-SET-321',name:'Lion Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
-    ]},
-    'MIRAY': { badge:'SET', items:[
-      {id:'MIRAY-3S',name:'Miray Three Seater',eur:505,usd:480},
-      {id:'MIRAY-2S',name:'Miray Two Seater (190 cm)',eur:505,usd:480},
-      {id:'MIRAY-BRG',name:'Miray Bergere',eur:175,usd:165},
-      {id:'MIRAY-CRN',name:'Miray Corner Sofa',eur:null,usd:860},
-      {id:'MIRAY-SF-SET',name:'Miray Sofa Set (2×Three Seater+2×Bergere)',eur:1360,usd:1290,bundled:true},
-      {id:'MIRAY-SET-331',name:'Miray Sofa Set (2×Three Seater+1×Bergere)',eur:1360,usd:1290,bundled:true},
-      {id:'MIRAY-SET-221',name:'Miray Sofa Set (2×Two Seater+1×Bergere)',eur:1360,usd:1290,bundled:true},
-      {id:'MIRAY-SET-321',name:'Miray Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1360,usd:1290,bundled:true},
-    ]},
-    'VERONA': { badge:'EUR', items:[
-      {id:'VER-3S',name:'Verona Three Seater',eur:580,usd:525},
-      {id:'VER-2S',name:'Verona Two Seater (190 cm)',eur:580,usd:525},
-      {id:'VER-BRG',name:'Verona Bergere',eur:205,usd:175},
-      {id:'VER-SF-SET',name:'Verona Sofa Set (2×Three Seater+2×Bergere)',eur:1570,usd:1500,bundled:true},
-      {id:'VER-SET-331',name:'Verona Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
-      {id:'VER-SET-221',name:'Verona Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
-      {id:'VER-SET-321',name:'Verona Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
-    ]},
-    'ZENA': { badge:'POP', items:[
-      {id:'ZENA-3S',name:'Zena Three Seater',eur:450,usd:480},
-      {id:'ZENA-2S',name:'Zena Two Seater (190 cm)',eur:450,usd:480},
-      {id:'ZENA-BRG',name:'Zena Bergere',eur:150,usd:165},
-      {id:'ZENA-SF-SET',name:'Zena Sofa Set (2×Three Seater+2×Bergere)',eur:1200,usd:1290,bundled:true},
-      {id:'ZENA-SET-331',name:'Zena Sofa Set (2×Three Seater+1×Bergere)',eur:1200,usd:1290,bundled:true},
-      {id:'ZENA-SET-221',name:'Zena Sofa Set (2×Two Seater+1×Bergere)',eur:1200,usd:1290,bundled:true},
-      {id:'ZENA-SET-321',name:'Zena Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1200,usd:1290,bundled:true},
-    ]},
-    'DIVA': { badge:'USD', items:[
-      {id:'DIVA-3S',name:'Diva Three Seater',eur:null,usd:480},
-      {id:'DIVA-2S',name:'Diva Two Seater (190 cm)',eur:null,usd:480},
-      {id:'DIVA-BRG',name:'Diva Bergere',eur:null,usd:165},
-      {id:'DIVA-SF-SET',name:'Diva Sofa Set (2×Three Seater+2×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'DIVA-SET-331',name:'Diva Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'DIVA-SET-221',name:'Diva Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'DIVA-SET-321',name:'Diva Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-    ]},
-    'LUNA': { badge:'USD', items:[
-      {id:'LUNA-3S',name:'Luna Three Seater',eur:null,usd:480},
-      {id:'LUNA-2S',name:'Luna Two Seater (190 cm)',eur:null,usd:480},
-      {id:'LUNA-BRG',name:'Luna Bergere',eur:null,usd:165},
-      {id:'LUNA-SF-SET',name:'Luna Sofa Set (2×Three Seater+2×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'LUNA-SET-331',name:'Luna Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'LUNA-SET-221',name:'Luna Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'LUNA-SET-321',name:'Luna Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-    ]},
-    'BEYZA': { badge:'USD', items:[
-      {id:'BEYZA-3S',name:'Beyza Three Seater',eur:null,usd:480},
-      {id:'BEYZA-2S',name:'Beyza Two Seater (190 cm)',eur:null,usd:480},
-      {id:'BEYZA-SGL',name:'Beyza Single Armchair',eur:null,usd:165},
-      {id:'BEYZA-SF-SET',name:'Beyza Sofa Set (2×Three Seater+2×Single)',eur:null,usd:1290,bundled:true},
-      {id:'BEYZA-SET-331',name:'Beyza Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'BEYZA-SET-221',name:'Beyza Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-      {id:'BEYZA-SET-321',name:'Beyza Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
-    ]},
-    'SIDE': { badge:'USD', items:[
-      {id:'SIDE-3S',name:'Side Three Seater',eur:null,usd:525},
-      {id:'SIDE-2S',name:'Side Two Seater (190 cm)',eur:null,usd:525},
-      {id:'SIDE-BRG',name:'Side Bergere',eur:null,usd:175},
-      {id:'SIDE-SF-SET',name:'Side Sofa Set (2×Three Seater+2×Bergere)',eur:null,usd:1400,bundled:true},
-      {id:'SIDE-SET-331',name:'Side Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1400,bundled:true},
-      {id:'SIDE-SET-221',name:'Side Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1400,bundled:true},
-      {id:'SIDE-SET-321',name:'Side Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1400,bundled:true},
-    ]},
-    'EFES': { badge:'USD', items:[
-      {id:'EFES-3S',name:'Efes Three Seater',eur:null,usd:515},
-      {id:'EFES-2S',name:'Efes Two Seater (190 cm)',eur:null,usd:515},
-      {id:'EFES-BRG',name:'Efes Bergere',eur:null,usd:165},
-      {id:'EFES-SF-SET',name:'Efes Sofa Set (2×Three Seater+2×Bergere)',eur:null,usd:1360,bundled:true},
-      {id:'EFES-SET-331',name:'Efes Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1360,bundled:true},
-      {id:'EFES-SET-221',name:'Efes Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1360,bundled:true},
-      {id:'EFES-SET-321',name:'Efes Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1360,bundled:true},
-    ]},
-    'NAPOLİ': { badge:'YENİ', items:[
-      {id:'NAPOLI-3S',name:'Napoli Three Seater',eur:532,usd:613},
-      {id:'NAPOLI-2S',name:'Napoli Two Seater (190 cm)',eur:532,usd:613},
-      {id:'NAPOLI-BRG',name:'Napoli Bergere',eur:187,usd:216},
-      {id:'NAPOLI-SF-SET',name:'Napoli Sofa Set (2×Three Seater+2×Bergere)',eur:1439,usd:1658,bundled:true},
-      {id:'NAPOLI-SET-331',name:'Napoli Sofa Set (2×Three Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
-      {id:'NAPOLI-SET-221',name:'Napoli Sofa Set (2×Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
-      {id:'NAPOLI-SET-321',name:'Napoli Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
-    ]},
-  }
-}};
+/* CATALOG loaded from catalog.js */
 
 // ============================================================
 // STATE
@@ -5351,14 +5104,14 @@ function renderHistory() {
     const canDeposit = !isTrashView && (h.approval || ['Confirmed','Production','Shipped'].includes(h.status));
     const actionsHtml = isTrashView
       ? '<button class="hist-load-btn" onclick="restoreHistory('+realIdx+')">♻ Geri Al</button><button class="hist-del-btn" onclick="permanentlyDeleteHistory('+realIdx+')">Kalıcı Sil</button>'
-      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button>'+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
+      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-load-btn" title="Tahsilat / Ödemeler" onclick="showPayments('+realIdx+')">💳</button>'+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
     row.innerHTML=`
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span class="hist-pi">${h.pi}</span>
           ${isTrashView ? '' : '<button class="status-badge '+stCls+'" onclick="cycleStatus('+realIdx+',event)">'+(h.status||'Draft')+'</button>'}
         </div>
-        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span>${h.approval?' <span class="hist-cbm" style="color:var(--success);" title="'+h.approval.name+' tarafından onaylandı — '+new Date(h.approval.at).toLocaleString('tr-TR')+'">✅ '+h.approval.name+'</span>':''}</div>
+        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span>${h.approval?' <span class="hist-cbm" style="color:var(--success);" title="'+h.approval.name+' tarafından onaylandı — '+new Date(h.approval.at).toLocaleString('tr-TR')+'">✅ '+h.approval.name+'</span>':''}${(function(){const tot=piTotalNum(h),paid=piPaidNum(h);if(paid<=0)return '';const rem=tot-paid;return rem>0.01?' <span class="hist-cbm" style="color:var(--warning);" title="Alınan: '+paid.toFixed(0)+' / Kalan: '+rem.toFixed(0)+'">💰 %'+Math.round(paid/tot*100)+'</span>':' <span class="hist-cbm" style="color:var(--success);" title="Tamamı tahsil edildi">💰 ödendi</span>';})()}${/\-R\d+$/.test(h.pi)?' <span class="hist-cbm" style="color:#A78BFA;cursor:pointer;" title="Önceki revizyonla karşılaştır" onclick="event.stopPropagation();showRevisionDiff('+realIdx+')">🔄 diff</span>':''}</div>
       </div>
       <div class="hist-total">${h.total}</div>
       <div class="hist-actions">${actionsHtml}</div>`;
@@ -5790,7 +5543,7 @@ function showPrint() {
     +'<div class="pf-notes"><strong>'+t.notes+':</strong> '+noteText+'</div>'
     +'<div class="pf-sigs">'
       +'<div class="pf-sig">'+t.buyerSig+'</div>'
-      +'<div class="pf-sig">'+t.sellerSig+'</div>'
+      +'<div class="pf-sig">'+t.sellerSig+getSignatureHtml('Morello Mobilya')+'</div>'
     +'</div>';
   document.getElementById('print-overlay').style.display='block';
   window.scrollTo(0,0);
@@ -6238,6 +5991,276 @@ async function syncApprovals() {
     if(histTab && histTab.classList.contains('active')) setTimeout(renderHistory, 100);
   }
   approvalsSyncedOnce = true;
+}
+
+// ============================================================
+// PAYMENT TRACKING
+// ============================================================
+function piTotalNum(h) { return parseFloat(String(h.total).replace(/[^0-9.]/g,'')) || 0; }
+function piPaidNum(h) { return (h.payments||[]).reduce(function(s,p){ return s+(parseFloat(p.amount)||0); }, 0); }
+
+function showPayments(histIdx) {
+  const h = getHistory()[histIdx];
+  if(!h) return;
+  const sym = h.currency==='TRY'?'\u20ba':h.currency==='EUR'?'\u20ac':'$';
+  const total = piTotalNum(h);
+  const paid = piPaidNum(h);
+  const remaining = total - paid;
+
+  const rows = (h.payments||[]).map(function(p, i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border-light);font-size:11.5px;">'
+      +'<span style="flex-shrink:0;">'+(p.type==='deposit'?'\ud83d\udd10':'\ud83d\udcb5')+'</span>'
+      +'<div style="flex:1;"><strong>'+sym+parseFloat(p.amount).toFixed(2)+'</strong> \u00b7 '+(p.type==='deposit'?'Kapora':'Bakiye/Di\u011fer')
+      +'<div style="font-size:10px;color:var(--muted);">'+p.date+(p.note?' \u00b7 '+p.note:'')+'</div></div>'
+      +'<button class="hist-del-btn" onclick="deletePayment('+histIdx+','+i+')">\u00d7</button></div>';
+  }).join('') || '<div style="padding:14px;text-align:center;color:var(--muted);font-size:11px;">Hen\u00fcz \u00f6deme kayd\u0131 yok</div>';
+
+  const pctPaid = total > 0 ? Math.min(100, paid/total*100) : 0;
+
+  const modal = document.createElement('div');
+  modal.id = 'pay-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10700;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  modal.innerHTML = '<div style="background:var(--surface);border-radius:var(--r);width:380px;max-width:92vw;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg);">'
+    +'<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><div style="font-size:13px;font-weight:700;color:var(--text);">\ud83d\udcb0 '+h.pi+' \u2014 Tahsilat</div>'
+      +'<div style="font-size:10px;color:var(--muted);">'+h.buyer+'</div></div>'
+      +'<button onclick="document.getElementById(\'pay-modal\').remove()" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--muted);">\u00d7</button></div>'
+    +'<div style="padding:12px 16px;">'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span style="color:var(--success);font-weight:700;">Al\u0131nan: '+sym+paid.toFixed(2)+'</span><span style="color:'+(remaining>0.01?'var(--danger)':'var(--muted)')+';font-weight:700;">Kalan: '+sym+remaining.toFixed(2)+'</span></div>'
+      +'<div style="height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;margin-bottom:14px;"><div style="height:100%;width:'+pctPaid.toFixed(1)+'%;background:var(--success);border-radius:5px;"></div></div>'
+      +rows
+      +'<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">+ Yeni \u00d6deme</div>'
+        +'<div style="display:flex;gap:6px;margin-bottom:8px;">'
+          +'<input type="number" id="pay-amount" placeholder="Tutar" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;background:var(--bg);color:var(--text);outline:none;">'
+          +'<select id="pay-type" style="padding:8px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;background:var(--bg);color:var(--text);outline:none;"><option value="deposit">Kapora</option><option value="balance">Bakiye</option></select>'
+        +'</div>'
+        +'<input type="text" id="pay-note" placeholder="Not (swift ref vb.)" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;margin-bottom:8px;">'
+        +'<button class="btn btn-gold btn-sm" style="width:100%;" onclick="addPayment('+histIdx+')">\ud83d\udcb0 \u00d6deme Kaydet</button>'
+      +'</div>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+
+function addPayment(histIdx) {
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  if(!amount || amount <= 0) { showToast('Ge\u00e7erli tutar girin'); return; }
+  const hist = getHistory();
+  const h = hist[histIdx];
+  if(!h) return;
+  if(!h.payments) h.payments = [];
+  h.payments.push({ amount: amount, type: document.getElementById('pay-type').value, note: document.getElementById('pay-note').value.trim(), date: new Date().toLocaleDateString('tr-TR') });
+  saveHistory(hist);
+  if(h._supa_id) saveHistoryToCloud(h);
+  document.getElementById('pay-modal').remove();
+  renderHistory();
+  showToast('\ud83d\udcb0 \u00d6deme kaydedildi');
+  showPayments(histIdx);
+}
+
+function deletePayment(histIdx, payIdx) {
+  if(!confirm('\u00d6deme kayd\u0131 silinsin mi?')) return;
+  const hist = getHistory();
+  hist[histIdx].payments.splice(payIdx, 1);
+  saveHistory(hist);
+  if(hist[histIdx]._supa_id) saveHistoryToCloud(hist[histIdx]);
+  document.getElementById('pay-modal').remove();
+  renderHistory();
+  showPayments(histIdx);
+}
+
+// ============================================================
+// PI REVISION
+// ============================================================
+function saveAsRevision() {
+  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
+  const curPI = document.getElementById('piNumber').value.trim();
+  if(!curPI) { showToast('PI numaras\u0131 bo\u015f'); return; }
+  const base = curPI.replace(/-R\d+$/, '');
+  const hist = getHistory();
+  let maxR = 1;
+  hist.forEach(function(h){
+    if(!h.pi) return;
+    if(h.pi === base) maxR = Math.max(maxR, 1);
+    const m = h.pi.match(new RegExp('^'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'-R(\\d+)$'));
+    if(m) maxR = Math.max(maxR, parseInt(m[1]));
+  });
+  const newPI = base + '-R' + (maxR + 1);
+  document.getElementById('piNumber').value = newPI;
+  saveToHistory();
+  showToast('\ud83d\udd04 Revizyon kaydedildi: '+newPI);
+}
+
+function showRevisionDiff(histIdx) {
+  const hist = getHistory();
+  const h = hist[histIdx];
+  if(!h) return;
+  const base = h.pi.replace(/-R\d+$/, '');
+  const family = hist.filter(function(x){
+    return x.pi === base || (x.pi && x.pi.indexOf(base+'-R') === 0);
+  }).sort(function(a,b){
+    const ra = (a.pi.match(/-R(\d+)$/)||[0,1])[1], rb = (b.pi.match(/-R(\d+)$/)||[0,1])[1];
+    return parseInt(ra) - parseInt(rb);
+  });
+  if(family.length < 2) { showToast('Kar\u015f\u0131la\u015ft\u0131r\u0131lacak revizyon yok'); return; }
+  const idx = family.findIndex(function(x){ return x.pi === h.pi; });
+  const prev = family[Math.max(0, idx-1)];
+  const cur = family[idx] || h;
+  if(prev.pi === cur.pi) { showToast('Bu ilk revizyon'); return; }
+
+  function itemsMap(x){ const m={}; (x.items||[]).forEach(function(i){ m[i.id]={qty:i.qty, up:i.unitPrice, name:i.name}; }); return m; }
+  const pm = itemsMap(prev), cm = itemsMap(cur);
+  const allIds = Array.from(new Set(Object.keys(pm).concat(Object.keys(cm))));
+  const sym = cur.currency==='TRY'?'\u20ba':cur.currency==='EUR'?'\u20ac':'$';
+  let rows = '';
+  allIds.forEach(function(id){
+    const a = pm[id], b = cm[id];
+    if(a && !b) rows += '<div style="padding:6px 10px;font-size:11px;background:var(--danger-bg);border-radius:var(--r-sm);margin-bottom:4px;color:var(--danger);">\u2212 '+a.name+' (kald\u0131r\u0131ld\u0131, '+a.qty+' adet)</div>';
+    else if(!a && b) rows += '<div style="padding:6px 10px;font-size:11px;background:var(--success-bg);border-radius:var(--r-sm);margin-bottom:4px;color:var(--success);">+ '+b.name+' \u00d7'+b.qty+' @ '+sym+b.up.toFixed(2)+'</div>';
+    else if(a && b && (a.qty !== b.qty || Math.abs(a.up-b.up) > 0.005)) {
+      let changes = [];
+      if(a.qty !== b.qty) changes.push('adet '+a.qty+' \u2192 '+b.qty);
+      if(Math.abs(a.up-b.up) > 0.005) changes.push('fiyat '+sym+a.up.toFixed(2)+' \u2192 '+sym+b.up.toFixed(2));
+      rows += '<div style="padding:6px 10px;font-size:11px;background:var(--warning-bg);border-radius:var(--r-sm);margin-bottom:4px;color:var(--warning);">\u0394 '+b.name+': '+changes.join(', ')+'</div>';
+    }
+  });
+  if(!rows) rows = '<div style="padding:14px;text-align:center;color:var(--muted);font-size:11px;">Kalem de\u011fi\u015fikli\u011fi yok</div>';
+
+  const modal = document.createElement('div');
+  modal.id = 'rev-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10700;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  modal.innerHTML = '<div style="background:var(--surface);border-radius:var(--r);width:400px;max-width:92vw;max-height:75vh;overflow-y:auto;box-shadow:var(--shadow-lg);">'
+    +'<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--text);">\ud83d\udd04 '+prev.pi+' \u2192 '+cur.pi+'</div>'
+      +'<button onclick="document.getElementById(\'rev-modal\').remove()" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--muted);">\u00d7</button></div>'
+    +'<div style="padding:12px 16px;">'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px;color:var(--muted);"><span>'+prev.total+'</span><span>\u2192</span><span style="font-weight:700;color:var(--text);">'+cur.total+'</span></div>'
+      +rows
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+
+// ============================================================
+// SIGNATURE & STAMP
+// ============================================================
+function getSignature() { try { return localStorage.getItem('morello_signature') || ''; } catch(e){ return ''; } }
+function uploadSignature() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = function(){
+    const f = inp.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = function(){
+      localStorage.setItem('morello_signature', r.result);
+      showToast('\u270d\ufe0f \u0130mza/ka\u015fe kaydedildi \u2014 belgelerde otomatik g\u00f6r\u00fcnecek');
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+function clearSignature() { localStorage.removeItem('morello_signature'); showToast('\u0130mza kald\u0131r\u0131ld\u0131'); }
+function getSignatureHtml(label) {
+  const sig = getSignature();
+  if(!sig) return '';
+  return '<div style="margin-top:6px;"><img src="'+sig+'" style="max-height:56px;max-width:160px;object-fit:contain;" alt="signature"><div style="font-size:8px;color:#999;">'+(label||'')+'</div></div>';
+}
+
+// ============================================================
+// COUNTRY SALES DISTRIBUTION (Reports)
+// ============================================================
+const COUNTRY_FLAGS = {'bulgaria':'\ud83c\udde7\ud83c\uddec','greece':'\ud83c\uddec\ud83c\uddf7','libya':'\ud83c\uddf1\ud83c\uddfe','somalia':'\ud83c\uddf8\ud83c\uddf4','senegal':'\ud83c\uddf8\ud83c\uddf3','ghana':'\ud83c\uddec\ud83c\udded','togo':'\ud83c\uddf9\ud83c\uddec','uae':'\ud83c\udde6\ud83c\uddea','dubai':'\ud83c\udde6\ud83c\uddea','saudi':'\ud83c\uddf8\ud83c\udde6','kuwait':'\ud83c\uddf0\ud83c\uddfc','qatar':'\ud83c\uddf6\ud83c\udde6','turkey':'\ud83c\uddf9\ud83c\uddf7','t\u00fcrkiye':'\ud83c\uddf9\ud83c\uddf7','cote':'\ud83c\udde8\ud83c\uddee','ivory':'\ud83c\udde8\ud83c\uddee','congo':'\ud83c\udde8\ud83c\udde9','drc':'\ud83c\udde8\ud83c\udde9','morocco':'\ud83c\uddf2\ud83c\udde6','italy':'\ud83c\uddee\ud83c\uddf9','france':'\ud83c\uddeb\ud83c\uddf7','germany':'\ud83c\udde9\ud83c\uddea','romania':'\ud83c\uddf7\ud83c\uddf4'};
+function flagFor(country) {
+  const k = (country||'').toLowerCase();
+  for(const key in COUNTRY_FLAGS) { if(k.includes(key)) return COUNTRY_FLAGS[key]; }
+  return '\ud83c\udff3\ufe0f';
+}
+function renderCountryDist(hist) {
+  const el = document.getElementById('report-countries');
+  if(!el) return;
+  const agg = {};
+  hist.forEach(function(h){
+    if(h.trashed) return;
+    const country = (h.buyer_data?.country || 'Bilinmiyor').trim() || 'Bilinmiyor';
+    if(!agg[country]) agg[country] = { total: 0, count: 0 };
+    agg[country].total += piTotalNum(h);
+    agg[country].count++;
+  });
+  const entries = Object.entries(agg).sort(function(a,b){ return b[1].total - a[1].total; });
+  if(!entries.length) { el.innerHTML = ''; return; }
+  const maxV = entries[0][1].total || 1;
+  const bars = entries.map(function([country, v]){
+    const pct = Math.max(3, v.total/maxV*100);
+    return '<div style="margin-bottom:7px;">'
+      +'<div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:2px;">'
+        +'<span style="font-weight:600;color:var(--text);">'+flagFor(country)+' '+country+'</span>'
+        +'<span style="color:var(--muted);">'+v.count+' PI \u00b7 '+v.total.toLocaleString(undefined,{maximumFractionDigits:0})+'</span></div>'
+      +'<div style="height:14px;background:var(--surface2);border-radius:7px;overflow:hidden;">'
+        +'<div style="height:100%;width:'+pct.toFixed(1)+'%;background:linear-gradient(90deg,var(--gold-mid),var(--gold));border-radius:7px;"></div></div></div>';
+  }).join('');
+  el.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">\ud83c\udf0d \u00dclke Da\u011f\u0131l\u0131m\u0131</div>'+bars;
+}
+
+// ============================================================
+// OPEN RECEIVABLES (Reports)
+// ============================================================
+function renderReceivables(hist) {
+  const el = document.getElementById('report-receivables');
+  if(!el) return;
+  const open = [];
+  hist.forEach(function(h){
+    if(h.trashed) return;
+    const st = h.status || 'Draft';
+    if(st === 'Draft') return; // not yet a receivable
+    const tot = piTotalNum(h), paid = piPaidNum(h);
+    const rem = tot - paid;
+    if(rem > 0.01) {
+      // Overdue if validity date passed
+      let overdue = false;
+      try {
+        const m = (h.settings?.validity||'').match(/(\d+)/);
+        if(m && h.settings?.date) {
+          const due = new Date(h.settings.date);
+          due.setDate(due.getDate() + parseInt(m[1]));
+          overdue = new Date() > due;
+        }
+      } catch(e) {}
+      open.push({ pi: h.pi, buyer: h.buyer, rem: rem, cur: h.currency, overdue: overdue, status: st });
+    }
+  });
+  if(!open.length) { el.innerHTML = ''; return; }
+  const byC = {};
+  open.forEach(function(o){ byC[o.cur] = (byC[o.cur]||0) + o.rem; });
+  const totStr = Object.entries(byC).map(function([cur,v]){
+    const s = cur==='TRY'?'\u20ba':cur==='EUR'?'\u20ac':'$';
+    return s+v.toLocaleString(undefined,{maximumFractionDigits:0});
+  }).join(' + ');
+  const rows = open.sort(function(a,b){ return (b.overdue?1:0)-(a.overdue?1:0) || b.rem-a.rem; }).slice(0,10).map(function(o){
+    const s = o.cur==='TRY'?'\u20ba':o.cur==='EUR'?'\u20ac':'$';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border-light);font-size:11px;">'
+      +'<span><strong>'+o.pi+'</strong> \u00b7 '+o.buyer+(o.overdue?' <span style="color:var(--danger);font-weight:700;">\u26a0 vadesi ge\u00e7ti</span>':'')+'</span>'
+      +'<span style="font-weight:700;color:'+(o.overdue?'var(--danger)':'var(--warning)')+';">'+s+o.rem.toLocaleString(undefined,{maximumFractionDigits:0})+'</span></div>';
+  }).join('');
+  el.innerHTML = '<div style="padding:14px;background:var(--danger-bg);border:1px solid rgba(220,38,38,.25);border-radius:var(--r);">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+      +'<span style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--danger);">\ud83d\udcb0 A\u00e7\u0131k Alacaklar ('+open.length+' PI)</span>'
+      +'<span style="font-size:15px;font-weight:800;color:var(--danger);">'+totStr+'</span></div>'
+    +rows+'</div>';
+}
+
+// ============================================================
+// DEALER PRICE LIST LINK
+// ============================================================
+function copyPriceListLink(companyName, currencyPref, discountPref) {
+  const payload = { name: companyName || '', cur: currencyPref || 'EUR', disc: discountPref || 0 };
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const link = 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/pricelist.html#'+b64;
+  navigator.clipboard.writeText(link).then(function(){ showToast('\ud83d\udcb2 Fiyat listesi linki kopyaland\u0131: '+(companyName||'genel')); }).catch(function(){ prompt('Linki kopyala:', link); });
+}
+function copyPriceListForCustomer(companyName) {
+  const c = getCustomers().find(function(x){ return x.company === companyName; });
+  copyPriceListLink(companyName, c?.defaults?.currency || 'EUR', c?.discount || 0);
 }
 
 // ============================================================
@@ -6848,7 +6871,7 @@ function showTalimat() {
       +(s.note?'<div class="doc-footer-row"><span class="doc-footer-key">Not:</span><span>'+s.note+'</span></div>':'')
     +'</div>'
     +'<div class="doc-sigs">'
-      +'<div class="doc-sig-line">Haz\u0131rlayan<br><span style="font-size:9px;">Selina Mobilya</span></div>'
+      +'<div class="doc-sig-line">Haz\u0131rlayan<br><span style="font-size:9px;">Selina Mobilya</span>'+getSignatureHtml('')+'</div>'
       +'<div class="doc-sig-line">Teslim Eden</div>'
       +'<div class="doc-sig-line">Onaylayan</div>'
     +'</div>'
@@ -6880,7 +6903,7 @@ function showIrsaliye() {
     rows+='<tr><td class="c" style="color:#999;">'+(idx+1)+'</td><td><div style="font-weight:600;">'+item.name+'</div>'+(item.endCustomer?'<div style="font-size:8px;color:#5B21B6;font-weight:700;">\ud83d\udc64 '+item.endCustomer+'</div>':'')+(item.note?'<div style="font-size:8px;color:#888;font-style:italic;">'+item.note+'</div>':'')+'</td><td class="c">'+item.qty+'</td><td class="c" style="font-weight:600;color:#5B21B6;">'+pkgStr+'</td><td class="c">'+cbmVal+' m\u00b3</td><td class="c">'+gwStr+'</td><td style="width:80px;border-bottom:1px solid #ccc;"></td></tr>';
   });
   const contHtml=buildContainerHTML(totalCBM);
-  document.getElementById('irsaliye-print').innerHTML='<div class="irs-hdr"><div>'+getPfLogoHtml()+'<div class="irs-title-sub" style="margin-top:4px;">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.</div><div style="font-size:9px;color:#888;">Yeniceк\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / Bursa</div></div><div style="text-align:right;"><div class="irs-title">\u0130RSAL\u0130YE</div><div class="irs-title-sub">WAYBILL / DELIVERY NOTE</div><div style="font-size:9.5px;color:#888;margin-top:6px;line-height:1.8;"><div>Belge No: <strong>'+piNo+'-WB</strong></div><div>Tarih: '+dateStr+'</div><div>Teslim \u015eekli: '+priceTerm+'</div></div></div></div><div class="irs-info-grid"><div><div class="irs-sec-lbl">G\u00f6nderen / Shipper</div><div class="irs-frow"><span class="irs-fk">Firma:</span><span class="irs-fv">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.</span></div><div class="irs-frow"><span class="irs-fk">Adres:</span><span class="irs-fv">Yeniceк\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / BURSA / T\u00dcRK\u0130YE</span></div><div class="irs-frow"><span class="irs-fk">Tel:</span><span class="irs-fv">+90 224 714 13 03</span></div></div><div><div class="irs-sec-lbl">Al\u0131c\u0131 / Consignee</div><div class="irs-frow"><span class="irs-fk">Firma:</span><span class="irs-fv">'+buyer+'</span></div>'+(buyerContact?'<div class="irs-frow"><span class="irs-fk">Yetkili:</span><span class="irs-fv">'+buyerContact+'</span></div>':'')+(buyerAddress?'<div class="irs-frow"><span class="irs-fk">Adres:</span><span class="irs-fv">'+buyerAddress+'</span></div>':'')+(buyerCountry?'<div class="irs-frow"><span class="irs-fk">\u00dclke:</span><span class="irs-fv">'+buyerCountry+'</span></div>':'')+'<div class="irs-frow"><span class="irs-fk">Ref:</span><span class="irs-fv">'+piNo+'</span></div></div></div><table class="irs-table"><thead><tr><th class="c" style="width:24px;">No</th><th>\u00dcr\u00fcn Ad\u0131 / Description</th><th class="c" style="width:40px;">Adet</th><th class="c" style="width:60px;">Paket</th><th class="c" style="width:60px;">CBM</th><th class="c" style="width:70px;">A\u011f\u0131rl\u0131k</th><th style="width:80px;">Parti No</th></tr></thead><tbody>'+rows+'</tbody></table><div class="irs-totals"><div class="irs-totals-box"><div class="irs-trow"><span>Toplam Kalem</span><span>'+orderItems.length+'</span></div><div class="irs-trow"><span>Toplam Adet</span><span>'+totalQty+'</span></div><div class="irs-trow"><span>Toplam Paket</span><span style="font-weight:700;color:#5B21B6;">'+(totalPkgs||'\u2014')+'</span></div><div class="irs-trow"><span>Toplam CBM</span><span>'+totalCBM.toFixed(2)+' m\u00b3</span></div><div class="irs-trow"><span>Est. A\u011f\u0131rl\u0131k</span><span>'+totalGW.toFixed(0)+' kg</span></div></div></div>'+contHtml+'<div class="irs-notes"><strong>NOTLAR:</strong> Bu belge nakliye ve teslimat ama\u00e7l\u0131d\u0131r, ticari de\u011fer i\u00e7ermez.</div><div class="irs-sig"><div class="irs-sig-box">Haz\u0131rlayan<br><span style="font-weight:400;font-size:8px;">Selina Mobilya</span></div><div class="irs-sig-box">Teslim Eden</div><div class="irs-sig-box">Teslim Alan<br><span style="font-weight:400;font-size:8px;">'+buyer+'</span></div></div>';
+  document.getElementById('irsaliye-print').innerHTML='<div class="irs-hdr"><div>'+getPfLogoHtml()+'<div class="irs-title-sub" style="margin-top:4px;">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.</div><div style="font-size:9px;color:#888;">Yeniceк\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / Bursa</div></div><div style="text-align:right;"><div class="irs-title">\u0130RSAL\u0130YE</div><div class="irs-title-sub">WAYBILL / DELIVERY NOTE</div><div style="font-size:9.5px;color:#888;margin-top:6px;line-height:1.8;"><div>Belge No: <strong>'+piNo+'-WB</strong></div><div>Tarih: '+dateStr+'</div><div>Teslim \u015eekli: '+priceTerm+'</div></div></div></div><div class="irs-info-grid"><div><div class="irs-sec-lbl">G\u00f6nderen / Shipper</div><div class="irs-frow"><span class="irs-fk">Firma:</span><span class="irs-fv">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.</span></div><div class="irs-frow"><span class="irs-fk">Adres:</span><span class="irs-fv">Yeniceк\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / BURSA / T\u00dcRK\u0130YE</span></div><div class="irs-frow"><span class="irs-fk">Tel:</span><span class="irs-fv">+90 224 714 13 03</span></div></div><div><div class="irs-sec-lbl">Al\u0131c\u0131 / Consignee</div><div class="irs-frow"><span class="irs-fk">Firma:</span><span class="irs-fv">'+buyer+'</span></div>'+(buyerContact?'<div class="irs-frow"><span class="irs-fk">Yetkili:</span><span class="irs-fv">'+buyerContact+'</span></div>':'')+(buyerAddress?'<div class="irs-frow"><span class="irs-fk">Adres:</span><span class="irs-fv">'+buyerAddress+'</span></div>':'')+(buyerCountry?'<div class="irs-frow"><span class="irs-fk">\u00dclke:</span><span class="irs-fv">'+buyerCountry+'</span></div>':'')+'<div class="irs-frow"><span class="irs-fk">Ref:</span><span class="irs-fv">'+piNo+'</span></div></div></div><table class="irs-table"><thead><tr><th class="c" style="width:24px;">No</th><th>\u00dcr\u00fcn Ad\u0131 / Description</th><th class="c" style="width:40px;">Adet</th><th class="c" style="width:60px;">Paket</th><th class="c" style="width:60px;">CBM</th><th class="c" style="width:70px;">A\u011f\u0131rl\u0131k</th><th style="width:80px;">Parti No</th></tr></thead><tbody>'+rows+'</tbody></table><div class="irs-totals"><div class="irs-totals-box"><div class="irs-trow"><span>Toplam Kalem</span><span>'+orderItems.length+'</span></div><div class="irs-trow"><span>Toplam Adet</span><span>'+totalQty+'</span></div><div class="irs-trow"><span>Toplam Paket</span><span style="font-weight:700;color:#5B21B6;">'+(totalPkgs||'\u2014')+'</span></div><div class="irs-trow"><span>Toplam CBM</span><span>'+totalCBM.toFixed(2)+' m\u00b3</span></div><div class="irs-trow"><span>Est. A\u011f\u0131rl\u0131k</span><span>'+totalGW.toFixed(0)+' kg</span></div></div></div>'+contHtml+'<div class="irs-notes"><strong>NOTLAR:</strong> Bu belge nakliye ve teslimat ama\u00e7l\u0131d\u0131r, ticari de\u011fer i\u00e7ermez.</div><div class="irs-sig"><div class="irs-sig-box">Haz\u0131rlayan<br><span style="font-weight:400;font-size:8px;">Selina Mobilya</span>'+getSignatureHtml('')+'</div><div class="irs-sig-box">Teslim Eden</div><div class="irs-sig-box">Teslim Alan<br><span style="font-weight:400;font-size:8px;">'+buyer+'</span></div></div>';
   document.getElementById('irsaliye-overlay').style.display='block'; window.scrollTo(0,0);
 }
 function closeIrsaliye() { document.getElementById('irsaliye-overlay').style.display='none'; }
@@ -6936,6 +6959,8 @@ function parseAmount(s) { return parseFloat((s||'').replace(/[^0-9.]/g,''))||0; 
 function renderReport(period) {
   const hist=filterHistByPeriod(getHistory(),period||reportPeriod);
   renderFunnel(hist);
+  renderCountryDist(hist);
+  renderReceivables(hist);
   const se=document.getElementById('report-stats'); if(!se) return;
   const total=hist.reduce((s,h)=>s+parseAmount(h.total),0); const avg=hist.length?total/hist.length:0;
   const cur=(hist[0]?.currency)||'EUR'; const sym=cur==='TRY'?'\u20ba':cur==='EUR'?'\u20ac':'$';
