@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783082608</title>
+<title>Morello — Proforma Generator v1783320928</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -163,7 +163,41 @@ body {
   margin-top: 1px;
   font-weight: 400;
 }
-.hdr-actions { display: flex; gap: 8px; align-items: center; }
+.hdr-actions { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
+
+/* ─── HEADER DROPDOWNS ─── */
+.hdr-dd { position: relative; }
+.hdr-dd-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 210px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+  padding: 5px;
+  z-index: 500;
+}
+.hdr-dd.open .hdr-dd-menu { display: block; }
+.hdr-dd-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  white-space: nowrap;
+}
+.hdr-dd-menu button:hover { background: var(--gold-subtle); color: var(--gold-mid); }
+.hdr-dd-sep { height: 1px; background: var(--border); margin: 4px 8px; }
 
 /* ─── LAYOUT ─── */
 .layout { display: flex; height: calc(100vh - 56px); overflow: hidden; }
@@ -669,6 +703,22 @@ body {
   gap: 14px;
   flex: 1;
   justify-content: center;
+  min-width: 0;
+}
+
+/* ─── HEADER RESPONSIVE ─── */
+@media (max-width: 1380px) {
+  .fx-widget .fx-label:nth-of-type(3), .fx-widget #fx-order-try { display: none; }
+  .fx-widget { gap: 8px; }
+}
+@media (max-width: 1180px) {
+  .fx-widget { display: none; }
+  .hdr-sub { display: none; }
+}
+@media (max-width: 900px) {
+  .hdr { height: auto; min-height: 56px; flex-wrap: wrap; padding: 8px 12px; gap: 6px; }
+  .hdr-actions { flex-wrap: wrap; }
+  .layout { height: calc(100vh - 104px); }
 }
 .fx-label {
   font-size: 9.5px;
@@ -1912,27 +1962,52 @@ body {
     <button class="fx-live-badge" onclick="fetchLiveRates()" title="Fetch live rates">🔄 Live</button>
   </div>
   <div class="hdr-actions">
-    <div style="display:flex;gap:3px;background:rgba(255,255,255,.1);padding:2px;border-radius:var(--r);margin-right:4px;">
-      <button class="lang-ui-btn cur-btn active" data-lang="en" onclick="setUILang('en')" style="padding:2px 8px;font-size:10px;font-weight:700;">EN</button>
-      <button class="lang-ui-btn cur-btn" data-lang="tr" onclick="setUILang('tr')" style="padding:2px 8px;font-size:10px;font-weight:700;">TR</button>
-    </div>
-    <button id="theme-toggle-btn" onclick="toggleTheme()" title="Tema değiştir" style="padding:3px 9px;font-size:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r);color:#fff;cursor:pointer;margin-right:4px;">🌙</button>
-    <span id="user-info" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:4px;"></span>
-    <button id="btn-logout" onclick="doLogout()" style="display:none;padding:2px 10px;font-size:10px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;color:#fff;cursor:pointer;">⎋ Çıkış</button>
+    <span id="user-info" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:2px;"></span>
     <button class="btn btn-outline btn-sm" onclick="showImport()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-color:#5B21B6;color:#fff;">🤖 Import</button>
-    <button id="btn-clear" class="btn btn-outline btn-sm" onclick="clearOrder()">🗑 Clear</button>
-    <button class="btn btn-outline btn-sm" onclick="showTemplates()" title="Kayıtlı sipariş şablonları">📐 Şablonlar</button>
-    <button class="btn btn-outline btn-sm" onclick="saveAsTemplate()" title="Mevcut siparişi şablon olarak kaydet">📐+</button>
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
-    <button class="btn btn-outline btn-sm" onclick="shareProformaLink()" title="Müşteriye gönderilecek web-proforma linki oluştur ve kopyala" style="background:linear-gradient(135deg,#0E7B5A,#16A374);border-color:#0E7B5A;color:#fff;">🔗 Link</button>
-    <button class="btn btn-outline btn-sm" onclick="generateEmailDraft()" title="Claude ile alıcının dilinde e-posta taslağı oluştur">✉️ E-posta</button>
-    <button class="btn btn-outline btn-sm" onclick="showPackingList()">📋 Packing List</button>
-    <button class="btn btn-outline btn-sm" onclick="showCI()">💼 C.Invoice</button>
-    <button class="btn btn-outline btn-sm" onclick="showCeki()">📄 Çeki</button>
-    <button class="btn btn-outline btn-sm" onclick="showTalimat()">📑 Talimat</button>
-    <button class="btn btn-outline btn-sm" onclick="showIrsaliye()">📦 İrsaliye</button>
-    <button id="btn-generate" class="btn btn-gold" onclick="showPrint()">📄 Generate Proforma</button>
+
+    <!-- SHARE DROPDOWN -->
+    <div class="hdr-dd">
+      <button class="btn btn-outline btn-sm hdr-dd-toggle" style="background:linear-gradient(135deg,#0E7B5A,#16A374);border-color:#0E7B5A;color:#fff;">📤 Paylaş ▾</button>
+      <div class="hdr-dd-menu">
+        <button onclick="shareProformaLink()">🔗 Web-Proforma Linki</button>
+        <button onclick="shareProformaLinkWA()">📱 WhatsApp ile Gönder</button>
+        <button onclick="generateEmailDraft()">✉️ E-posta Taslağı (AI)</button>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS DROPDOWN -->
+    <div class="hdr-dd">
+      <button class="btn btn-outline btn-sm hdr-dd-toggle">📑 Belgeler ▾</button>
+      <div class="hdr-dd-menu">
+        <button onclick="showPackingList()">📋 Packing List</button>
+        <button onclick="showCI()">💼 Commercial Invoice</button>
+        <button onclick="showCeki()">📄 Çeki Listesi</button>
+        <button onclick="showTalimat()">📑 Yükleme Talimatı</button>
+        <button onclick="showIrsaliye()">📦 İrsaliye</button>
+        <div class="hdr-dd-sep"></div>
+        <button onclick="generateAllDocuments()" style="font-weight:700;">🗂 Tüm Belgeleri Oluştur</button>
+      </div>
+    </div>
+
+    <button id="btn-generate" class="btn btn-gold" onclick="showPrint()">📄 Proforma</button>
+
+    <!-- OVERFLOW MENU -->
+    <div class="hdr-dd">
+      <button class="btn btn-outline btn-sm hdr-dd-toggle" title="Diğer" style="padding:5px 10px;">⋮</button>
+      <div class="hdr-dd-menu" style="right:0;left:auto;">
+        <button onclick="showTemplates()">📐 Sipariş Şablonları</button>
+        <button onclick="saveAsTemplate()">📐 Şablon Olarak Kaydet</button>
+        <div class="hdr-dd-sep"></div>
+        <button onclick="clearOrder()">🗑 Siparişi Temizle</button>
+        <div class="hdr-dd-sep"></div>
+        <button onclick="toggleTheme()"><span id="theme-menu-icon">🌙</span> Tema Değiştir</button>
+        <button onclick="setUILang(uiLang==='en'?'tr':'en')">🌐 Dil: <span id="lang-menu-label">EN</span></button>
+        <div class="hdr-dd-sep"></div>
+        <button id="btn-logout" onclick="doLogout()" style="display:none;color:var(--danger);">⎋ Çıkış</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3324,6 +3399,8 @@ function setUILang(lang) {
   uiLang = lang;
   localStorage.setItem('morello_ui_lang', lang);
   applyUILang();
+  const lbl = document.getElementById('lang-menu-label');
+  if(lbl) lbl.textContent = lang.toUpperCase();
 }
 
 function applyUILang() {
@@ -3797,6 +3874,8 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('theme-toggle-btn');
   if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
+  const menuIcon = document.getElementById('theme-menu-icon');
+  if(menuIcon) menuIcon.textContent = theme==='dark' ? '☀️' : '🌙';
   localStorage.setItem('morello_theme', theme);
 }
 function toggleTheme() {
@@ -5835,6 +5914,26 @@ function sendWAShare() {
   window.open(url, '_blank');
   closeWAShare();
 }
+
+// ============================================================
+// HEADER DROPDOWNS
+// ============================================================
+document.addEventListener('click', function(e) {
+  const toggle = e.target.closest('.hdr-dd-toggle');
+  const insideMenu = e.target.closest('.hdr-dd-menu');
+  document.querySelectorAll('.hdr-dd.open').forEach(function(dd){
+    if(toggle && dd.contains(toggle)) return; // handled below
+    dd.classList.remove('open');
+  });
+  if(toggle) {
+    const dd = toggle.closest('.hdr-dd');
+    dd.classList.toggle('open');
+    e.stopPropagation();
+  } else if(insideMenu) {
+    // Menu item clicked -> close after action fires
+    setTimeout(function(){ document.querySelectorAll('.hdr-dd.open').forEach(function(d){ d.classList.remove('open'); }); }, 50);
+  }
+});
 
 // ============================================================
 // CATALOG VIEW TOGGLE (list ↔ card)
