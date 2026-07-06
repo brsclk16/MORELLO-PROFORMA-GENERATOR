@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Morello Mobilya — Fiyat Listesi</title>
+<style>
+:root { --cherry:#74113D; --gold:#B8935A; --text:#2A2622; --muted:#8A8479; --border:#E8E2D8; --bg:#FAF8F4; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); }
+.hero { background:linear-gradient(160deg,#1F1B17 0%,#33291F 100%); color:#fff; padding:26px 20px 22px; text-align:center; position:sticky; top:0; z-index:50; }
+.hero .logo { font-family:Georgia,serif; font-size:24px; font-weight:700; letter-spacing:5px; }
+.hero .logo span { color:var(--gold); }
+.hero .cust { margin-top:10px; font-size:13px; font-weight:700; }
+.hero .meta { font-size:10px; color:rgba(255,255,255,.5); margin-top:3px; letter-spacing:1px; }
+.wrap { max-width:640px; margin:0 auto; padding:14px 14px 50px; }
+.cat-title { font-size:12px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--cherry); margin:22px 4px 10px; }
+.series-title { font-size:11px; font-weight:700; color:var(--muted); margin:14px 4px 8px; letter-spacing:.8px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.p-card { background:#fff; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.p-img { width:100%; height:96px; background:#F4F0E9; display:flex; align-items:center; justify-content:center; }
+.p-img img { max-width:88%; max-height:88%; object-fit:contain; }
+.p-img .noimg { font-size:30px; opacity:.3; }
+.p-body { padding:8px 10px 10px; }
+.p-name { font-size:10.5px; font-weight:600; line-height:1.3; min-height:27px; }
+.p-price { font-size:13.5px; font-weight:800; color:var(--cherry); margin-top:4px; }
+.p-list { font-size:9.5px; color:var(--muted); text-decoration:line-through; }
+.search { position:sticky; top:0; padding:10px 14px; background:var(--bg); z-index:40; }
+.search input { width:100%; max-width:612px; display:block; margin:0 auto; padding:11px 14px; border:1.5px solid var(--border); border-radius:12px; font-size:14px; outline:none; background:#fff; }
+.foot { text-align:center; font-size:10px; color:var(--muted); padding:10px 20px 30px; line-height:1.7; }
+.err-wrap { padding:70px 24px; text-align:center; color:var(--muted); }
+.badge-disc { display:inline-block; margin-top:8px; background:rgba(184,147,90,.18); border:1px solid rgba(184,147,90,.4); color:var(--gold); font-size:10px; font-weight:700; padding:3px 12px; border-radius:14px; }
+</style>
+</head>
+<body>
+<div id="app"><div class="err-wrap">⏳ Yükleniyor…</div></div>
+<script src="imgs.js"></script>
+<script src="catalog.js"></script>
+<script>
+if(typeof IMGS === 'undefined') window.IMGS = {};
+
+function decode() {
+  try {
+    const h = location.hash.slice(1);
+    if(!h) return null;
+    return JSON.parse(decodeURIComponent(escape(atob(h.replace(/-/g,'+').replace(/_/g,'/')))));
+  } catch(e) { return null; }
+}
+function esc(s){ return String(s||'').replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
+
+function render() {
+  const d = decode();
+  const app = document.getElementById('app');
+  if(!d || typeof CATALOG === 'undefined') {
+    app.innerHTML = '<div class="err-wrap">💲 Fiyat listesi bulunamadı veya link hatalı.</div>';
+    return;
+  }
+  const cur = d.cur || 'EUR';
+  const disc = parseFloat(d.disc) || 0;
+  const sym = cur==='TRY'?'₺':cur==='EUR'?'€':'$';
+
+  function priceOf(item) {
+    let base;
+    if(cur==='TRY') base = (typeof TL_PRICES!=='undefined' ? TL_PRICES[item.id] : null) ?? null;
+    else base = cur==='EUR' ? (item.eur ?? item.usd) : (item.usd ?? item.eur);
+    if(base == null) return null;
+    return { list: base, net: base * (1 - disc/100) };
+  }
+
+  let body = '';
+  Object.entries(CATALOG).forEach(function([catName, catData]){
+    let catHtml = '';
+    Object.entries(catData.series||{}).forEach(function([sn, sd]){
+      const cards = (sd.items||[]).map(function(item){
+        const p = priceOf(item);
+        if(!p) return '';
+        const img = IMGS[item.id];
+        return '<div class="p-card" data-s="'+esc((item.name+' '+sn+' '+catName).toLowerCase())+'">'
+          +'<div class="p-img">'+(img?'<img src="'+img+'" loading="lazy" alt="">':'<span class="noimg">'+(catData.icon||'🪑')+'</span>')+'</div>'
+          +'<div class="p-body"><div class="p-name">'+esc(item.name)+'</div>'
+          +'<div class="p-price">'+sym+p.net.toFixed(2)
+          +(disc>0?' <span class="p-list">'+sym+p.list.toFixed(2)+'</span>':'')
+          +'</div></div></div>';
+      }).join('');
+      if(cards) catHtml += '<div class="series-title">'+esc(sn)+'</div><div class="grid">'+cards+'</div>';
+    });
+    if(catHtml) body += '<div class="cat-title">'+(catData.icon||'')+' '+esc(catName)+'</div>'+catHtml;
+  });
+
+  app.innerHTML = '<div class="hero">'
+    +'<div class="logo">M<span>O</span>RELLO</div>'
+    +'<div class="cust">'+esc(d.name||'')+'</div>'
+    +'<div class="meta">'+cur+' PRICE LIST · '+new Date().toLocaleDateString('en-GB')+'</div>'
+    +(disc>0?'<div class="badge-disc">Özel iskonto uygulanmıştır · Special discount applied</div>':'')
+    +'</div>'
+    +'<div class="search"><input type="text" placeholder="Ürün ara / Search…" oninput="filterCards(this.value)"></div>'
+    +'<div class="wrap">'+body+'</div>'
+    +'<div class="foot">Morello Mobilya — İnegöl / Bursa / Türkiye<br>Fiyatlar bilgi amaçlıdır; sipariş öncesi teyit ediniz. Prices are indicative; please confirm before ordering.</div>';
+}
+
+function filterCards(q) {
+  q = (q||'').toLowerCase().trim();
+  document.querySelectorAll('.p-card').forEach(function(c){
+    c.style.display = (!q || c.dataset.s.includes(q)) ? '' : 'none';
+  });
+}
+
+render();
+window.addEventListener('hashchange', render);
+</script>
+</body>
+</html>
