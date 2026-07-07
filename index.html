@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783429904</title>
+<title>Morello — Proforma Generator v1783462398</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -4392,7 +4392,8 @@ function buildCatalog() {
           ? `<img src="${imgSrc}" onclick="openLightbox(IMGS['${item.id}'],'${item.name.replace(/'/g,'')}')" title="${item.name}" style="width:36px;height:30px;object-fit:contain;border-radius:3px;border:1px solid var(--border);background:#fff;cursor:zoom-in;">`
           : `<div class="prod-thumb">${catData.icon}</div>`;
         const bestBadge = bestSellers.has(item.id) ? ' <span class="best-seller-badge" title="En çok satan">🔥</span>' : '';
-        pi.innerHTML = `${thumbHtml}<div class="prod-info"><div class="prod-name">${item.name}${item.bundled?' 📦':''}${bestBadge}</div><div class="prod-price">${p!==null?fmt(p):'—'}</div></div><button class="add-btn" onclick="addItem('${item.id}')">+</button>`;
+        const priceHtml = p!==null ? fmt(p) : (currency==='TRY' ? '<span style="color:var(--muted);font-size:9px;">TL fiyatı yok</span>' : '—');
+        pi.innerHTML = `${thumbHtml}<div class="prod-info"><div class="prod-name">${item.name}${item.bundled?' 📦':''}${bestBadge}</div><div class="prod-price">${priceHtml}</div></div><button class="add-btn" onclick="addItem('${item.id}')">+</button>`;
         pl.appendChild(pi);
       });
       sb.appendChild(pl); wrap.appendChild(sb);
@@ -4613,20 +4614,22 @@ function setCurrency(c) {
   document.getElementById('pfCurrency').value=c;
   // Auto language for TRY
   if(c==='TRY') { const el=document.getElementById('pfLang'); if(el) el.value='tr'; }
+  let missingTL = 0;
   orderItems.forEach(i=>{
     const f=findItem(i.id);
     if(f){
       let nl;
-      if(c==='TRY') nl=TL_PRICES[i.id]??null;
+      if(c==='TRY') { nl=TL_PRICES[i.id]??null; if(nl===null) missingTL++; }
       else nl=c==='EUR'?(f.eur??f.usd):(f.usd??f.eur);
       if(nl){const r=i.listPrice>0?i.unitPrice/i.listPrice:1; i.listPrice=nl; i.unitPrice=parseFloat((nl*r).toFixed(2));}
     }
   });
   buildCatalog(); renderOrder();
-  const bankKey=c==='EUR'?'eur':'usd';
+  const bankKey=c==='EUR'?'eur':c==='TRY'?'try':'usd';
   fillBank(bankKey);
   document.getElementById('bankSelect').value=bankKey;
   applyCurrencyAccent(c);
+  if(c==='TRY' && missingTL>0) showToast('⚠ Siparişteki '+missingTL+' ürünün TL fiyatı yok (ihracat serisi) — elle fiyat girin');
 }
 function applyCurrencyAccent(c) {
   const hdr = document.querySelector('.hdr');
