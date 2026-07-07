@@ -144,10 +144,32 @@ const T = {
 function decodePayload() {
   try {
     const hash = location.hash.slice(1);
-    if(!hash) return null;
+    if(!hash || hash.startsWith('s=')) return null;
     const json = decodeURIComponent(escape(atob(hash.replace(/-/g,'+').replace(/_/g,'/'))));
     return JSON.parse(json);
   } catch(e) { console.error('decode fail', e); return null; }
+}
+
+function decodeB64(b64) {
+  try { return JSON.parse(decodeURIComponent(escape(atob(b64.replace(/-/g,'+').replace(/_/g,'/'))))); }
+  catch(e) { return null; }
+}
+
+async function resolvePayload() {
+  const hash = location.hash.slice(1);
+  if(hash.startsWith('s=')) {
+    const id = hash.slice(2).replace(/[^A-Za-z0-9]/g,'');
+    if(!id) return null;
+    try {
+      const r = await fetch(SUPA_URL+'/rest/v1/proforma_links?id=eq.'+encodeURIComponent(id)+'&select=payload&limit=1', {
+        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY }
+      });
+      const rows = await r.json();
+      if(Array.isArray(rows) && rows.length && rows[0].payload) return decodeB64(rows[0].payload);
+    } catch(e) { console.error('short link fetch fail', e); }
+    return null;
+  }
+  return decodePayload();
 }
 
 function trackView(pi, buyer) {
@@ -166,8 +188,8 @@ function trackView(pi, buyer) {
   } catch(e) {}
 }
 
-function render() {
-  const d = decodePayload();
+async function render() {
+  const d = await resolvePayload();
   PAYLOAD_CACHE = d;
   const app = document.getElementById('app');
   if(!d || !d.items || !d.items.length) {
