@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello Proforma · 07.07 06:12</title>
+<title>Morello — Proforma Generator v1783429904</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1688,8 +1688,13 @@ body {
   .all-docs-page:last-child { page-break-after: auto; }
   .all-docs-page + .all-docs-page { margin-top: 0; border-top: none; padding-top: 14mm; }
 }
-.all-docs-page { background: #fff; }
-.all-docs-page + .all-docs-page { margin-top: 24px; border-top: 2px dashed #ccc; padding-top: 24px; }
+.all-docs-page { background: #fff; max-width: 830px; margin: 22px auto; padding: 30px 36px; box-shadow: 0 2px 14px rgba(0,0,0,.13); border-radius: 4px; overflow: hidden; }
+#all-docs-print { padding: 4px 14px 40px; }
+.all-docs-page .doc-paper, .all-docs-page [class*="-print"] { width: auto !important; max-width: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+@media print {
+  .all-docs-page { max-width: none; margin: 0; padding: 14mm 12mm; box-shadow: none; border-radius: 0; }
+  #all-docs-print { padding: 0; }
+}
 
 /* ─── PROFORMA TOTALS ─── */
 .pf-tots {
@@ -1969,7 +1974,6 @@ body {
     <span id="user-info" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:2px;"></span>
     <button class="btn btn-outline btn-sm" onclick="showImport()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-color:#5B21B6;color:#fff;">🤖 Import</button>
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
-    <a href="pipeline.html" class="btn btn-outline btn-sm" style="background:linear-gradient(135deg,#A8843A,#C4A05A);border-color:#A8843A;color:#fff;text-decoration:none;">🎯 Pipeline</a>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
 
     <!-- SHARE DROPDOWN -->
@@ -3720,25 +3724,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(renderActivityFeed, 800);
   // Auth check
   checkSession();
-  // Pipeline'dan gelen müşteri: buyer alanını doldur
-  try {
-    const pc = new URLSearchParams(window.location.search).get('pipeline_customer');
-    if(pc) {
-      document.getElementById('buyerCompany').value = pc;
-      // Müşteri defterinde varsa detayları da doldur
-      const custs = JSON.parse(localStorage.getItem('morello_customers')||'[]');
-      const m = custs.find(c => (c.company||'').toLowerCase() === pc.toLowerCase());
-      if(m) {
-        if(m.contact) document.getElementById('buyerContact').value = m.contact;
-        if(m.country) document.getElementById('buyerCountry').value = m.country;
-        if(m.phone) document.getElementById('buyerPhone').value = m.phone;
-        if(m.email) document.getElementById('buyerEmail').value = m.email;
-        if(m.address) document.getElementById('buyerAddress').value = m.address;
-      }
-      showToast('🎯 Pipeline müşterisi yüklendi: '+pc);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  } catch(e) {}
   if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
 });
 
@@ -4980,36 +4965,6 @@ function saveToHistory() {
   saveHistoryToCloud(hist[0]);
   const lockedRateShown = currency==='USD' ? hist[0].fx.usdTry : hist[0].fx.eurTry;
   renderHistory(); showToast(u('toast_saved')+' '+pi+(currency!=='TRY'?' · Kur kilitlendi: 1'+currency+'='+lockedRateShown.toFixed(2)+'₺':''));
-  syncPipelineOnProforma(buyer, pi);
-}
-
-// ============================================================
-// PIPELINE BRIDGE — proforma kaydında pipeline durumunu güncelle
-// ============================================================
-async function syncPipelineOnProforma(buyerName, piNo) {
-  if(!buyerName || buyerName==='Unknown Buyer' || !currentUser) return;
-  try {
-    const found = await supaFetch('/rest/v1/pipeline_contacts?select=id,name,status&name=ilike.'+encodeURIComponent('%'+buyerName.trim()+'%')+'&limit=1');
-    if(found && found.length) {
-      const c = found[0];
-      // Order'a düşmüşse geri çekme; değilse sample'a taşı
-      if(c.status!=='order') {
-        await supaFetch('/rest/v1/pipeline_contacts?id=eq.'+c.id, 'PATCH', {
-          status:'sample', last_contact:new Date().toISOString().slice(0,10), updated_at:new Date().toISOString()
-        });
-      } else {
-        await supaFetch('/rest/v1/pipeline_contacts?id=eq.'+c.id, 'PATCH', {
-          last_contact:new Date().toISOString().slice(0,10), updated_at:new Date().toISOString()
-        });
-      }
-      await supaFetch('/rest/v1/pipeline_logs', 'POST', {
-        user_id:currentUserId, contact_id:c.id, firm_name:c.name,
-        log_date:new Date().toISOString().slice(0,10), tag:'sample',
-        note:'Proforma oluşturuldu: '+piNo
-      });
-      showToast('🎯 Pipeline güncellendi: '+c.name+' → Sample Sent');
-    }
-  } catch(e) { console.warn('Pipeline sync skipped:', e.message); }
 }
 
 
@@ -5630,6 +5585,7 @@ function showPrint() {
     +'</div>';
   document.getElementById('print-overlay').style.display='block';
   window.scrollTo(0,0);
+  fillQRSlot();
 }
 
 function closePrint() {
@@ -5891,10 +5847,50 @@ function computeExpiryDate() {
 }
 
 function buildQRHtml() {
-  const link = buildShareLinkSilent();
-  if(!link) return '';
+  // Placeholder — filled asynchronously with a SHORT link QR after render (see fillQRSlot)
+  return '<div id="pf-qr-slot" style="margin-top:8px;text-align:right;min-height:76px;"></div>';
+}
+
+async function fillQRSlot() {
+  const slot = document.getElementById('pf-qr-slot');
+  if(!slot) return;
+  const short = await createShortLink();
+  const link = short || buildShareLinkSilent();
+  if(!link) return;
   const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=90x90&margin=1&data='+encodeURIComponent(link);
-  return '<div style="margin-top:8px;text-align:right;"><img src="'+qrUrl+'" width="72" height="72" style="border:1px solid #E5E5E5;border-radius:4px;" alt="QR"><div style="font-size:6.5px;color:#999;margin-top:2px;letter-spacing:.5px;">SCAN FOR ONLINE VERSION</div></div>';
+  slot.innerHTML = '<img src="'+qrUrl+'" width="72" height="72" style="border:1px solid #E5E5E5;border-radius:4px;" alt="QR"><div style="font-size:6.5px;color:#999;margin-top:2px;letter-spacing:.5px;">SCAN FOR ONLINE VERSION</div>';
+}
+
+// ============================================================
+// SHORT LINK (Supabase-backed)
+// ============================================================
+const shortLinkCache = {};
+function randomId(n) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let s = '';
+  for(let i=0;i<n;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+async function createShortLink() {
+  if(!orderItems.length) return null;
+  const pi = document.getElementById('piNumber')?.value || '';
+  // Reuse if already created for identical payload this session
+  const longLink = buildShareLinkSilent();
+  if(!longLink) return null;
+  const payloadB64 = longLink.split('#')[1];
+  const cacheKey = pi + ':' + payloadB64.length + ':' + payloadB64.slice(0,40);
+  if(shortLinkCache[cacheKey]) return shortLinkCache[cacheKey];
+  const id = randomId(8);
+  try {
+    const r = await supaFetch('/rest/v1/proforma_links', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ id: id, pi: pi, payload: payloadB64 })
+    });
+    const short = 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/view.html#s='+id;
+    shortLinkCache[cacheKey] = short;
+    return short;
+  } catch(e) { console.warn('short link failed, falling back to long', e); return null; }
 }
 
 function buildShareLinkSilent() {
@@ -5943,18 +5939,24 @@ function buildShareLink() {
   return 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/view.html#'+b64;
 }
 
-function shareProformaLink() {
-  const link = buildShareLink();
+async function shareProformaLink() {
+  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
+  showToast('\ud83d\udd17 Link olu\u015fturuluyor\u2026');
+  const short = await createShortLink();
+  const link = short || buildShareLink();
   if(!link) return;
   navigator.clipboard.writeText(link).then(function(){
-    showToast('\ud83d\udd17 Link kopyaland\u0131! WhatsApp\'a yap\u0131\u015ft\u0131rabilirsin');
+    showToast(short ? '\ud83d\udd17 K\u0131sa link kopyaland\u0131!' : '\ud83d\udd17 Link kopyaland\u0131 (uzun format \u2014 ba\u011flant\u0131 hatas\u0131)');
   }).catch(function(){
     prompt('Linki kopyala:', link);
   });
 }
 
-function shareProformaLinkWA() {
-  const link = buildShareLink();
+async function shareProformaLinkWA() {
+  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
+  showToast('\ud83d\udd17 Link olu\u015fturuluyor\u2026');
+  const short = await createShortLink();
+  const link = short || buildShareLink();
   if(!link) return;
   const pi = document.getElementById('piNumber')?.value || '';
   const phone = (document.getElementById('buyerPhone')?.value || '').replace(/[^0-9]/g,'');
@@ -7277,6 +7279,15 @@ function generateAllDocuments() {
 
   document.getElementById('all-docs-overlay').style.display = 'block';
   window.scrollTo(0,0);
+  // Fill any QR slots in the combined view
+  createShortLink().then(function(short){
+    const link = short || buildShareLinkSilent();
+    if(!link) return;
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=90x90&margin=1&data='+encodeURIComponent(link);
+    document.querySelectorAll('#all-docs-print [id="pf-qr-slot"]').forEach(function(slot){
+      slot.innerHTML = '<img src="'+qrUrl+'" width="72" height="72" style="border:1px solid #E5E5E5;border-radius:4px;" alt="QR"><div style="font-size:6.5px;color:#999;margin-top:2px;letter-spacing:.5px;">SCAN FOR ONLINE VERSION</div>';
+    });
+  });
 }
 function closeAllDocuments() { document.getElementById('all-docs-overlay').style.display='none'; }
 
