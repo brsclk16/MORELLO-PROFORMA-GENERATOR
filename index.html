@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783324446</title>
+<title>Morello Proforma · 07.07 06:12</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1969,6 +1969,7 @@ body {
     <span id="user-info" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:2px;"></span>
     <button class="btn btn-outline btn-sm" onclick="showImport()" style="background:linear-gradient(135deg,#5B21B6,#7C3AED);border-color:#5B21B6;color:#fff;">🤖 Import</button>
     <button id="btn-save" class="btn btn-outline btn-sm" onclick="saveToHistory()">💾 Save</button>
+    <a href="pipeline.html" class="btn btn-outline btn-sm" style="background:linear-gradient(135deg,#A8843A,#C4A05A);border-color:#A8843A;color:#fff;text-decoration:none;">🎯 Pipeline</a>
     <button id="btn-summary" class="btn btn-outline btn-sm" onclick="showSummary()">📋 Özet</button>
 
     <!-- SHARE DROPDOWN -->
@@ -3719,6 +3720,25 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(renderActivityFeed, 800);
   // Auth check
   checkSession();
+  // Pipeline'dan gelen müşteri: buyer alanını doldur
+  try {
+    const pc = new URLSearchParams(window.location.search).get('pipeline_customer');
+    if(pc) {
+      document.getElementById('buyerCompany').value = pc;
+      // Müşteri defterinde varsa detayları da doldur
+      const custs = JSON.parse(localStorage.getItem('morello_customers')||'[]');
+      const m = custs.find(c => (c.company||'').toLowerCase() === pc.toLowerCase());
+      if(m) {
+        if(m.contact) document.getElementById('buyerContact').value = m.contact;
+        if(m.country) document.getElementById('buyerCountry').value = m.country;
+        if(m.phone) document.getElementById('buyerPhone').value = m.phone;
+        if(m.email) document.getElementById('buyerEmail').value = m.email;
+        if(m.address) document.getElementById('buyerAddress').value = m.address;
+      }
+      showToast('🎯 Pipeline müşterisi yüklendi: '+pc);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  } catch(e) {}
   if('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(function(){});
 });
 
@@ -4960,6 +4980,36 @@ function saveToHistory() {
   saveHistoryToCloud(hist[0]);
   const lockedRateShown = currency==='USD' ? hist[0].fx.usdTry : hist[0].fx.eurTry;
   renderHistory(); showToast(u('toast_saved')+' '+pi+(currency!=='TRY'?' · Kur kilitlendi: 1'+currency+'='+lockedRateShown.toFixed(2)+'₺':''));
+  syncPipelineOnProforma(buyer, pi);
+}
+
+// ============================================================
+// PIPELINE BRIDGE — proforma kaydında pipeline durumunu güncelle
+// ============================================================
+async function syncPipelineOnProforma(buyerName, piNo) {
+  if(!buyerName || buyerName==='Unknown Buyer' || !currentUser) return;
+  try {
+    const found = await supaFetch('/rest/v1/pipeline_contacts?select=id,name,status&name=ilike.'+encodeURIComponent('%'+buyerName.trim()+'%')+'&limit=1');
+    if(found && found.length) {
+      const c = found[0];
+      // Order'a düşmüşse geri çekme; değilse sample'a taşı
+      if(c.status!=='order') {
+        await supaFetch('/rest/v1/pipeline_contacts?id=eq.'+c.id, 'PATCH', {
+          status:'sample', last_contact:new Date().toISOString().slice(0,10), updated_at:new Date().toISOString()
+        });
+      } else {
+        await supaFetch('/rest/v1/pipeline_contacts?id=eq.'+c.id, 'PATCH', {
+          last_contact:new Date().toISOString().slice(0,10), updated_at:new Date().toISOString()
+        });
+      }
+      await supaFetch('/rest/v1/pipeline_logs', 'POST', {
+        user_id:currentUserId, contact_id:c.id, firm_name:c.name,
+        log_date:new Date().toISOString().slice(0,10), tag:'sample',
+        note:'Proforma oluşturuldu: '+piNo
+      });
+      showToast('🎯 Pipeline güncellendi: '+c.name+' → Sample Sent');
+    }
+  } catch(e) { console.warn('Pipeline sync skipped:', e.message); }
 }
 
 
