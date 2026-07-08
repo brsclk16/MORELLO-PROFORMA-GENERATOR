@@ -179,6 +179,21 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
 .search-box { padding: 11px 14px 0; }
 .search-box input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 13px; font-size: 13.5px; outline: none; font-family: inherit; }
 .search-box input:focus { border-color: var(--gold-mid); }
+
+.ob-wrap { padding: 11px 14px; }
+.ob-item { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 9px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+.ob-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.ob-name { font-size: 13.5px; font-weight: 700; }
+.ob-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ob-msg { font-size: 13px; color: var(--text-sec); margin-top: 8px; line-height: 1.55; background: var(--surface2); border-radius: 7px; padding: 10px 12px; white-space: pre-wrap; }
+.ob-msg[contenteditable="true"] { outline: 2px solid var(--gold-mid); background: #fff; }
+.ob-actions { display: flex; gap: 7px; margin-top: 10px; }
+.ob-lang { font-size: 9.5px; padding: 2px 7px; border-radius: 8px; font-weight: 700; background: var(--gold-light); color: var(--gold); }
+.ob-nophone { font-size: 11px; color: var(--danger); font-weight: 600; margin-top: 6px; }
+.ph-row { display: flex; align-items: center; gap: 9px; padding: 8px 4px; border-bottom: 1px solid var(--border-light); font-size: 12.5px; }
+.ph-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--gold); }
+.ph-fill-input { width: 150px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: 12.5px; outline: none; font-family: inherit; }
+.ph-fill-input:focus { border-color: var(--gold-mid); }
 </style>
 </head>
 <body>
@@ -199,6 +214,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
   <div class="nav-tab on" data-tab="pipeline" onclick="showTab('pipeline',this)">📋 Pipeline</div>
   <div class="nav-tab" data-tab="countries" onclick="showTab('countries',this)">🌍 Ülkeler</div>
   <div class="nav-tab" data-tab="followup" onclick="showTab('followup',this)">🔔 Takip<span id="fu-badge"></span></div>
+  <div class="nav-tab" data-tab="outbox" onclick="showTab('outbox',this)">📤 Giden<span id="ob-badge"></span></div>
   <div class="nav-tab" data-tab="log" onclick="showTab('log',this)">📝 Notlar</div>
   <div class="nav-tab" data-tab="goals" onclick="showTab('goals',this)">🎯 Hedefler</div>
 </div>
@@ -215,13 +231,40 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
     <div class="import-sub" id="import-sub">163 firma hazır (2020 cari + 2023 segmentasyon birleşik). Buluta eklemek için onayla.</div>
     <button class="btn btn-gold" id="import-btn" onclick="importSeed()">✅ Hepsini Buluta Ekle</button>
   </div>
-  <div class="search-box"><input type="text" id="search-input" placeholder="🔍 Firma ara…" oninput="renderCountries()"></div>
+  <div class="search-box" style="display:flex;gap:8px;align-items:center">
+    <input type="text" id="search-input" placeholder="🔍 Firma ara…" oninput="renderCountries()" style="flex:1">
+    <button class="btn btn-ghost btn-sm" id="phfilter-btn" onclick="togglePhFilter()">☎️ Telefonsuz</button>
+    <button class="btn btn-ghost btn-sm" onclick="harvestPhones()">📖 Proformalardan Çek</button>
+  </div>
   <div class="country-nav" id="country-nav"></div>
   <div class="company-list" id="company-list"></div>
 </div>
 
 <div id="page-followup" class="page">
   <div class="fu-wrap" id="fu-list"></div>
+</div>
+
+<div id="page-outbox" class="page">
+  <div class="sec-pad">
+    <div class="sec-head">
+      <div class="sec-title">Giden Kutusu — Mesaj Taslakları</div>
+      <button class="btn btn-gold btn-sm" onclick="openGen()">⚡ Mesaj Üret</button>
+    </div>
+  </div>
+  <div class="ob-wrap" id="ob-list"></div>
+  <div class="sec-pad" style="margin-top:8px">
+    <div class="sec-head"><div class="sec-title">Şablon Yönergeleri (AI'a rehber)</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('tpl-box').style.display=document.getElementById('tpl-box').style.display==='none'?'block':'none'">Göster/Gizle</button>
+    </div>
+    <div id="tpl-box" style="display:none">
+      <div class="goal-card">
+        <div class="field"><label>Cold — İlk Tanışma</label><textarea id="tpl-cold" onchange="saveTpl()"></textarea></div>
+        <div class="field"><label>Follow-up — Cevapsız Takip</label><textarea id="tpl-follow" onchange="saveTpl()"></textarea></div>
+        <div class="field"><label>Re-engage — Eski Müşteri Canlandırma</label><textarea id="tpl-reengage" onchange="saveTpl()"></textarea></div>
+        <div class="field"><label>Fiyat İtirazı Cevabı</label><textarea id="tpl-price" onchange="saveTpl()"></textarea></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="page-log" class="page">
@@ -278,7 +321,17 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
         </select>
       </div>
     </div>
-    <div class="field"><label>Son İletişim</label><input type="date" id="f-date"></div>
+    <div class="frow2">
+      <div class="field"><label>Son İletişim</label><input type="date" id="f-date"></div>
+      <div class="field"><label>Mesaj Dili</label>
+        <select id="f-lang">
+          <option value="">Otomatik (ülkeden)</option>
+          <option value="en">🇬🇧 English</option><option value="fr">🇫🇷 Français</option>
+          <option value="ar">🇸🇦 العربية</option><option value="tr">🇹🇷 Türkçe</option>
+          <option value="ru">🇷🇺 Русский</option><option value="de">🇩🇪 Deutsch</option>
+        </select>
+      </div>
+    </div>
     <div class="field"><label>Not</label><textarea id="f-note"></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeOverlay()">İptal</button>
@@ -315,6 +368,49 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
   </div>
 </div>
 
+<!-- GENERATION MODAL -->
+<div class="overlay" id="gen-overlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal">
+    <div class="modal-title">⚡ Mesaj Üret</div>
+    <div class="field"><label>Senaryo</label>
+      <select id="gen-scenario">
+        <option value="cold">❄️ Cold — İlk tanışma</option>
+        <option value="follow">📤 Follow-up — Cevapsız takip</option>
+        <option value="reengage">🔄 Re-engage — Eski müşteri canlandırma</option>
+        <option value="price">💸 Fiyat itirazına cevap</option>
+      </select>
+    </div>
+    <div class="field"><label>Hedef</label>
+      <select id="gen-target">
+        <option value="rotation">🎯 Rotasyon önerisi (geciken + cold, maks 10)</option>
+        <option value="country">🌍 Seçili ülke (telefonu olanlar, maks 10)</option>
+        <option value="single">👤 Tek firma seç</option>
+      </select>
+    </div>
+    <div class="field" id="gen-single-wrap" style="display:none"><label>Firma</label>
+      <input type="text" id="gen-single" list="firm-list">
+    </div>
+    <div id="gen-progress" style="display:none;font-size:13px;color:var(--gold);font-weight:600;padding:8px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('gen-overlay').classList.remove('on')">İptal</button>
+      <button class="btn btn-gold" id="gen-go" onclick="runGeneration()">Üret</button>
+    </div>
+  </div>
+</div>
+
+<!-- PHONE HARVEST MODAL -->
+<div class="overlay" id="ph-overlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal">
+    <div class="modal-title">📖 Proformalardan Telefon Çek</div>
+    <div style="font-size:13px;color:var(--text-sec);margin-bottom:12px" id="ph-info">Proforma geçmişindeki buyer telefonları pipeline firmalarıyla eşleştirilecek.</div>
+    <div id="ph-matches" style="max-height:50vh;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('ph-overlay').classList.remove('on')">Kapat</button>
+      <button class="btn btn-gold" id="ph-apply" onclick="applyPhones()" style="display:none">Seçilenleri Uygula</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -326,7 +422,7 @@ const SEED = [{"name": "ELİT HOME", "country": "Almanya", "city": "Kassel", "ba
 let session = null, userId = null;
 let contacts = [], logs = [];
 let goals = JSON.parse(localStorage.getItem('mpl_goals')||'{"msg":30,"meet":5,"new":10}');
-let editId = null, activeCountry = 'Tümü', cloudOK = false;
+let editId = null, activeCountry = 'Tümü', cloudOK = false, phFilter = false;
 
 function loadSession(){
   const saved = localStorage.getItem('morello_session');
@@ -362,6 +458,7 @@ async function loadCloud(){
     ]);
     contacts = results[0]; logs = results[1]; cloudOK = true;
     setSync(true);
+    loadOutbox(); loadTplInputs();
     document.getElementById('import-card').style.display = contacts.length===0 ? 'block' : 'none';
     render();
   } catch(e){
@@ -414,6 +511,7 @@ function showTab(id, el){
   document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('on');});
   document.getElementById('page-'+id).classList.add('on');
   el.classList.add('on');
+  if(id==='outbox'){ loadTplInputs(); renderOutbox(); }
 }
 
 function render(){
@@ -476,6 +574,9 @@ function renderKanban(){
 
 function renderCountries(){
   const q=(document.getElementById('search-input').value||'').toLowerCase();
+  const noPh = contacts.filter(function(c){return !c.phone;}).length;
+  const pb = document.getElementById('phfilter-btn');
+  if(pb) pb.textContent = '☎️ Telefonsuz ('+noPh+')';
   const all=['Tümü'].concat([...new Set(contacts.map(function(c){return c.country;}).filter(Boolean))].sort());
   document.getElementById('country-nav').innerHTML=all.map(function(c){
     const cnt=c==='Tümü'?contacts.length:contacts.filter(function(x){return x.country===c;}).length;
@@ -483,6 +584,7 @@ function renderCountries(){
   }).join('');
   let filtered=activeCountry==='Tümü'?contacts:contacts.filter(function(c){return c.country===activeCountry;});
   if(q) filtered=filtered.filter(function(c){return (c.name+' '+(c.city||'')+' '+(c.country||'')).toLowerCase().indexOf(q)>-1;});
+  if(phFilter) filtered=filtered.filter(function(c){return !c.phone;});
   const sv={order:0,sample:1,replied:2,contacted:3,cold:4,dead:5};
   const sorted=filtered.slice().sort(function(a,b){return (sv[a.status]||4)-(sv[b.status]||4)||a.name.localeCompare(b.name);});
   document.getElementById('company-list').innerHTML=sorted.length?sorted.map(function(c){
@@ -494,10 +596,19 @@ function renderCountries(){
       '<div class="company-meta">'+esc([c.city,c.country].filter(Boolean).join(', '))+(c.contact_person?' · '+esc(c.contact_person):'')+'</div>'+
       (c.note?'<div class="company-note">'+esc(c.note)+'</div>':'')+'</div>'+
       '<div class="company-right"><div class="bakiye '+bcls+'">'+bstr+'</div>'+
-      '<div class="status-pill sp-'+c.status+'">'+(SP_LBL[c.status]||c.status)+'</div></div></div>';
+      '<div class="status-pill sp-'+c.status+'">'+(SP_LBL[c.status]||c.status)+'</div>'+
+      (phFilter?'<div onclick="event.stopPropagation()" style="margin-top:6px"><input class="ph-fill-input" placeholder="+90..." onkeydown="if(event.key===\'Enter\'){quickPhone(\''+c.id+'\',this.value);}"></div>':'')+
+      '</div></div>';
   }).join(''):'<div class="empty"><div class="icon">🗂️</div><p>Firma bulunamadı.</p></div>';
 }
 function setCountry(c){ activeCountry=c; renderCountries(); }
+function togglePhFilter(){
+  phFilter = !phFilter;
+  const b = document.getElementById('phfilter-btn');
+  b.style.background = phFilter ? 'var(--gold)' : '';
+  b.style.color = phFilter ? '#fff' : '';
+  renderCountries();
+}
 
 function renderFollowUp(){
   const urgent=[];
@@ -565,6 +676,7 @@ function openAdd(){
   ['name','country','city','contact','phone','email','note'].forEach(function(k){document.getElementById('f-'+k).value='';});
   document.getElementById('f-channel').value='wa';
   document.getElementById('f-status').value='cold';
+  document.getElementById('f-lang').value='';
   document.getElementById('f-date').value=today();
   document.getElementById('modal-overlay').classList.add('on');
 }
@@ -581,6 +693,7 @@ function openEdit(id){
   document.getElementById('f-email').value=c.email||'';
   document.getElementById('f-channel').value=c.channel||'wa';
   document.getElementById('f-status').value=c.status||'cold';
+  document.getElementById('f-lang').value=c.lang||'';
   document.getElementById('f-date').value=c.last_contact||'';
   document.getElementById('f-note').value=c.note||'';
   document.getElementById('wa-btn').style.display=c.phone?'inline-flex':'none';
@@ -598,6 +711,7 @@ async function saveContact(){
     email:document.getElementById('f-email').value.trim(),
     channel:document.getElementById('f-channel').value,
     status:document.getElementById('f-status').value,
+    lang:document.getElementById('f-lang').value,
     last_contact:document.getElementById('f-date').value||null,
     note:document.getElementById('f-note').value.trim(),
     updated_at:new Date().toISOString()
@@ -660,6 +774,252 @@ async function saveLog(){
     toast('✓ Not kaydedildi');
     document.getElementById('log-overlay').classList.remove('on');
     render();
+  } catch(e){ toast('❌ '+e.message.slice(0,60)); }
+}
+
+
+// ═══════════ OUTBOX & MESSAGE ENGINE ═══════════
+const WORKER_URL = 'https://morello-ai-proxy.brsclk16.workers.dev';
+let outbox = [];
+
+const LANG_BY_COUNTRY = {
+  'Fransa':'fr','Belçika':'fr','Fildişi Sahili':'fr','Gine':'fr','Kongo (DRC)':'fr','Fas':'fr','Senegal':'fr','Kamerun':'fr','Benin':'fr','Togo':'fr',
+  'Irak':'ar','Libya':'ar','Mısır':'ar','Kuveyt':'ar','Umman':'ar','BAE':'ar','Suudi Arabistan':'ar','Sudan':'ar','Lübnan':'ar',
+  'Almanya':'de','Avusturya':'de','İsviçre':'de',
+  'Rusya':'ru','Kazakistan':'ru','Kırgızistan':'ru','Özbekistan':'ru','Tacikistan':'ru','Azerbaycan':'ru','Ukrayna':'ru','Moğolistan':'ru','Ermenistan':'ru','Gürcistan':'ru',
+  'Türkiye':'tr','Kosova':'tr','Kuzey Makedonya':'tr','Bulgaristan':'tr',
+};
+const LANG_LABEL = {en:'EN',fr:'FR',ar:'AR',tr:'TR',ru:'RU',de:'DE'};
+const SCEN_LABEL = {cold:'❄️ Cold',follow:'📤 Follow-up',reengage:'🔄 Re-engage',price:'💸 Fiyat'};
+
+function langOf(c){ return c.lang || LANG_BY_COUNTRY[c.country] || 'en'; }
+
+const DEFAULT_TPL = {
+  cold: "Kendini Barış olarak tanıt, Morello Mobilya (İnegöl/Türkiye) export müdürü. Ekonomik-modern segment koltuk takımları, yatak ve yemek odası ürettiğimizi, 25+ ülkeye ihracat yaptığımızı söyle. Katalog paylaşmayı teklif et. Kısa, samimi, satış baskısı yok.",
+  follow: "Daha önce mesaj attığımızı nazikçe hatırlat. Yeni koleksiyon/kampanya olduğunu belirt, katalog linkini tekrar teklif et. Kısa tut, suçlayıcı olma.",
+  reengage: "Geçmişte birlikte çalıştığımızı hatırlat, tekrar çalışmaktan memnuniyet duyacağımızı söyle. Yeni modelleri ve güncel fiyat listesini paylaşmayı öner.",
+  price: "Fiyat konusundaki geri bildirimi anladığımızı belirt. Alternatif ürün grupları, farklı kumaş/konfigürasyon seçenekleri veya adet bazlı iskonto konuşabileceğimizi söyle. Kazan-kazan tonu."
+};
+function getTpl(){ try { return Object.assign({}, DEFAULT_TPL, JSON.parse(localStorage.getItem('mpl_tpl')||'{}')); } catch(e){ return DEFAULT_TPL; } }
+function saveTpl(){
+  const t = { cold:document.getElementById('tpl-cold').value, follow:document.getElementById('tpl-follow').value,
+              reengage:document.getElementById('tpl-reengage').value, price:document.getElementById('tpl-price').value };
+  localStorage.setItem('mpl_tpl', JSON.stringify(t)); toast('✓ Şablonlar kaydedildi');
+}
+function loadTplInputs(){
+  const t = getTpl();
+  document.getElementById('tpl-cold').value=t.cold;
+  document.getElementById('tpl-follow').value=t.follow;
+  document.getElementById('tpl-reengage').value=t.reengage;
+  document.getElementById('tpl-price').value=t.price;
+}
+
+async function loadOutbox(){
+  try {
+    outbox = await supa('/rest/v1/pipeline_outbox?select=*&status=eq.draft&order=created_at.desc&limit=100');
+  } catch(e){ outbox = []; }
+  renderOutbox();
+}
+
+function renderOutbox(){
+  const el = document.getElementById('ob-list');
+  document.getElementById('ob-badge').innerHTML = outbox.length ? '<span class="badge" style="background:var(--gold)">'+outbox.length+'</span>' : '';
+  if(!outbox.length){ el.innerHTML='<div class="empty"><div class="icon">📤</div><p>Taslak yok. "⚡ Mesaj Üret" ile başla.</p></div>'; return; }
+  el.innerHTML = outbox.map(function(o){
+    return '<div class="ob-item" data-id="'+o.id+'">'+
+      '<div class="ob-top"><div><div class="ob-name">'+esc(o.firm_name)+'</div>'+
+      '<div class="ob-meta">'+(SCEN_LABEL[o.scenario]||o.scenario)+' · <span class="ob-lang">'+(LANG_LABEL[o.lang]||o.lang.toUpperCase())+'</span>'+(o.phone?' · '+esc(o.phone):'')+'</div></div></div>'+
+      '<div class="ob-msg" id="obmsg-'+o.id+'">'+esc(o.message)+'</div>'+
+      (o.phone?'':'<div class="ob-nophone">☎️ Telefon yok — göndermeden önce ekle (firma kartından)</div>')+
+      '<div class="ob-actions">'+
+        (o.phone?'<button class="btn btn-gold btn-sm" onclick="sendDraft(\''+o.id+'\')">📱 WhatsApp\'ta Aç</button>':'')+
+        '<button class="btn btn-ghost btn-sm" onclick="editDraft(\''+o.id+'\')">✏️ Düzenle</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="copyDraft(\''+o.id+'\')">📋 Kopyala</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="skipDraft(\''+o.id+'\')">✖️ Atla</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+function openGen(){
+  document.getElementById('gen-overlay').classList.add('on');
+  document.getElementById('gen-target').onchange = function(){
+    document.getElementById('gen-single-wrap').style.display = this.value==='single'?'block':'none';
+  };
+}
+
+function pickTargets(scenario, mode){
+  let pool = [];
+  if(mode==='single'){
+    const nm = document.getElementById('gen-single').value.trim().toLowerCase();
+    const c = contacts.find(function(x){return x.name.toLowerCase()===nm;});
+    return c ? [c] : [];
+  }
+  if(mode==='country'){
+    pool = (activeCountry==='Tümü' ? contacts : contacts.filter(function(c){return c.country===activeCountry;}))
+           .filter(function(c){return c.phone && c.status!=='dead' && c.status!=='order';});
+  } else {
+    // rotation: overdue replied/contacted first, then cold with phone
+    const over = contacts.filter(function(c){
+      const d=daysSince(c.last_contact);
+      return (c.status==='replied'&&d>7&&d<9999)||(c.status==='contacted'&&d>14&&d<9999)||(c.status==='sample'&&d>10&&d<9999);
+    });
+    const colds = contacts.filter(function(c){return c.status==='cold'&&c.phone;});
+    pool = over.concat(colds);
+  }
+  // skip ones already having a draft
+  const drafted = new Set(outbox.map(function(o){return o.contact_id;}));
+  pool = pool.filter(function(c){return !drafted.has(c.id);});
+  return pool.slice(0,10);
+}
+
+function scenarioFor(c, chosen){
+  if(chosen!=='auto') return chosen;
+  if(c.status==='cold') return 'cold';
+  if(c.status==='replied') return 'follow';
+  return 'follow';
+}
+
+async function runGeneration(){
+  const scenario = document.getElementById('gen-scenario').value;
+  const mode = document.getElementById('gen-target').value;
+  const targets = pickTargets(scenario, mode);
+  if(!targets.length){ toast('Uygun hedef yok (taslakları ve telefonları kontrol et)'); return; }
+  const prog = document.getElementById('gen-progress');
+  const btn = document.getElementById('gen-go');
+  btn.disabled = true; prog.style.display='block';
+  const tpl = getTpl();
+  let done = 0;
+  for(const c of targets){
+    prog.textContent = '⏳ '+(done+1)+'/'+targets.length+' — '+c.name;
+    try {
+      const lang = langOf(c);
+      const recentLogs = logs.filter(function(l){return l.contact_id===c.id;}).slice(0,3)
+        .map(function(l){return l.log_date+': '+l.tag+' — '+(l.note||'');}).join('\n');
+      const sys = 'You write short WhatsApp B2B messages for Barış, export manager at Morello Mobilya, a Turkish furniture manufacturer (İnegöl/Bursa) making economy-modern sofa sets, bedroom and dining furniture, exporting to 25+ countries. Write ONLY the message text, no quotes, no explanations. Max 90 words. Professional but warm. Never invent prices or promises. End with: for orders/procurement please contact export@morello.com.tr (translate that sentence to the target language too).';
+      const usr = 'Language: '+lang+'\nScenario guidance: '+ (tpl[scenario]||tpl.cold) +
+        '\n\nFirm: '+c.name+'\nCountry: '+(c.country||'?')+(c.city?' / '+c.city:'')+
+        '\nPipeline status: '+c.status+(c.last_contact?'\nLast contact: '+c.last_contact:'')+
+        (c.contact_person?'\nContact person: '+c.contact_person:'')+
+        (c.note?'\nNotes: '+c.note:'')+(recentLogs?'\nRecent logs:\n'+recentLogs:'')+
+        '\n\nWrite the WhatsApp message in '+lang+'.';
+      const r = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:400, system:sys, messages:[{role:'user',content:usr}] }) });
+      const data = await r.json();
+      const msg = (data.content && data.content[0]) ? data.content[0].text.trim() : '';
+      if(msg){
+        const ins = await supa('/rest/v1/pipeline_outbox','POST',{
+          user_id:userId, contact_id:c.id, firm_name:c.name, phone:c.phone||'', lang:lang, scenario:scenario, message:msg, status:'draft'
+        });
+        if(ins[0]) outbox.unshift(ins[0]);
+      }
+    } catch(e){ console.error('gen fail', c.name, e); }
+    done++;
+  }
+  btn.disabled = false; prog.style.display='none';
+  document.getElementById('gen-overlay').classList.remove('on');
+  renderOutbox();
+  toast('✅ '+done+' taslak üretildi');
+}
+
+async function sendDraft(id){
+  const o = outbox.find(function(x){return x.id===id;}); if(!o) return;
+  window.open('https://wa.me/'+o.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(o.message),'_blank');
+  try {
+    await supa('/rest/v1/pipeline_outbox?id=eq.'+id,'PATCH',{status:'sent',sent_at:new Date().toISOString()});
+    if(o.contact_id){
+      const c = contacts.find(function(x){return x.id===o.contact_id;});
+      const newStatus = (c && (c.status==='cold')) ? 'contacted' : (c?c.status:'contacted');
+      await supa('/rest/v1/pipeline_contacts?id=eq.'+o.contact_id,'PATCH',{status:newStatus,last_contact:today(),updated_at:new Date().toISOString()});
+      if(c){ c.status=newStatus; c.last_contact=today(); }
+      await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:o.contact_id,firm_name:o.firm_name,log_date:today(),tag:'generic',note:'WA mesajı gönderildi ('+(SCEN_LABEL[o.scenario]||o.scenario)+')'});
+    }
+    outbox = outbox.filter(function(x){return x.id!==id;});
+    renderOutbox(); render();
+  } catch(e){ toast('❌ '+e.message.slice(0,60)); }
+}
+
+function editDraft(id){
+  const el = document.getElementById('obmsg-'+id);
+  if(el.contentEditable==='true'){
+    el.contentEditable='false';
+    const o = outbox.find(function(x){return x.id===id;});
+    if(o){ o.message = el.innerText.trim();
+      supa('/rest/v1/pipeline_outbox?id=eq.'+id,'PATCH',{message:o.message}).then(function(){toast('✓ Güncellendi');}).catch(function(){});
+    }
+  } else { el.contentEditable='true'; el.focus(); toast('Düzenle, sonra tekrar ✏️ bas'); }
+}
+
+function copyDraft(id){
+  const o = outbox.find(function(x){return x.id===id;}); if(!o) return;
+  navigator.clipboard.writeText(o.message).then(function(){toast('📋 Kopyalandı');});
+}
+
+async function skipDraft(id){
+  try {
+    await supa('/rest/v1/pipeline_outbox?id=eq.'+id,'PATCH',{status:'skipped'});
+    outbox = outbox.filter(function(x){return x.id!==id;});
+    renderOutbox();
+  } catch(e){ toast('❌ '+e.message.slice(0,60)); }
+}
+
+// ═══════════ PHONE HARVEST ═══════════
+let phMatches = [];
+function harvestPhones(){
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem('morello_history')||'[]'); } catch(e){}
+  const phoneByBuyer = {};
+  hist.forEach(function(h){
+    const b = h.buyer_data||{};
+    if(b.company && b.phone) phoneByBuyer[b.company.trim().toLowerCase()] = b.phone.trim();
+  });
+  phMatches = [];
+  function nrm(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,''); }
+  contacts.filter(function(c){return !c.phone;}).forEach(function(c){
+    const cn = nrm(c.name);
+    for(const bn in phoneByBuyer){
+      const bnn = nrm(bn);
+      if(cn===bnn || (cn.length>5 && (bnn.indexOf(cn)>-1 || cn.indexOf(bnn)>-1))){
+        phMatches.push({contact:c, buyer:bn, phone:phoneByBuyer[bn], use:true});
+        break;
+      }
+    }
+  });
+  const el = document.getElementById('ph-matches');
+  if(!phMatches.length){
+    el.innerHTML = '<div class="empty" style="padding:20px"><p>Eşleşme bulunamadı.<br><span style="font-size:11px">Not: Proforma geçmişi bu tarayıcının localStorage\'ında aranır — index.html\'i bu cihazda kullandıysan dolu olur.</span></p></div>';
+    document.getElementById('ph-apply').style.display='none';
+  } else {
+    el.innerHTML = phMatches.map(function(m,i){
+      return '<div class="ph-row"><input type="checkbox" checked onchange="phMatches['+i+'].use=this.checked">'+
+        '<div style="flex:1"><b>'+esc(m.contact.name)+'</b><br><span style="color:var(--muted);font-size:11px">← '+esc(m.buyer)+'</span></div>'+
+        '<div style="font-weight:600">'+esc(m.phone)+'</div></div>';
+    }).join('');
+    document.getElementById('ph-apply').style.display='inline-flex';
+  }
+  document.getElementById('ph-overlay').classList.add('on');
+}
+
+async function applyPhones(){
+  let ok=0;
+  for(const m of phMatches){
+    if(!m.use) continue;
+    try {
+      await supa('/rest/v1/pipeline_contacts?id=eq.'+m.contact.id,'PATCH',{phone:m.phone,updated_at:new Date().toISOString()});
+      m.contact.phone = m.phone; ok++;
+    } catch(e){}
+  }
+  document.getElementById('ph-overlay').classList.remove('on');
+  toast('✅ '+ok+' telefon eklendi'); render();
+}
+
+async function quickPhone(id, val){
+  if(!val.trim()) return;
+  try {
+    await supa('/rest/v1/pipeline_contacts?id=eq.'+id,'PATCH',{phone:val.trim(),updated_at:new Date().toISOString()});
+    const c = contacts.find(function(x){return x.id===id;});
+    if(c) c.phone = val.trim();
+    toast('✓ '+((c&&c.name)||'')+' telefonu kaydedildi');
+    renderCountries();
   } catch(e){ toast('❌ '+e.message.slice(0,60)); }
 }
 
