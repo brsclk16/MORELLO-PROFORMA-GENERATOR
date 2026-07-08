@@ -275,7 +275,13 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
 .deal-row { display: flex; gap: 6px; }
 .deal-stage { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: inherit; color: var(--text); outline: none; }
 .deal-val { width: 110px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: inherit; color: var(--text); outline: none; }
+.mc-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; font-size: 13px; border-bottom: 1px solid var(--border-light); cursor: pointer; }
+.mc-row:hover { background: var(--gold-subtle); }
+.mc-n { font-weight: 700; color: var(--gold); background: var(--gold-subtle); padding: 1px 9px; border-radius: 10px; font-size: 12px; }
+.leaflet-container { background: var(--surface2); font-family: inherit; }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 </head>
 <body>
 
@@ -300,6 +306,7 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
   <div class="nav-tab" data-tab="log" onclick="showTab('log',this)">📝 Notlar</div>
   <div class="nav-tab" data-tab="goals" onclick="showTab('goals',this)">🎯 Hedefler</div>
   <div class="nav-tab" data-tab="stats" onclick="showTab('stats',this)">📊 Analiz</div>
+  <div class="nav-tab" data-tab="map" onclick="showTab('map',this)">🗺️ Harita</div>
 </div>
 
 <div id="page-pipeline" class="page on">
@@ -331,6 +338,7 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
     <button class="btn btn-ghost btn-sm" onclick="harvestPhones()">📖 Proformalardan Çek</button>
     <button class="btn btn-ghost btn-sm" onclick="openRehber()">📇 Rehber</button>
     <button class="btn btn-ghost btn-sm" onclick="findDupes()">🧹 Mükerrer</button>
+    <button class="btn btn-ghost btn-sm" onclick="openEnrich()">✨ AI Zenginleştir</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ CSV</button>
   </div>
   <div class="country-nav" id="country-nav"></div>
@@ -393,6 +401,12 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
   <div class="stats-wrap" id="stats-wrap"></div>
 </div>
 
+<div id="page-map" class="page">
+  <div style="padding:10px 14px 6px;font-size:12px;color:var(--muted)">Balon büyüklüğü firma sayısına göre. Balona tıkla → o ülkedeki firmalar. Seyahat planlaması için şehir bazlı gruplama.</div>
+  <div id="map-canvas" style="height:62vh;margin:0 14px;border-radius:12px;overflow:hidden;border:1px solid var(--border)"></div>
+  <div id="map-country-list" style="padding:12px 14px"></div>
+</div>
+
 <!-- CONTACT MODAL -->
 <div class="overlay" id="modal-overlay" onclick="if(event.target===this)closeOverlay()">
   <div class="modal">
@@ -432,6 +446,15 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
           <option value="ru">🇷🇺 Русский</option><option value="de">🇩🇪 Deutsch</option>
         </select>
       </div>
+    </div>
+    <div class="field"><label>🪑 İlgilendiği Koleksiyon / Ürün</label>
+      <input type="text" id="f-product" list="product-list" placeholder="Verona, Roma, Sofa Set...">
+      <datalist id="product-list">
+        <option value="Roma"><option value="Beyza"><option value="Diva"><option value="Efes">
+        <option value="Istanbul Corner"><option value="Lion"><option value="Luna"><option value="Miray">
+        <option value="Side"><option value="Verona"><option value="Zena">
+        <option value="Yatak Odası"><option value="Yemek Odası"><option value="Koltuk Takımı">
+      </datalist>
     </div>
     <div class="field"><label>Not</label><textarea id="f-note"></textarea></div>
     <div class="frow2" style="background:var(--gold-subtle);border-radius:8px;padding:10px;margin-bottom:12px">
@@ -568,6 +591,27 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
   </div>
 </div>
 
+<!-- AI ENRICH MODAL -->
+<div class="overlay" id="enrich-overlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal">
+    <div class="modal-title">✨ AI Veri Zenginleştirme</div>
+    <div style="font-size:12.5px;color:var(--text-sec);margin-bottom:12px">Claude, eksik verili firmaları analiz eder: isimden <b>ülke, şehir, dil</b> tahmini + firma/kişi ayrımı + mobilya sektörü tespiti. Aktif ülke filtresine göre çalışır.</div>
+    <div class="field"><label>Kapsam</label>
+      <select id="enrich-scope">
+        <option value="missing">Eksik verili firmalar (ülke veya dil boş)</option>
+        <option value="country">Aktif ülkedeki tüm firmalar</option>
+        <option value="all">Tümü (dikkat: çok olabilir)</option>
+      </select>
+    </div>
+    <div id="enrich-count" style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:10px"></div>
+    <div id="enrich-progress" style="display:none;font-size:13px;color:var(--gold);font-weight:600;padding:6px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('enrich-overlay').classList.remove('on')">İptal</button>
+      <button class="btn btn-gold" id="enrich-go" onclick="runEnrich()">Başlat</button>
+    </div>
+  </div>
+</div>
+
 <!-- BULK ACTION MODAL -->
 <div class="overlay" id="bulk-overlay" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="modal">
@@ -698,6 +742,59 @@ function showTab(id, el){
   el.classList.add('on');
   if(id==='outbox'){ loadTplInputs(); renderOutbox(); }
   if(id==='stats'){ renderStats(); }
+  if(id==='map'){ setTimeout(renderMap, 60); }
+}
+
+// ═══════════ HARİTA (seyahat planlama) ═══════════
+const COUNTRY_COORD = {
+  'Türkiye':[39,35],'Nijerya':[9.1,8.7],'Irak':[33.2,43.7],'Libya':[26.3,17.2],'Suudi Arabistan':[23.9,45.1],
+  'Rusya':[61.5,105],'Kazakistan':[48,67],'Ürdün':[31.2,36.5],'Romanya':[45.9,25],'Lübnan':[33.9,35.5],
+  'Fas':[31.8,-7.1],'Kenya':[-0.02,37.9],'BAE':[23.4,53.8],'Kosova':[42.6,20.9],'Gürcistan':[42.3,43.4],
+  'Bulgaristan':[42.7,25.5],'Almanya':[51.2,10.4],'Senegal':[14.5,-14.5],'Bahreyn':[26,50.5],'Mısır':[26.8,30.8],
+  'Pakistan':[30.4,69.3],'Kuzey Makedonya':[41.6,21.7],'Katar':[25.4,51.2],'ABD':[39.8,-98.6],'Sırbistan':[44,21],
+  'Azerbaycan':[40.1,47.6],'Hindistan':[20.6,79],'Yunanistan':[39.1,21.8],'Somali':[5.2,46.2],'Sudan':[12.9,30.2],
+  'Gana':[7.9,-1],'Gine':[9.9,-9.7],'Kongo (DRC)':[-4,21.8],'Kongo':[-4,21.8],'Fildişi Sahili':[7.5,-5.5],
+  'Fransa':[46.6,2.2],'İtalya':[41.9,12.6],'İngiltere':[52.4,-1.5],'Belçika':[50.5,4.5],'İsviçre':[46.8,8.2],
+  'Avusturya':[47.6,14.1],'Ukrayna':[48.4,31.2],'Özbekistan':[41.4,64.6],'Tacikistan':[38.9,71.3],'Kuveyt':[29.3,47.5],
+  'Umman':[21,57],'Uganda':[1.4,32.3],'Tanzanya':[-6.4,34.9],'Etiyopya':[9.1,40.5],'Kamerun':[7.4,12.4],
+  'Moritanya':[21,-10.9],'Mali':[17.6,-4],'Gabon':[-0.8,11.6],'Angola':[-11.2,17.9],'Bosna-Hersek':[43.9,17.7],
+  'Moğolistan':[46.9,103.8],'İsveç':[60.1,18.6],'Danimarka':[56.3,9.5],'Ermenistan':[40.1,45],'Kosova':[42.6,20.9],
+  'Karadağ':[42.7,19.4],'Arnavutluk':[41,20],'Hollanda':[52.1,5.3],'İran':[32.4,53.7],'Yemen':[15.6,48],
+  'Suriye':[34.8,38.9],'Filistin':[31.9,35.2],'İspanya':[40.4,-3.7],'Polonya':[51.9,19.1],'Sierra Leone':[8.5,-11.8],
+  'Ruanda':[-1.9,29.9],'Zimbabve':[-19,29.8],'KKTC':[35.2,33.4],'Kıbrıs':[35.1,33.4],'Çin':[35.9,104.2],
+  'Cezayir':[28,1.7],'Tunus':[33.9,9.5],'Güney Afrika':[-30.6,22.9],'Benin':[9.3,2.3],'Togo':[8.6,0.8],
+  'Liberya':[6.4,-9.4],'Gambiya':[13.4,-15.3],'Burkina Faso':[12.2,-1.6],'Bangladeş':[23.7,90.4],'Zambiya':[-13.1,27.8],'Hırvatistan':[45.1,15.2]
+};
+let mapObj=null, mapLayer=null;
+function renderMap(){
+  if(typeof L==='undefined'){ document.getElementById('map-canvas').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">Harita kütüphanesi yüklenemedi (internet?)</div>'; return; }
+  if(!mapObj){
+    mapObj=L.map('map-canvas',{scrollWheelZoom:true}).setView([25,20],2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OSM'}).addTo(mapObj);
+  } else { mapObj.invalidateSize(); }
+  if(mapLayer) mapObj.removeLayer(mapLayer);
+  mapLayer=L.layerGroup().addTo(mapObj);
+  const byCountry={};
+  contacts.forEach(function(c){ const k=c.country; if(!k||!COUNTRY_COORD[k]) return; byCountry[k]=(byCountry[k]||0)+1; });
+  const entries=Object.keys(byCountry).map(function(k){return {k:k,n:byCountry[k]};}).sort(function(a,b){return b.n-a.n;});
+  const maxN=entries.length?entries[0].n:1;
+  entries.forEach(function(e){
+    const co=COUNTRY_COORD[e.k];
+    const r=8+Math.round(Math.sqrt(e.n/maxN)*26);
+    const m=L.circleMarker(co,{radius:r,fillColor:'#C4A05A',color:'#A8843A',weight:1.5,fillOpacity:.55});
+    m.bindTooltip(e.k+': '+e.n+' firma',{direction:'top'});
+    m.on('click',function(){ activeCountry=e.k; pageShown=pageSize; document.querySelector('[data-tab="countries"]').click(); renderCountries(); });
+    mapLayer.addLayer(m);
+  });
+  // liste
+  const uncoded=contacts.filter(function(c){return c.country && !COUNTRY_COORD[c.country];}).length;
+  document.getElementById('map-country-list').innerHTML=
+    '<div class="sec-title" style="margin-bottom:8px">Ülke Dağılımı ('+entries.length+' ülke)</div>'+
+    entries.map(function(e){
+      return '<div class="mc-row" onclick="activeCountry=\''+esc(e.k)+'\';document.querySelector(\'[data-tab=countries]\').click();renderCountries();">'+
+        '<span>'+esc(e.k)+'</span><span class="mc-n">'+e.n+'</span></div>';
+    }).join('')+
+    (uncoded?'<div style="font-size:11px;color:var(--muted);margin-top:8px">'+uncoded+' firma haritada gösterilemedi (koordinatı tanımsız ülke)</div>':'');
 }
 
 // ═══════════ ANALİZ / FUNNEL ═══════════
@@ -1166,7 +1263,7 @@ function openAdd(){
   document.getElementById('deals-wrap').style.display='none';
   document.getElementById('f-nextdate').value='';
   document.getElementById('f-nextnote').value='';
-  ['name','country','city','contact','phone','email','note'].forEach(function(k){document.getElementById('f-'+k).value='';});
+  ['name','country','city','contact','phone','email','note','product'].forEach(function(k){document.getElementById('f-'+k).value='';});
   document.getElementById('f-channel').value='wa';
   document.getElementById('f-status').value='cold';
   document.getElementById('f-lang').value='';
@@ -1189,6 +1286,7 @@ function openEdit(id){
   document.getElementById('f-lang').value=c.lang||'';
   document.getElementById('f-date').value=c.last_contact||'';
   document.getElementById('f-note').value=c.note||'';
+  document.getElementById('f-product').value=c.product||'';
   document.getElementById('f-nextdate').value=c.next_date||'';
   document.getElementById('f-nextnote').value=c.next_note||'';
   document.getElementById('quick-touch').style.display='block';
@@ -1334,6 +1432,7 @@ async function saveContact(){
     next_date:document.getElementById('f-nextdate').value||null,
     next_note:document.getElementById('f-nextnote').value.trim(),
     note:document.getElementById('f-note').value.trim(),
+    product:document.getElementById('f-product').value.trim(),
     updated_at:new Date().toISOString()
   };
   try {
@@ -1400,6 +1499,59 @@ async function saveLog(){
 
 // ═══════════ OUTBOX & MESSAGE ENGINE ═══════════
 const WORKER_URL = 'https://morello-ai-proxy.brsclk16.workers.dev';
+
+// ═══════════ AI VERİ ZENGİNLEŞTİRME ═══════════
+function enrichTargets(){
+  const scope=document.getElementById('enrich-scope').value;
+  if(scope==='all') return contacts.slice();
+  if(scope==='country') return activeCountry==='Tümü'?contacts.slice():contacts.filter(function(c){return c.country===activeCountry;});
+  return contacts.filter(function(c){return !c.country || !c.lang;});
+}
+function openEnrich(){
+  document.getElementById('enrich-overlay').classList.add('on');
+  const upd=function(){ document.getElementById('enrich-count').textContent=enrichTargets().length+' firma işlenecek'; };
+  document.getElementById('enrich-scope').onchange=upd; upd();
+}
+async function runEnrich(){
+  const targets=enrichTargets();
+  if(!targets.length){ toast('İşlenecek firma yok'); return; }
+  const btn=document.getElementById('enrich-go'); btn.disabled=true;
+  const prog=document.getElementById('enrich-progress'); prog.style.display='block';
+  const BATCH=15;
+  let done=0, updated=0;
+  for(let i=0;i<targets.length;i+=BATCH){
+    const chunk=targets.slice(i,i+BATCH);
+    prog.textContent='⏳ '+Math.min(i+BATCH,targets.length)+' / '+targets.length;
+    const listStr=chunk.map(function(c,idx){return idx+'|'+c.name+(c.country?' [country:'+c.country+']':'');}).join('\n');
+    const sys='You are a data enrichment engine for a Turkish furniture exporter\'s CRM. For each contact line "index|name [country:x]", infer fields from the name text. Return ONLY a JSON array, no prose. Each item: {"i":index,"country":"Turkish country name or empty","city":"city or empty","lang":"en|fr|ar|ru|de|tr based on country","company":"cleaned company name if identifiable else empty","furniture":true/false}. Country in Turkish (Nijerya, Irak, Libya, Fransa, Suudi Arabistan, Rusya, Kazakistan etc). Lang: Arabic countries=ar, Francophone Africa/France=fr, ex-Soviet=ru, Germany/Austria/Swiss=de, else en. Keep existing country if given. Only output the JSON array.';
+    const usr='Contacts:\n'+listStr;
+    try {
+      const r=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,system:sys,messages:[{role:'user',content:usr}]})});
+      const data=await r.json();
+      const raw=(data.content&&data.content[0])?data.content[0].text:'[]';
+      const match=raw.match(/\[[\s\S]*\]/);
+      const arr=match?JSON.parse(match[0]):[];
+      for(const item of arr){
+        const c=chunk[item.i]; if(!c) continue;
+        const patch={};
+        if(item.country && !c.country) patch.country=item.country;
+        if(item.city && !c.city) patch.city=item.city;
+        if(item.lang && !c.lang) patch.lang=item.lang;
+        if(item.furniture && (!c.note||c.note.indexOf('🪑')<0)) patch.note=((c.note||'')+' 🪑 mobilya').trim();
+        if(Object.keys(patch).length){
+          patch.updated_at=new Date().toISOString();
+          try { await supa('/rest/v1/pipeline_contacts?id=eq.'+c.id,'PATCH',patch); Object.assign(c,patch); updated++; } catch(e){}
+        }
+      }
+    } catch(e){ console.error('enrich batch',e); }
+    done+=chunk.length;
+  }
+  btn.disabled=false; prog.style.display='none';
+  document.getElementById('enrich-overlay').classList.remove('on');
+  toast('✨ '+updated+' firma zenginleştirildi ('+done+' tarandı)');
+  render();
+}
 let outbox = [];
 
 const LANG_BY_COUNTRY = {
@@ -1525,7 +1677,7 @@ async function runGeneration(){
         '\n\nFirm: '+c.name+'\nCountry: '+(c.country||'?')+(c.city?' / '+c.city:'')+
         '\nPipeline status: '+c.status+(c.last_contact?'\nLast contact: '+c.last_contact:'')+
         (c.contact_person?'\nContact person: '+c.contact_person:'')+
-        (c.note?'\nNotes: '+c.note:'')+(recentLogs?'\nRecent logs:\n'+recentLogs:'')+
+        (c.note?'\nNotes: '+c.note:'')+(c.product?'\nInterested in collection/product: '+c.product+' (reference this naturally, e.g. new colors/options available)':'')+(recentLogs?'\nRecent logs:\n'+recentLogs:'')+
         '\n\nWrite the WhatsApp message in '+lang+'.';
       const r = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:400, system:sys, messages:[{role:'user',content:usr}] }) });
