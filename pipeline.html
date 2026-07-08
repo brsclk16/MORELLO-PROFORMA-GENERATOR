@@ -233,6 +233,24 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
 .funnel-bar span { color: #fff; font-size: 12px; font-weight: 700; }
 .ctable-head { display: flex; padding: 6px 10px; font-size: 10.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); }
 .ctable-row { display: flex; align-items: center; padding: 9px 10px; font-size: 12.5px; border-bottom: 1px solid var(--border-light); }
+.dupe-group { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 9px; overflow: hidden; }
+.dupe-gh { background: var(--surface2); padding: 5px 10px; font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.dupe-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-top: 1px solid var(--border-light); cursor: pointer; }
+.dupe-row input[type=radio] { width: 16px; height: 16px; accent-color: var(--gold); }
+body.dark {
+  --bg: #121214; --surface: #1a1a1d; --surface2: #202024; --surface3: #2a2a30;
+  --border: #2e2e35; --border-light: #262629;
+  --text: #eeeef0; --text-sec: #b8b4ac; --muted: #86828a; --muted-light: #56545c;
+  --gold-subtle: #22201a; --gold-light: #2a2618; --green-bg:#12251a; --blue-bg:#141f30; --orange-bg:#2a1f10; --danger-bg:#2a1414; --purple-bg:#1e1830;
+  --shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+body.dark .hc-cold .k-head { background:#2a2838; } body.dark .hc-contacted .k-head{background:#16283a;}
+body.dark .hc-replied .k-head{background:#162a1e;} body.dark .hc-sample .k-head{background:#2e2410;}
+body.dark .hc-order .k-head{background:#14281c;} body.dark .hc-dead .k-head{background:#2a1616;}
+body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
+.k-body.k-drop { background: var(--gold-light); outline: 2px dashed var(--gold-mid); outline-offset: -2px; }
+.k-card[draggable=true] { cursor: grab; }
+.k-card[draggable=true]:active { cursor: grabbing; }
 </style>
 </head>
 <body>
@@ -244,6 +262,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
   </div>
   <div class="hdr-actions">
     <span class="sync-status" id="sync-status"><span class="sync-dot off"></span>…</span>
+    <button class="btn btn-dark-ghost btn-sm" onclick="toggleDark()" id="dark-btn" title="Tema">🌙</button>
     <a href="index.html" class="btn btn-dark-ghost btn-sm">📄 Proforma</a>
     <button class="btn btn-gold btn-sm" onclick="openAdd()">+ Firma</button>
   </div>
@@ -283,6 +302,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
     <button class="btn btn-ghost btn-sm" id="phfilter-btn" onclick="togglePhFilter()">☎️ Telefonsuz</button>
     <button class="btn btn-ghost btn-sm" onclick="harvestPhones()">📖 Proformalardan Çek</button>
     <button class="btn btn-ghost btn-sm" onclick="openRehber()">📇 Rehber</button>
+    <button class="btn btn-ghost btn-sm" onclick="findDupes()">🧹 Mükerrer</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ CSV</button>
   </div>
   <div class="country-nav" id="country-nav"></div>
   <div class="company-list" id="company-list"></div>
@@ -481,6 +502,20 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-s
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('reh-overlay').classList.remove('on')">Kapat</button>
       <button class="btn btn-gold" id="reh-go" onclick="importRehber()">Bu Ülkeyi Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEDUPE MODAL -->
+<div class="overlay" id="dupe-overlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal">
+    <div class="modal-title">🧹 Mükerrer Temizleyici</div>
+    <div style="font-size:12.5px;color:var(--text-sec);margin-bottom:12px" id="dupe-info">Aynı telefon veya çok benzer isimli firmalar taranıyor…</div>
+    <div id="dupe-list" style="max-height:52vh;overflow-y:auto"></div>
+    <div id="dupe-progress" style="display:none;font-size:13px;color:var(--gold);font-weight:600;padding:8px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('dupe-overlay').classList.remove('on')">Kapat</button>
+      <button class="btn btn-danger" id="dupe-apply" onclick="applyDedupe()" style="display:none">Seçilenleri Sil</button>
     </div>
   </div>
 </div>
@@ -795,15 +830,37 @@ function renderKanban(){
     const h=cards.length?cards.map(function(c){
       const days=daysSince(c.last_contact);
       const urg=(c.status==='contacted'&&days>14&&days<9999)||(c.status==='replied'&&days>7&&days<9999);
-      return '<div class="k-card" onclick="openEdit(\''+c.id+'\')"'+(urg?' style="border-color:var(--danger)"':'')+'>'+
+      return '<div class="k-card" draggable="true" data-id="'+c.id+'" ondragstart="dragStart(event)" onclick="openEdit(\''+c.id+'\')"'+(urg?' style="border-color:var(--danger)"':'')+'>'+
         '<div class="k-cname">'+esc(c.name)+'</div>'+
         '<div class="k-country">'+esc([c.city,c.country].filter(Boolean).join(', '))+'</div>'+
         '<div class="k-ch"><span class="k-tag '+(CH_TAG[c.channel]||'tag-wa')+'">'+(CH_LABEL[c.channel]||'WA')+'</span></div>'+
         (c.last_contact?'<div class="k-date">'+fmtDate(c.last_contact)+'</div>':'')+
       '</div>';
     }).join(''):'<div class="k-empty">Boş</div>';
-    return '<div class="k-col '+st.cls+'"><div class="k-head"><span class="k-label">'+st.label+'</span><span class="k-cnt">'+cards.length+'</span></div><div class="k-body">'+h+'</div></div>';
+    return '<div class="k-col '+st.cls+'"><div class="k-head"><span class="k-label">'+st.label+'</span><span class="k-cnt">'+cards.length+'</span></div>'+
+      '<div class="k-body" data-status="'+st.id+'" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event)">'+h+'</div></div>';
   }).join('');
+}
+// ── Kanban drag-drop ──
+let dragId = null;
+function dragStart(e){ dragId = e.target.getAttribute('data-id'); e.dataTransfer.effectAllowed='move'; }
+function dragOver(e){ e.preventDefault(); e.currentTarget.classList.add('k-drop'); }
+function dragLeave(e){ e.currentTarget.classList.remove('k-drop'); }
+async function dropCard(e){
+  e.preventDefault();
+  const col = e.currentTarget; col.classList.remove('k-drop');
+  const newStatus = col.getAttribute('data-status');
+  if(!dragId || !newStatus) return;
+  const c = contacts.find(function(x){return x.id===dragId;});
+  if(!c || c.status===newStatus) return;
+  const old = c.status; c.status = newStatus;
+  renderKanban();
+  try {
+    await supa('/rest/v1/pipeline_contacts?id=eq.'+dragId,'PATCH',{status:newStatus,updated_at:new Date().toISOString()});
+    toast('→ '+(SP_LBL[newStatus]||newStatus));
+    render();
+  } catch(err){ c.status=old; renderKanban(); toast('❌ '+err.message.slice(0,50)); }
+  dragId=null;
 }
 
 function renderCountries(){
@@ -1477,7 +1534,92 @@ async function importRehber(){
   render();
 }
 
-// ═══════════ INIT ═══════════
+// ═══════════ MÜKERRER TEMİZLEYİCİ ═══════════
+let dupeGroups = [];
+function findDupes(){
+  function digits(s){ return (s||'').replace(/[^0-9]/g,''); }
+  function normName(s){ return (s||'').toLowerCase().replace(/[^a-z0-9çğıöşü]/g,'').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ç/g,'c'); }
+  const groups = [];
+  const used = new Set();
+  // 1) Aynı telefon
+  const byPhone = {};
+  contacts.forEach(function(c){ const d=digits(c.phone); if(d.length>=7){ (byPhone[d]=byPhone[d]||[]).push(c);} });
+  Object.keys(byPhone).forEach(function(p){
+    if(byPhone[p].length>1){ groups.push(byPhone[p]); byPhone[p].forEach(function(c){used.add(c.id);}); }
+  });
+  // 2) Aynı normalize isim (telefon grubunda olmayanlar)
+  const byName = {};
+  contacts.forEach(function(c){ if(used.has(c.id)) return; const n=normName(c.name); if(n.length>4){ (byName[n]=byName[n]||[]).push(c);} });
+  Object.keys(byName).forEach(function(n){
+    if(byName[n].length>1){ groups.push(byName[n]); }
+  });
+  dupeGroups = groups;
+  const el = document.getElementById('dupe-list');
+  document.getElementById('dupe-info').textContent = groups.length+' mükerrer grup bulundu. Her gruptan tutulacak kaydı seç, gerisi silinir. (En dolu kayıt otomatik önerildi)';
+  if(!groups.length){ el.innerHTML='<div class="empty" style="padding:24px"><div class="icon">✨</div><p>Mükerrer yok, liste temiz!</p></div>'; document.getElementById('dupe-apply').style.display='none'; document.getElementById('dupe-overlay').classList.add('on'); return; }
+  // her grupta en çok dolu alanı olan "keep" default
+  el.innerHTML = groups.map(function(g, gi){
+    const scored = g.map(function(c){ let s=0; ['phone','email','contact_person','city','note','last_contact'].forEach(function(k){if(c[k]) s++;}); if(c.status!=='cold') s+=2; return {c:c,s:s}; }).sort(function(a,b){return b.s-a.s;});
+    return '<div class="dupe-group"><div class="dupe-gh">'+g.length+' kayıt</div>'+
+      scored.map(function(x,i){
+        const c=x.c;
+        return '<label class="dupe-row"><input type="radio" name="keep-'+gi+'" value="'+c.id+'" '+(i===0?'checked':'')+'>'+
+          '<div style="flex:1"><b>'+esc(c.name)+'</b><br><span style="font-size:11px;color:var(--muted)">'+esc([c.city,c.country,c.phone,c.status].filter(Boolean).join(' · '))+'</span></div>'+
+          (i===0?'<span class="hb hb-gold">tut</span>':'')+'</label>';
+      }).join('')+'</div>';
+  }).join('');
+  document.getElementById('dupe-apply').style.display='inline-flex';
+  document.getElementById('dupe-apply').textContent = 'Fazlaları Sil (~'+groups.reduce(function(s,g){return s+g.length-1;},0)+')';
+  document.getElementById('dupe-overlay').classList.add('on');
+}
+async function applyDedupe(){
+  const toDelete = [];
+  dupeGroups.forEach(function(g, gi){
+    const keep = (document.querySelector('input[name="keep-'+gi+'"]:checked')||{}).value;
+    g.forEach(function(c){ if(c.id!==keep) toDelete.push(c.id); });
+  });
+  if(!toDelete.length){ toast('Silinecek yok'); return; }
+  if(!confirm(toDelete.length+' mükerrer kayıt silinecek. Onaylıyor musun?')) return;
+  const prog=document.getElementById('dupe-progress'); prog.style.display='block';
+  let done=0;
+  for(let i=0;i<toDelete.length;i+=100){
+    const chunk=toDelete.slice(i,i+100);
+    prog.textContent='⏳ '+Math.min(i+100,toDelete.length)+' / '+toDelete.length;
+    try { await supa('/rest/v1/pipeline_contacts?id=in.('+chunk.join(',')+')','DELETE'); done+=chunk.length; } catch(e){ console.error(e); }
+  }
+  contacts=contacts.filter(function(c){return toDelete.indexOf(c.id)<0;});
+  prog.style.display='none';
+  document.getElementById('dupe-overlay').classList.remove('on');
+  toast('🧹 '+done+' mükerrer silindi'); render();
+}
+
+// ═══════════ DARK MODE ═══════════
+function toggleDark(){
+  const on = document.body.classList.toggle('dark');
+  localStorage.setItem('mpl_dark', on?'1':'0');
+  document.getElementById('dark-btn').textContent = on?'☀️':'🌙';
+}
+if(localStorage.getItem('mpl_dark')==='1'){ document.body.classList.add('dark'); }
+setTimeout(function(){ var db=document.getElementById('dark-btn'); if(db&&document.body.classList.contains('dark')) db.textContent='☀️'; },0);
+
+// ═══════════ CSV EXPORT ═══════════
+function exportCSV(){
+  const cols=['name','contact_person','country','city','phone','email','status','last_contact','bakiye','note'];
+  const head=['Firma','Yetkili','Ülke','Şehir','Telefon','Eposta','Durum','Son İletişim','Bakiye','Not'];
+  const q=(document.getElementById('search-input').value||'').toLowerCase();
+  let rows=activeCountry==='Tümü'?contacts:contacts.filter(function(c){return c.country===activeCountry;});
+  if(q) rows=rows.filter(function(c){return (c.name+' '+(c.country||'')+' '+(c.phone||'')).toLowerCase().indexOf(q)>-1;});
+  const esc2=function(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; };
+  const csv='\ufeff'+head.map(esc2).join(',')+'\n'+rows.map(function(c){return cols.map(function(k){return esc2(c[k]);}).join(',');}).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='morello_pipeline_'+(activeCountry==='Tümü'?'tumu':activeCountry)+'_'+today()+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('⬇️ '+rows.length+' firma CSV olarak indirildi');
+}
+
+
 if(loadSession()){ loadCloud(); }
 else {
   setSync(false);
