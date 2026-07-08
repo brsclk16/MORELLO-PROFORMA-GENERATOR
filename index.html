@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783462398</title>
+<title>Morello — Proforma Generator v1783520712</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1982,6 +1982,7 @@ body {
       <div class="hdr-dd-menu">
         <button onclick="shareProformaLink()">🔗 Web-Proforma Linki</button>
         <button onclick="shareProformaLinkWA()">📱 WhatsApp ile Gönder</button>
+        <button onclick="showSummaryCard()">🧾 Görsel Özet Kartı (PNG)</button>
         <button onclick="generateEmailDraft()">✉️ E-posta Taslağı (AI)</button>
       </div>
     </div>
@@ -2662,6 +2663,18 @@ body {
       <button class="btn btn-ghost btn-sm" onclick="closeEmailModal()">Kapat</button>
       <button class="btn btn-ghost btn-sm" id="email-copy-btn" onclick="copyEmailDraft()" style="display:none;">📋 Kopyala</button>
       <button class="btn btn-gold btn-sm" id="email-mailto-btn" onclick="openEmailInMail()" style="display:none;">📨 Mail'de Aç</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER SUMMARY CARD MODAL -->
+<div id="summary-card-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10650;align-items:center;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="max-width:400px;width:100%;">
+    <div id="summary-card-canvas-wrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="closeSummaryCard()" style="background:#fff;">✕ Kapat</button>
+      <button class="btn btn-sm" onclick="downloadSummaryCard()" style="background:#fff;color:var(--accent);border:1px solid var(--border);">⬇ İndir (PNG)</button>
+      <button class="btn btn-sm" onclick="shareSummaryCardWA()" style="background:#25D366;color:#fff;border:none;">📱 WhatsApp</button>
     </div>
   </div>
 </div>
@@ -5145,7 +5158,7 @@ function renderHistory() {
     const canDeposit = !isTrashView && (h.approval || ['Confirmed','Production','Shipped'].includes(h.status));
     const actionsHtml = isTrashView
       ? '<button class="hist-load-btn" onclick="restoreHistory('+realIdx+')">♻ Geri Al</button><button class="hist-del-btn" onclick="permanentlyDeleteHistory('+realIdx+')">Kalıcı Sil</button>'
-      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-load-btn" title="Tahsilat / Ödemeler" onclick="showPayments('+realIdx+')">💳</button>'+((h.status!=='Lost'&&h.status!=='Shipped')?'<button class="hist-del-btn" title="Kayıp olarak işaretle" onclick="markAsLost('+realIdx+')">📉</button>':'')+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
+      : '<button class="hist-load-btn" onclick="loadHistory('+realIdx+')">Load</button><button class="hist-load-btn" title="Tekrar Sipariş — yeni taslak olarak kopyala" onclick="reorderFromHistory('+realIdx+')">🔁</button><button class="hist-load-btn" title="Tahsilat / Ödemeler" onclick="showPayments('+realIdx+')">💳</button>'+((h.status!=='Lost'&&h.status!=='Shipped')?'<button class="hist-del-btn" title="Kayıp olarak işaretle" onclick="markAsLost('+realIdx+')">📉</button>':'')+'<button class="hist-load-btn" title="Ekler (B/L, swift, gümrük evrakı)" onclick="showAttachments('+realIdx+')">📎</button>'+(canDeposit?'<button class="hist-load-btn" title="Kapora Faturası (30%)" style="background:var(--success-bg);color:var(--success);" onclick="showDepositInvoice('+realIdx+')">💰</button>':'')+'<button class="hist-del-btn" onclick="deleteHistory('+realIdx+')">×</button>';
     row.innerHTML=`
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -6327,6 +6340,305 @@ function checkCreditLimit(companyName) {
   } else if(pct >= 75) {
     showToast('\u26a0\ufe0f Limit uyar\u0131s\u0131: '+companyName+' a\u00e7\u0131k '+sym+open.total.toFixed(0)+' (limitin %'+pct.toFixed(0)+'\u0131)');
   }
+}
+
+// ============================================================
+// FILE ATTACHMENTS (Supabase Storage bucket: "attachments")
+// ============================================================
+const STORAGE_BUCKET = 'attachments';
+
+async function uploadAttachment(pi, file) {
+  const token = (currentUser && currentUser.access_token) ? currentUser.access_token : SUPA_KEY;
+  const safePi = (pi||'misc').replace(/[^A-Za-z0-9\-]/g,'_');
+  const safeName = file.name.replace(/[^A-Za-z0-9._\-]/g,'_');
+  const path = safePi + '/' + Date.now() + '_' + safeName;
+  const r = await fetch(SUPA_URL + '/storage/v1/object/' + STORAGE_BUCKET + '/' + encodeURIComponent(path), {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+token, 'Content-Type': file.type||'application/octet-stream', 'x-upsert': 'true' },
+    body: file
+  });
+  if(!r.ok) throw new Error('upload failed: '+r.status+' '+(await r.text()));
+  return path;
+}
+
+async function listAttachments(pi) {
+  const token = (currentUser && currentUser.access_token) ? currentUser.access_token : SUPA_KEY;
+  const safePi = (pi||'misc').replace(/[^A-Za-z0-9\-]/g,'_');
+  const r = await fetch(SUPA_URL + '/storage/v1/object/list/' + STORAGE_BUCKET, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prefix: safePi + '/', limit: 100, sortBy: { column:'created_at', order:'desc' } })
+  });
+  if(!r.ok) return [];
+  const rows = await r.json();
+  return Array.isArray(rows) ? rows.map(function(f){ return { name: f.name, path: safePi+'/'+f.name, size: f.metadata?.size||0 }; }) : [];
+}
+
+async function getAttachmentUrl(path) {
+  const token = (currentUser && currentUser.access_token) ? currentUser.access_token : SUPA_KEY;
+  const r = await fetch(SUPA_URL + '/storage/v1/object/sign/' + STORAGE_BUCKET + '/' + encodeURIComponent(path), {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expiresIn: 3600 })
+  });
+  if(!r.ok) return null;
+  const d = await r.json();
+  return d.signedURL ? SUPA_URL + '/storage/v1' + d.signedURL : null;
+}
+
+async function deleteAttachment(path) {
+  const token = (currentUser && currentUser.access_token) ? currentUser.access_token : SUPA_KEY;
+  const r = await fetch(SUPA_URL + '/storage/v1/object/' + STORAGE_BUCKET + '/' + encodeURIComponent(path), {
+    method: 'DELETE',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+token }
+  });
+  return r.ok;
+}
+
+function fileIcon(name) {
+  const ext = (name.split('.').pop()||'').toLowerCase();
+  if(['pdf'].includes(ext)) return '\ud83d\udcc4';
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)) return '\ud83d\uddbc\ufe0f';
+  if(['xls','xlsx','csv'].includes(ext)) return '\ud83d\udcca';
+  if(['doc','docx'].includes(ext)) return '\ud83d\udcdd';
+  if(['zip','rar'].includes(ext)) return '\ud83d\udddc\ufe0f';
+  return '\ud83d\udcce';
+}
+function fmtSize(b) {
+  if(!b) return '';
+  if(b < 1024) return b+' B';
+  if(b < 1048576) return (b/1024).toFixed(0)+' KB';
+  return (b/1048576).toFixed(1)+' MB';
+}
+
+async function showAttachments(histIdx) {
+  const h = getHistory()[histIdx];
+  if(!h) return;
+  const modal = document.createElement('div');
+  modal.id = 'attach-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10700;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  modal.innerHTML = '<div style="background:var(--surface);border-radius:var(--r);width:400px;max-width:92vw;max-height:78vh;overflow-y:auto;box-shadow:var(--shadow-lg);">'
+    +'<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><div style="font-size:13px;font-weight:700;color:var(--text);">\ud83d\udcce '+h.pi+' \u2014 Ekler</div>'
+      +'<div style="font-size:10px;color:var(--muted);">B/L, swift, g\u00fcmr\u00fck evrak\u0131 vb.</div></div>'
+      +'<button onclick="document.getElementById(\'attach-modal\').remove()" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--muted);">\u00d7</button></div>'
+    +'<div style="padding:14px 16px;">'
+      +'<button class="btn btn-gold btn-sm" style="width:100%;margin-bottom:12px;" onclick="pickAttachment('+histIdx+')">\u2795 Dosya Ekle</button>'
+      +'<div id="attach-list" style="font-size:11px;color:var(--muted);text-align:center;padding:12px;">Y\u00fckleniyor\u2026</div>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+  refreshAttachList(h.pi);
+}
+
+async function refreshAttachList(pi) {
+  const el = document.getElementById('attach-list');
+  if(!el) return;
+  let files = [];
+  try { files = await listAttachments(pi); } catch(e) { el.innerHTML = '<div style="color:var(--danger);">Depo eri\u015filemedi. Bucket kurulu mu?</div>'; return; }
+  if(!files.length) { el.innerHTML = '<div style="padding:8px;">Hen\u00fcz ek yok.</div>'; return; }
+  el.style.textAlign = 'left'; el.style.padding = '0';
+  el.innerHTML = files.map(function(f){
+    const displayName = f.name.replace(/^\d+_/, '');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border-light);font-size:11.5px;">'
+      +'<span style="flex-shrink:0;font-size:15px;">'+fileIcon(f.name)+'</span>'
+      +'<span style="flex:1;color:var(--text);word-break:break-all;cursor:pointer;" onclick="openAttachment(\''+f.path.replace(/'/g,"\\'")+'\')">'+displayName+'<div style="font-size:9px;color:var(--muted);">'+fmtSize(f.size)+'</div></span>'
+      +'<button class="hist-del-btn" onclick="removeAttachment(\''+f.path.replace(/'/g,"\\'")+'\',\''+pi.replace(/'/g,"\\'")+'\')">\u00d7</button></div>';
+  }).join('');
+}
+
+function pickAttachment(histIdx) {
+  const h = getHistory()[histIdx];
+  if(!h) return;
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx,.zip';
+  inp.onchange = async function(){
+    const file = inp.files[0]; if(!file) return;
+    if(file.size > 15*1048576) { showToast('Dosya 15MB\'\u0131 a\u015f\u0131yor'); return; }
+    const el = document.getElementById('attach-list');
+    if(el) el.innerHTML = '<div style="padding:12px;text-align:center;">\u2b06 Y\u00fckleniyor\u2026</div>';
+    try {
+      await uploadAttachment(h.pi, file);
+      showToast('\ud83d\udcce Eklendi: '+file.name);
+      refreshAttachList(h.pi);
+    } catch(e) {
+      showToast('\u274c Y\u00fckleme ba\u015far\u0131s\u0131z \u2014 bucket kurulu mu?');
+      if(el) el.innerHTML = '<div style="color:var(--danger);padding:12px;">Hata: '+e.message.slice(0,80)+'</div>';
+    }
+  };
+  inp.click();
+}
+
+async function openAttachment(path) {
+  showToast('\ud83d\udd17 A\u00e7\u0131l\u0131yor\u2026');
+  const url = await getAttachmentUrl(path);
+  if(url) window.open(url, '_blank');
+  else showToast('Link al\u0131namad\u0131');
+}
+
+async function removeAttachment(path, pi) {
+  if(!confirm('Bu ek silinsin mi?')) return;
+  const ok = await deleteAttachment(path);
+  if(ok) { showToast('\ud83d\uddd1 Silindi'); refreshAttachList(pi); }
+  else showToast('Silinemedi');
+}
+
+// ============================================================
+// ORDER SUMMARY CARD (SVG -> PNG for WhatsApp)
+// ============================================================
+let _summaryCardBlob = null;
+
+function buildSummaryCardSVG() {
+  const pi = document.getElementById('piNumber')?.value || '';
+  const buyer = document.getElementById('buyerCompany')?.value || '';
+  const country = document.getElementById('buyerCountry')?.value || '';
+  const dateStr = new Date().toLocaleDateString('tr-TR');
+  const sym = currency==='TRY'?'\u20ba':currency==='EUR'?'\u20ac':'$';
+  const total = orderItems.reduce(function(s,i){ return s+i.unitPrice*i.qty; }, 0);
+  const qtyTotal = orderItems.reduce(function(s,i){ return s+i.qty; }, 0);
+  const cbmTotal = orderItems.reduce(function(s,i){ return s+(i.cbm||0)*i.qty; }, 0);
+
+  // Layout constants
+  const W = 720;
+  const padX = 44;
+  const headerH = 150;
+  const rowH = 46;
+  const maxRows = 12;
+  const shownItems = orderItems.slice(0, maxRows);
+  const extraCount = orderItems.length - shownItems.length;
+  const itemsH = shownItems.length * rowH + (extraCount > 0 ? 34 : 0);
+  const footerH = 168;
+  const H = headerH + 44 + itemsH + footerH;
+
+  function esc(s){ return String(s||'').replace(/[<>&]/g,function(ch){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[ch];}); }
+  function truncate(s, n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'\u2026' : s; }
+
+  let rows = '';
+  shownItems.forEach(function(it, i){
+    const y = headerH + 44 + i*rowH;
+    const lineTotal = (it.unitPrice*it.qty).toFixed(2);
+    rows += '<text x="'+padX+'" y="'+(y+20)+'" font-family="Arial,sans-serif" font-size="17" font-weight="600" fill="#2A2622">'+esc(truncate(it.name, 42))+'</text>';
+    rows += '<text x="'+padX+'" y="'+(y+38)+'" font-family="Arial,sans-serif" font-size="13" fill="#8A8479">'+it.qty+' x '+sym+it.unitPrice.toFixed(2)+'</text>';
+    rows += '<text x="'+(W-padX)+'" y="'+(y+28)+'" text-anchor="end" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#74113D">'+sym+lineTotal+'</text>';
+    if(i < shownItems.length-1) rows += '<line x1="'+padX+'" y1="'+(y+rowH-4)+'" x2="'+(W-padX)+'" y2="'+(y+rowH-4)+'" stroke="#EFEAE2" stroke-width="1"/>';
+  });
+  if(extraCount > 0) {
+    const y = headerH + 44 + shownItems.length*rowH;
+    rows += '<text x="'+padX+'" y="'+(y+18)+'" font-family="Arial,sans-serif" font-size="14" font-style="italic" fill="#8A8479">+ '+extraCount+' \u00fcr\u00fcn daha\u2026</text>';
+  }
+
+  const footerY = headerH + 44 + itemsH + 20;
+  const depositAmt = (total*0.3).toFixed(2);
+
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'
+    // Background
+    +'<rect width="'+W+'" height="'+H+'" fill="#FAF8F4"/>'
+    // Header dark band
+    +'<rect width="'+W+'" height="'+headerH+'" fill="#1F1B17"/>'
+    +'<rect y="'+(headerH-5)+'" width="'+W+'" height="5" fill="#B8935A"/>'
+    // Logo text
+    +'<text x="'+padX+'" y="60" font-family="Georgia,serif" font-size="34" font-weight="700" letter-spacing="6" fill="#FFFFFF">M<tspan fill="#B8935A">O</tspan>RELLO</text>'
+    +'<text x="'+padX+'" y="80" font-family="Arial,sans-serif" font-size="11" letter-spacing="3" fill="#8A8479">MOBILYA \u00b7 FURNITURE</text>'
+    // PI badge
+    +'<rect x="'+(W-padX-180)+'" y="34" width="180" height="34" rx="17" fill="rgba(184,147,90,0.18)" stroke="#B8935A" stroke-width="1"/>'
+    +'<text x="'+(W-padX-90)+'" y="56" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#B8935A">'+esc(pi)+'</text>'
+    // Buyer
+    +'<text x="'+padX+'" y="116" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#FFFFFF">'+esc(truncate(buyer, 34))+'</text>'
+    +'<text x="'+padX+'" y="136" font-family="Arial,sans-serif" font-size="13" fill="#8A8479">'+esc(country)+(country?' \u00b7 ':'')+dateStr+'</text>'
+    // Items section label
+    +'<text x="'+padX+'" y="'+(headerH+28)+'" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.5" fill="#8A8479">\u00dcR\u00dcNLER ('+orderItems.length+')</text>'
+    +rows
+    // Footer separator
+    +'<line x1="'+padX+'" y1="'+footerY+'" x2="'+(W-padX)+'" y2="'+footerY+'" stroke="#B8935A" stroke-width="1.5"/>'
+    // Totals
+    +'<text x="'+padX+'" y="'+(footerY+34)+'" font-family="Arial,sans-serif" font-size="14" fill="#8A8479">'+qtyTotal+' adet \u00b7 '+cbmTotal.toFixed(2)+' m\u00b3</text>'
+    +'<text x="'+(W-padX)+'" y="'+(footerY+40)+'" text-anchor="end" font-family="Arial,sans-serif" font-size="30" font-weight="800" fill="#74113D">'+sym+total.toFixed(2)+'</text>'
+    +'<text x="'+(W-padX)+'" y="'+(footerY+62)+'" text-anchor="end" font-family="Arial,sans-serif" font-size="12" fill="#8A8479">GENEL TOPLAM</text>'
+    // Deposit line
+    +'<rect x="'+padX+'" y="'+(footerY+78)+'" width="'+(W-2*padX)+'" height="40" rx="8" fill="#F7F1E8"/>'
+    +'<text x="'+(padX+16)+'" y="'+(footerY+103)+'" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="#74113D">Kapora (30%): '+sym+depositAmt+'</text>'
+    +'<text x="'+(W-padX-16)+'" y="'+(footerY+103)+'" text-anchor="end" font-family="Arial,sans-serif" font-size="12" fill="#8A8479">Bakiye: '+sym+(total*0.7).toFixed(2)+'</text>'
+    // Footer note
+    +'<text x="'+(W/2)+'" y="'+(H-16)+'" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#B0AAA0">Morello Mobilya \u00b7 \u0130neg\u00f6l / Bursa / T\u00fcrkiye \u00b7 export@morellomobilya.com</text>'
+    +'</svg>';
+  return { svg: svg, W: W, H: H };
+}
+
+function showSummaryCard() {
+  if(!orderItems.length) { showToast('\u00d6nce \u00fcr\u00fcn ekleyin'); return; }
+  const { svg, W, H } = buildSummaryCardSVG();
+  const wrap = document.getElementById('summary-card-canvas-wrap');
+  // Show SVG preview scaled to fit
+  wrap.innerHTML = '<div style="width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.35);border-radius:8px;overflow:hidden;">'
+    + svg.replace('<svg ', '<svg style="width:100%;height:auto;display:block;" ') + '</div>';
+  document.getElementById('summary-card-modal').style.display = 'flex';
+
+  // Render to PNG blob in background
+  renderCardToPng(svg, W, H).then(function(blob){ _summaryCardBlob = blob; }).catch(function(e){ console.warn('png render fail', e); });
+}
+
+function renderCardToPng(svg, W, H) {
+  return new Promise(function(resolve, reject){
+    const scale = 2; // retina
+    const canvas = document.createElement('canvas');
+    canvas.width = W*scale; canvas.height = H*scale;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const svgBlob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = function(){
+      ctx.setTransform(scale,0,0,scale,0,0);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(blob){ resolve(blob); }, 'image/png');
+    };
+    img.onerror = function(e){ URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+function closeSummaryCard() { document.getElementById('summary-card-modal').style.display = 'none'; }
+
+function downloadSummaryCard() {
+  const pi = (document.getElementById('piNumber')?.value || 'proforma').replace(/[^A-Za-z0-9\-]/g,'');
+  function doDownload(blob){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = pi+'-ozet.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+  if(_summaryCardBlob) { doDownload(_summaryCardBlob); showToast('\u2b07 \u0130ndirildi'); }
+  else {
+    const { svg, W, H } = buildSummaryCardSVG();
+    renderCardToPng(svg, W, H).then(function(blob){ _summaryCardBlob = blob; doDownload(blob); });
+  }
+}
+
+async function shareSummaryCardWA() {
+  const pi = (document.getElementById('piNumber')?.value || 'proforma');
+  const phone = (document.getElementById('buyerPhone')?.value || '').replace(/[^0-9]/g,'');
+  // Ensure blob ready
+  if(!_summaryCardBlob) {
+    const { svg, W, H } = buildSummaryCardSVG();
+    try { _summaryCardBlob = await renderCardToPng(svg, W, H); } catch(e) {}
+  }
+  // Try native share with image (mobile)
+  if(_summaryCardBlob && navigator.canShare) {
+    const file = new File([_summaryCardBlob], pi+'-ozet.png', {type:'image/png'});
+    if(navigator.canShare({ files:[file] })) {
+      try {
+        await navigator.share({ files:[file], text: pi+' \u2014 Morello Mobilya' });
+        return;
+      } catch(e) { /* user cancelled or unsupported, fall through */ }
+    }
+  }
+  // Fallback: download the image + open WhatsApp chat so user attaches it
+  downloadSummaryCard();
+  showToast('\ud83d\udcbe Kart indirildi \u2014 WhatsApp\'ta g\u00f6rsel olarak ekleyebilirsin');
+  const msg = encodeURIComponent(pi+' numaral\u0131 sipari\u015f \u00f6zetiniz ekte. / Your order summary is attached.');
+  setTimeout(function(){ window.open('https://wa.me/'+(phone||'')+'?text='+msg, '_blank'); }, 600);
 }
 
 // ============================================================
