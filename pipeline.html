@@ -339,6 +339,7 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
     <button class="btn btn-ghost btn-sm" onclick="openRehber()">📇 Rehber</button>
     <button class="btn btn-ghost btn-sm" onclick="findDupes()">🧹 Mükerrer</button>
     <button class="btn btn-ghost btn-sm" onclick="openEnrich()">✨ AI Zenginleştir</button>
+    <button class="btn btn-ghost btn-sm" onclick="openEkstre()">💰 Ekstre</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ CSV</button>
   </div>
   <div class="country-nav" id="country-nav"></div>
@@ -587,6 +588,20 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('dupe-overlay').classList.remove('on')">Kapat</button>
       <button class="btn btn-danger" id="dupe-apply" onclick="applyDedupe()" style="display:none">Seçilenleri Sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- EKSTRE (bakiye güncelleme) MODAL -->
+<div class="overlay" id="ekstre-overlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal">
+    <div class="modal-title">💰 Muhasebe Ekstresi (24.06.2026)</div>
+    <div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">Cari bakiyeler pipeline firmalarıyla eşleştiriliyor. <b style="color:var(--green)">Pozitif = müşteri bize borçlu (tahsilat)</b>, <b style="color:var(--danger)">negatif = biz müşteriye borçluyuz</b>.</div>
+    <div id="ekstre-list" style="max-height:52vh;overflow-y:auto"></div>
+    <div id="ekstre-progress" style="display:none;font-size:13px;color:var(--gold);font-weight:600;padding:6px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('ekstre-overlay').classList.remove('on')">Kapat</button>
+      <button class="btn btn-gold" id="ekstre-apply" onclick="applyEkstre()" style="display:none">Eşleşenleri Güncelle</button>
     </div>
   </div>
 </div>
@@ -1499,6 +1514,58 @@ async function saveLog(){
 
 // ═══════════ OUTBOX & MESSAGE ENGINE ═══════════
 const WORKER_URL = 'https://morello-ai-proxy.brsclk16.workers.dev';
+
+
+// ═══════════ MUHASEBE EKSTRESİ ═══════════
+const EKSTRE = [{"n":"EVİM MOBİLYA","b":-109385},{"n":"BERRAK MOBİLYA","b":-76233},{"n":"ERVA HOME","b":-12755},{"n":"ASHLEY HOME STORE GEORGİA","b":-4350},{"n":"BUMESSA MOBİLYA","b":-2487},{"n":"LORENZO DANTE İNTERİOR","b":-1400},{"n":"MOBİLİUM","b":-999.65},{"n":"BERKOM MOBİLYA","b":-627},{"n":"TOMA MOBİLYA","b":-625},{"n":"AK ASLAN MÖBEL","b":-470},{"n":"ERSİN MÖBEL","b":-93.5},{"n":"STİLİX MOBİLYA","b":10},{"n":"VİNHOTTİ","b":31},{"n":"4 SEASONS MOBİLYA","b":40},{"n":"YUSUF NIGERIA","b":200},{"n":"LÜX DESING","b":259},{"n":"RALİCA","b":278},{"n":"ROYAL COMFORT","b":860.45},{"n":"ELİT HOME","b":1500},{"n":"ROTA MOBİLYA","b":2393},{"n":"ANKA HOME FURNİTURE","b":2408.52},{"n":"SERDEM MOBİLYA","b":2605},{"n":"CORALP TRADING LLC /","b":2880},{"n":"LTD GIO-21","b":3324.01},{"n":"CAPİTAL","b":4120},{"n":"YUVAM MOBİLYA","b":7685.5},{"n":"HELİN HOME","b":8304},{"n":"EDF GİNE","b":15066.01},{"n":"BERKEL MOBİLYA","b":55606},{"n":"ARBEMET","b":121270.5}];
+let ekstreMatches=[];
+function normN(s){ return (s||'').toLowerCase().replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ç/g,'c').replace(/[^a-z0-9]/g,''); }
+function openEkstre(){
+  ekstreMatches=[];
+  EKSTRE.forEach(function(e){
+    const en=normN(e.n);
+    let best=null;
+    contacts.forEach(function(c){
+      const cn=normN(c.name);
+      if(cn===en || (en.length>5 && (cn.indexOf(en)>-1||en.indexOf(cn)>-1))){
+        if(!best) best=c;
+      }
+    });
+    ekstreMatches.push({ekstre:e, contact:best, use:!!best});
+  });
+  const el=document.getElementById('ekstre-list');
+  el.innerHTML=ekstreMatches.map(function(m,i){
+    const b=m.ekstre.b;
+    const bcls=b>0?'var(--green)':(b<0?'var(--danger)':'var(--muted)');
+    const bstr=(b>0?'+':'')+Number(b).toLocaleString('tr-TR',{maximumFractionDigits:0});
+    if(m.contact){
+      return '<div class="ph-row"><input type="checkbox" '+(m.use?'checked':'')+' onchange="ekstreMatches['+i+'].use=this.checked">'+
+        '<div style="flex:1"><b>'+esc(m.ekstre.n)+'</b><br><span style="font-size:11px;color:var(--muted)">→ '+esc(m.contact.name)+'</span></div>'+
+        '<div style="font-weight:700;color:'+bcls+'">'+bstr+'</div></div>';
+    } else {
+      return '<div class="ph-row" style="opacity:.5"><div style="width:16px"></div><div style="flex:1"><b>'+esc(m.ekstre.n)+'</b><br><span style="font-size:11px;color:var(--danger)">eşleşme yok</span></div><div style="font-weight:700;color:'+bcls+'">'+bstr+'</div></div>';
+    }
+  }).join('');
+  const matched=ekstreMatches.filter(function(m){return m.contact;}).length;
+  document.getElementById('ekstre-apply').style.display=matched?'inline-flex':'none';
+  document.getElementById('ekstre-apply').textContent='Eşleşenleri Güncelle ('+matched+')';
+  document.getElementById('ekstre-overlay').classList.add('on');
+}
+async function applyEkstre(){
+  const prog=document.getElementById('ekstre-progress'); prog.style.display='block';
+  let done=0;
+  for(const m of ekstreMatches){
+    if(!m.use||!m.contact) continue;
+    prog.textContent='⏳ '+m.contact.name;
+    try {
+      await supa('/rest/v1/pipeline_contacts?id=eq.'+m.contact.id,'PATCH',{bakiye:m.ekstre.b,updated_at:new Date().toISOString()});
+      m.contact.bakiye=m.ekstre.b; done++;
+    } catch(e){ console.error(e); }
+  }
+  prog.style.display='none';
+  document.getElementById('ekstre-overlay').classList.remove('on');
+  toast('💰 '+done+' firmanın bakiyesi güncellendi'); render();
+}
 
 // ═══════════ AI VERİ ZENGİNLEŞTİRME ═══════════
 function enrichTargets(){
