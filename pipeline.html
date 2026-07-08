@@ -251,6 +251,21 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
 .k-body.k-drop { background: var(--gold-light); outline: 2px dashed var(--gold-mid); outline-offset: -2px; }
 .k-card[draggable=true] { cursor: grab; }
 .k-card[draggable=true]:active { cursor: grabbing; }
+.today-item { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--border-light); border-left: 3px solid var(--gold); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 7px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+.today-item.overdue { border-left-color: var(--danger); }
+.today-item:hover { border-color: var(--gold-mid); }
+.today-check { width: 26px; height: 26px; border: 2px solid var(--border2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: transparent; font-weight: 700; flex-shrink: 0; transition: all .15s; }
+.today-check:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.today-name { font-size: 13.5px; font-weight: 600; }
+.today-note { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.today-date { font-size: 11px; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+.today-date.od { color: var(--danger); }
+.forecast-panel { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.fc-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.fc-lbl { font-size: 13px; color: var(--text-sec); }
+.fc-val { font-size: 17px; font-weight: 700; font-family: 'Playfair Display', serif; }
+.fc-val.gold { color: var(--gold); }
+.fc-note { font-size: 10.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; border-top: 1px solid var(--border-light); padding-top: 8px; }
 </style>
 </head>
 <body>
@@ -281,6 +296,10 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
 <div id="page-pipeline" class="page on">
   <div class="week-bar" id="week-bar"></div>
   <div class="rotation" id="rotation-hint"></div>
+  <div class="today-wrap" id="today-wrap" style="display:none">
+    <div class="sec-head" style="padding:14px 16px 0"><div class="sec-title">📅 Bugün Yapılacaklar</div></div>
+    <div id="today-list" style="padding:8px 14px"></div>
+  </div>
   <div class="hunt-wrap" id="hunt-wrap">
     <div class="sec-head" style="padding:14px 16px 0">
       <div class="sec-title">🎯 Bugünün Av Listesi</div>
@@ -406,6 +425,20 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
       </div>
     </div>
     <div class="field"><label>Not</label><textarea id="f-note"></textarea></div>
+    <div class="frow2" style="background:var(--gold-subtle);border-radius:8px;padding:10px;margin-bottom:12px">
+      <div class="field" style="margin-bottom:0"><label>⏭️ Sonraki Adım Tarihi</label><input type="date" id="f-nextdate"></div>
+      <div class="field" style="margin-bottom:0"><label>Sonraki Adım</label><input type="text" id="f-nextnote" placeholder="Numune takibi ara..."></div>
+    </div>
+    <div id="quick-touch" style="display:none;margin-bottom:12px">
+      <div class="sec-title" style="margin-bottom:7px">⚡ Hızlı Dokunuş Kaydet</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('call')">📞 Aradım</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('wa')">📱 WhatsApp</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('voice')">🎤 Sesli Mesaj</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('meeting')">🤝 Görüşme</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('email')">📧 E-posta</button>
+      </div>
+    </div>
     <div id="timeline-wrap" style="display:none">
       <div class="sec-title" style="margin:4px 0 8px">📊 Zaman Çizelgesi</div>
       <div id="timeline-box"></div>
@@ -662,6 +695,19 @@ function renderStats(){
   const convRate = total ? Math.round(byStatus.order/total*1000)/10 : 0;
   const replyRate = (total-byStatus.cold) ? Math.round(engaged/(total-byStatus.cold)*1000)/10 : 0;
 
+  // ── FORECAST: durum bazlı kapanış olasılığı × bakiye (pozitif = potansiyel değer) ──
+  const PROB = {cold:0.05, contacted:0.15, replied:0.40, sample:0.60, order:1.0, dead:0};
+  let pipelineValue=0, weightedValue=0, openDeals=0;
+  contacts.forEach(function(c){
+    const bv=parseFloat(c.bakiye||0);
+    if(bv>0 && c.status!=='dead'){
+      pipelineValue += bv;
+      weightedValue += bv*(PROB[c.status]||0);
+      if(c.status!=='order') openDeals++;
+    }
+  });
+  const fmtMoney=function(v){ return '€'+Math.round(v).toLocaleString('tr-TR'); };
+
   // Funnel
   const funnelSteps = [
     {l:'Toplam Firma', v:total, col:'#8A8078'},
@@ -695,6 +741,13 @@ function renderStats(){
       '<div class="stat-c"><div class="stat-v gold">'+withPhone.toLocaleString('tr-TR')+'</div><div class="stat-l">Telefonlu</div></div>'+
       '<div class="stat-c"><div class="stat-v">%'+replyRate+'</div><div class="stat-l">Cevap Oranı</div></div>'+
       '<div class="stat-c"><div class="stat-v gold">%'+convRate+'</div><div class="stat-l">Sipariş Oranı</div></div>'+
+    '</div>'+
+    '<div class="sec-head" style="margin:18px 0 10px"><div class="sec-title">💰 Boru Hattı Değeri (Forecast)</div></div>'+
+    '<div class="forecast-panel">'+
+      '<div class="fc-row"><span class="fc-lbl">Toplam açık potansiyel</span><span class="fc-val">'+fmtMoney(pipelineValue)+'</span></div>'+
+      '<div class="fc-row"><span class="fc-lbl">Ağırlıklı beklenti (olasılıkla)</span><span class="fc-val gold">'+fmtMoney(weightedValue)+'</span></div>'+
+      '<div class="fc-row"><span class="fc-lbl">Açık fırsat sayısı</span><span class="fc-val">'+openDeals+'</span></div>'+
+      '<div class="fc-note">Ağırlıklı beklenti = her firmanın bakiyesi × durumuna göre kapanış olasılığı (Cold %5 · Contacted %15 · Replied %40 · Sample %60). Bakiyesi girili firmalar üzerinden hesaplanır.</div>'+
     '</div>'+
     '<div class="sec-head" style="margin:18px 0 10px"><div class="sec-title">Satış Hunisi</div></div>'+
     funnelSteps.map(function(f){
@@ -781,7 +834,37 @@ function scoreContact(c){
   if(!c.phone) s -= 15;
   return s;
 }
+function renderToday(){
+  const t = today();
+  const due = contacts.filter(function(c){
+    return c.next_date && c.next_date.slice(0,10) <= t && c.status!=='dead' && c.status!=='order';
+  }).sort(function(a,b){return (a.next_date||'').localeCompare(b.next_date||'');});
+  const wrap = document.getElementById('today-wrap');
+  const el = document.getElementById('today-list');
+  if(!due.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  el.innerHTML = due.map(function(c){
+    const overdue = c.next_date.slice(0,10) < t;
+    return '<div class="today-item'+(overdue?' overdue':'')+'" onclick="openEdit(\''+c.id+'\')">'+
+      '<div class="today-check" onclick="event.stopPropagation();completeStep(\''+c.id+'\')" title="Tamamlandı">✓</div>'+
+      '<div style="flex:1;min-width:0"><div class="today-name">'+esc(c.name)+'</div>'+
+      '<div class="today-note">'+esc(c.next_note||'Takip')+' · '+esc([c.city,c.country].filter(Boolean).join(', '))+'</div></div>'+
+      '<div class="today-date'+(overdue?' od':'')+'">'+(overdue?'⚠ '+fmtDate(c.next_date):fmtDate(c.next_date))+'</div>'+
+      (c.phone?'<button class="btn btn-gold btn-sm" onclick="event.stopPropagation();quickWA(\''+c.id+'\')">📱</button>':'')+
+    '</div>';
+  }).join('');
+}
+async function completeStep(id){
+  const c=contacts.find(function(x){return x.id===id;}); if(!c) return;
+  try {
+    await supa('/rest/v1/pipeline_contacts?id=eq.'+id,'PATCH',{next_date:null,next_note:'',last_contact:today(),updated_at:new Date().toISOString()});
+    if(c.next_note){ await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:c.id,firm_name:c.name,log_date:today(),tag:'generic',note:'✓ '+c.next_note}); logs.unshift({contact_id:c.id,firm_name:c.name,log_date:today(),tag:'generic',note:'✓ '+c.next_note}); }
+    c.next_date=null; c.next_note=''; c.last_contact=today();
+    toast('✓ Tamamlandı'); render();
+  } catch(e){ toast('❌ '+e.message.slice(0,50)); }
+}
 function renderHuntList(){
+  renderToday();
   const pool = contacts.filter(function(c){return c.status!=='dead'&&c.status!=='order';});
   const scored = pool.map(function(c){return {c:c, s:scoreContact(c)};})
     .filter(function(x){return x.s>0;})
@@ -1064,6 +1147,9 @@ function openAdd(){
   document.getElementById('modal-title').textContent='Firma Ekle';
   document.getElementById('extra-actions').style.display='none';
   document.getElementById('timeline-wrap').style.display='none';
+  document.getElementById('quick-touch').style.display='none';
+  document.getElementById('f-nextdate').value='';
+  document.getElementById('f-nextnote').value='';
   ['name','country','city','contact','phone','email','note'].forEach(function(k){document.getElementById('f-'+k).value='';});
   document.getElementById('f-channel').value='wa';
   document.getElementById('f-status').value='cold';
@@ -1087,10 +1173,32 @@ function openEdit(id){
   document.getElementById('f-lang').value=c.lang||'';
   document.getElementById('f-date').value=c.last_contact||'';
   document.getElementById('f-note').value=c.note||'';
+  document.getElementById('f-nextdate').value=c.next_date||'';
+  document.getElementById('f-nextnote').value=c.next_note||'';
+  document.getElementById('quick-touch').style.display='block';
   document.getElementById('wa-btn').style.display=c.phone?'inline-flex':'none';
   document.getElementById('timeline-wrap').style.display='block';
   document.getElementById('modal-overlay').classList.add('on');
   loadTimeline(c);
+}
+
+// ═══════════ HIZLI DOKUNUŞ (aktivite log) ═══════════
+async function quickTouch(kind){
+  if(!editId) return;
+  const c=contacts.find(function(x){return x.id===editId;}); if(!c) return;
+  const lbl={call:'📞 Telefon araması',wa:'📱 WhatsApp mesajı',voice:'🎤 Sesli mesaj',meeting:'🤝 Görüşme',email:'📧 E-posta'};
+  const tagMap={call:'generic',wa:'generic',voice:'generic',meeting:'meeting',email:'generic'};
+  try {
+    await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:c.id,firm_name:c.name,log_date:today(),tag:tagMap[kind],note:lbl[kind]});
+    // son iletişimi güncelle
+    await supa('/rest/v1/pipeline_contacts?id=eq.'+c.id,'PATCH',{last_contact:today(),updated_at:new Date().toISOString()});
+    c.last_contact=today();
+    document.getElementById('f-date').value=today();
+    // logs'a ekle ki timeline hemen görsün
+    logs.unshift({contact_id:c.id,firm_name:c.name,log_date:today(),tag:tagMap[kind],note:lbl[kind]});
+    toast('✓ '+lbl[kind]+' kaydedildi');
+    loadTimeline(c);
+  } catch(e){ toast('❌ '+e.message.slice(0,50)); }
 }
 
 // ═══════════ FIRMA ZAMAN ÇİZELGESİ (view tracking) ═══════════
@@ -1154,6 +1262,8 @@ async function saveContact(){
     status:document.getElementById('f-status').value,
     lang:document.getElementById('f-lang').value,
     last_contact:document.getElementById('f-date').value||null,
+    next_date:document.getElementById('f-nextdate').value||null,
+    next_note:document.getElementById('f-nextnote').value.trim(),
     note:document.getElementById('f-note').value.trim(),
     updated_at:new Date().toISOString()
   };
@@ -1375,9 +1485,12 @@ async function sendDraft(id){
     if(o.contact_id){
       const c = contacts.find(function(x){return x.id===o.contact_id;});
       const newStatus = (c && (c.status==='cold')) ? 'contacted' : (c?c.status:'contacted');
-      await supa('/rest/v1/pipeline_contacts?id=eq.'+o.contact_id,'PATCH',{status:newStatus,last_contact:today(),updated_at:new Date().toISOString()});
-      if(c){ c.status=newStatus; c.last_contact=today(); }
-      await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:o.contact_id,firm_name:o.firm_name,log_date:today(),tag:'generic',note:'WA mesajı gönderildi ('+(SCEN_LABEL[o.scenario]||o.scenario)+')'});
+      // Cadence: cevap beklerken +4 gün sonraki adım (follow-up) otomatik planla
+      const nextD = new Date(); nextD.setDate(nextD.getDate()+4);
+      const nextDStr = nextD.toISOString().slice(0,10);
+      await supa('/rest/v1/pipeline_contacts?id=eq.'+o.contact_id,'PATCH',{status:newStatus,last_contact:today(),next_date:nextDStr,next_note:'Cevap yoksa follow-up mesajı at',updated_at:new Date().toISOString()});
+      if(c){ c.status=newStatus; c.last_contact=today(); c.next_date=nextDStr; c.next_note='Cevap yoksa follow-up mesajı at'; }
+      await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:o.contact_id,firm_name:o.firm_name,log_date:today(),tag:'generic',note:'WA mesajı gönderildi ('+(SCEN_LABEL[o.scenario]||o.scenario)+') · Takip 4 gün sonra planlandı'});
     }
     outbox = outbox.filter(function(x){return x.id!==id;});
     renderOutbox(); render();
