@@ -266,6 +266,15 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
 .fc-val { font-size: 17px; font-weight: 700; font-family: 'Playfair Display', serif; }
 .fc-val.gold { color: var(--gold); }
 .fc-note { font-size: 10.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; border-top: 1px solid var(--border-light); padding-top: 8px; }
+.deal-card { background: var(--surface2); border: 1px solid var(--border-light); border-radius: 8px; padding: 9px 10px; margin-bottom: 7px; }
+.deal-top { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.deal-title-in { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: 13px; font-weight: 600; font-family: inherit; color: var(--text); outline: none; }
+.deal-title-in:focus { border-color: var(--gold-mid); }
+.deal-del { background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer; padding: 4px 6px; }
+.deal-del:hover { color: var(--danger); }
+.deal-row { display: flex; gap: 6px; }
+.deal-stage { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: inherit; color: var(--text); outline: none; }
+.deal-val { width: 110px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: inherit; color: var(--text); outline: none; }
 </style>
 </head>
 <body>
@@ -438,6 +447,12 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
         <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('meeting')">🤝 Görüşme</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="quickTouch('email')">📧 E-posta</button>
       </div>
+    </div>
+    <div id="deals-wrap" style="display:none">
+      <div class="sec-head" style="margin:4px 0 8px"><div class="sec-title">💼 Fırsatlar</div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addDeal()">+ Fırsat</button>
+      </div>
+      <div id="deals-box"></div>
     </div>
     <div id="timeline-wrap" style="display:none">
       <div class="sec-title" style="margin:4px 0 8px">📊 Zaman Çizelgesi</div>
@@ -1148,6 +1163,7 @@ function openAdd(){
   document.getElementById('extra-actions').style.display='none';
   document.getElementById('timeline-wrap').style.display='none';
   document.getElementById('quick-touch').style.display='none';
+  document.getElementById('deals-wrap').style.display='none';
   document.getElementById('f-nextdate').value='';
   document.getElementById('f-nextnote').value='';
   ['name','country','city','contact','phone','email','note'].forEach(function(k){document.getElementById('f-'+k).value='';});
@@ -1176,10 +1192,63 @@ function openEdit(id){
   document.getElementById('f-nextdate').value=c.next_date||'';
   document.getElementById('f-nextnote').value=c.next_note||'';
   document.getElementById('quick-touch').style.display='block';
+  document.getElementById('deals-wrap').style.display='block';
+  loadDeals(c.id);
   document.getElementById('wa-btn').style.display=c.phone?'inline-flex':'none';
   document.getElementById('timeline-wrap').style.display='block';
   document.getElementById('modal-overlay').classList.add('on');
   loadTimeline(c);
+}
+
+// ═══════════ FIRSATLAR (deals) ═══════════
+const DEAL_STAGES = [
+  {id:'new',label:'Yeni',prob:10},{id:'quoted',label:'Teklif Verildi',prob:30},
+  {id:'negotiation',label:'Pazarlık',prob:55},{id:'won',label:'Kazanıldı',prob:100},{id:'lost',label:'Kaybedildi',prob:0}
+];
+let curDeals = [];
+async function loadDeals(contactId){
+  const box=document.getElementById('deals-box');
+  box.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0">⏳</div>';
+  try {
+    curDeals = await supa('/rest/v1/pipeline_deals?select=*&contact_id=eq.'+contactId+'&order=created_at.desc');
+  } catch(e){ curDeals=[]; box.innerHTML='<div style="font-size:11.5px;color:var(--muted);padding:6px 0">Fırsat tablosu yok — SQL kur (aşağıda).</div>'; return; }
+  renderDeals();
+}
+function renderDeals(){
+  const box=document.getElementById('deals-box');
+  if(!curDeals.length){ box.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0">Henüz fırsat yok. Yatak odası, koltuk gibi ayrı işleri fırsat olarak ekle.</div>'; return; }
+  box.innerHTML=curDeals.map(function(d){
+    const st=DEAL_STAGES.find(function(s){return s.id===d.stage;})||DEAL_STAGES[0];
+    const val=parseFloat(d.value||0);
+    return '<div class="deal-card">'+
+      '<div class="deal-top"><input class="deal-title-in" value="'+esc(d.title)+'" onchange="updDeal(\''+d.id+'\',\'title\',this.value)">'+
+      '<button class="deal-del" onclick="delDeal(\''+d.id+'\')">✕</button></div>'+
+      '<div class="deal-row">'+
+        '<select class="deal-stage" onchange="updDeal(\''+d.id+'\',\'stage\',this.value)">'+
+          DEAL_STAGES.map(function(s){return '<option value="'+s.id+'" '+(s.id===d.stage?'selected':'')+'>'+s.label+' (%'+s.prob+')</option>';}).join('')+
+        '</select>'+
+        '<input class="deal-val" type="number" value="'+(val||'')+'" placeholder="€ değer" onchange="updDeal(\''+d.id+'\',\'value\',this.value)">'+
+      '</div></div>';
+  }).join('');
+}
+async function addDeal(){
+  if(!editId){ toast('Önce firmayı kaydet'); return; }
+  try {
+    const ins=await supa('/rest/v1/pipeline_deals','POST',{user_id:userId,contact_id:editId,title:'Yeni fırsat',stage:'new',value:0});
+    if(ins[0]){ curDeals.unshift(ins[0]); renderDeals(); }
+  } catch(e){ toast('❌ Fırsat tablosu kurulu mu? '+e.message.slice(0,40)); }
+}
+async function updDeal(id,field,val){
+  const d=curDeals.find(function(x){return x.id===id;}); if(!d) return;
+  if(field==='value') val=parseFloat(val)||0;
+  d[field]=val;
+  try { await supa('/rest/v1/pipeline_deals?id=eq.'+id,'PATCH',{[field]:val,updated_at:new Date().toISOString()}); }
+  catch(e){ toast('❌ '+e.message.slice(0,40)); }
+}
+async function delDeal(id){
+  if(!confirm('Fırsatı sil?')) return;
+  try { await supa('/rest/v1/pipeline_deals?id=eq.'+id,'DELETE'); curDeals=curDeals.filter(function(x){return x.id!==id;}); renderDeals(); }
+  catch(e){ toast('❌ '+e.message.slice(0,40)); }
 }
 
 // ═══════════ HIZLI DOKUNUŞ (aktivite log) ═══════════
