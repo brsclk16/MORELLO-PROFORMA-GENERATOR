@@ -155,6 +155,7 @@ const CATALOG = {
       {id:'VER-SET-331',name:'Verona Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
       {id:'VER-SET-221',name:'Verona Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
       {id:'VER-SET-321',name:'Verona Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
+      {id:'VER-SEHPA',name:'Verona İlave Kollu Sehpa (isteğe bağlı)',eur:55,usd:60},
     ]},
     'ZENA': { badge:'POP', items:[
       {id:'ZENA-3S',name:'Zena Three Seater',eur:450,usd:480},
@@ -245,7 +246,7 @@ const TL_PRICES = {
   'IST-3S': 28200, 'IST-2S': 28200, 'IST-BRG': 9925, 'IST-SF-SET': 76250, 'IST-SET-331': 66325, 'IST-SET-321': 66325, 'IST-SET-221': 66325, 'IST-CRN': 54800,
 
   // ═══ VERONA KOLTUK ═══
-  'VER-3S': 29400, 'VER-2S': 29400, 'VER-BRG': 10300, 'VER-SF-SET': 79400, 'VER-SET-331': 69100, 'VER-SET-321': 69100, 'VER-SET-221': 69100,
+  'VER-3S': 29400, 'VER-2S': 29400, 'VER-BRG': 10300, 'VER-SF-SET': 79400, 'VER-SET-331': 69100, 'VER-SET-321': 69100, 'VER-SET-221': 69100, 'VER-SEHPA': 2000,
 
   // ═══ LION KOLTUK / KÖŞE ═══
   'LION-3S': 28200, 'LION-2S': 28200, 'LION-BRG': 9925, 'LION-SF-SET': 76250, 'LION-SET-331': 66325, 'LION-SET-321': 66325, 'LION-SET-221': 66325, 'LION-CRN': 54800,
