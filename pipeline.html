@@ -354,7 +354,10 @@ body.dark .sp-cold{background:#2a2838;} body.dark .status-pill{opacity:.92;}
   <div class="sec-pad">
     <div class="sec-head">
       <div class="sec-title">Giden Kutusu — Mesaj Taslakları</div>
-      <button class="btn btn-gold btn-sm" onclick="openGen()">⚡ Mesaj Üret</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="sendAllDrafts()" id="send-all-btn">🚀 Hepsini Gönder</button>
+        <button class="btn btn-gold btn-sm" onclick="openGen()">⚡ Mesaj Üret</button>
+      </div>
     </div>
   </div>
   <div class="ob-wrap" id="ob-list"></div>
@@ -1765,9 +1768,67 @@ async function runGeneration(){
   toast('✅ '+done+' taslak üretildi');
 }
 
+async function sendAllDrafts(){
+  const targets = outbox.filter(function(o){return o.phone;});
+  if(!targets.length){ toast('Telefonlu taslak yok'); return; }
+  if(!confirm(targets.length+' firmaya WhatsApp mesajı otomatik gönderilecek. Onaylıyor musun?')) return;
+  const btn = document.getElementById('send-all-btn'); if(btn) btn.disabled=true;
+  let ok=0, fail=0;
+  for(const o of targets.slice()){
+    toast('📤 '+(ok+fail+1)+'/'+targets.length+' — '+o.firm_name);
+    let apiOk=false;
+    try {
+      const r = await fetch(WORKER_URL+'/wa-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:o.phone,message:o.message})});
+      const data = await r.json();
+      apiOk = r.ok && !!data.messages;
+    } catch(e){}
+    if(apiOk){
+      ok++;
+      try {
+        await supa('/rest/v1/pipeline_outbox?id=eq.'+o.id,'PATCH',{status:'sent',sent_at:new Date().toISOString()});
+        if(o.contact_id){
+          const c = contacts.find(function(x){return x.id===o.contact_id;});
+          const newStatus = (c && c.status==='cold') ? 'contacted' : (c?c.status:'contacted');
+          const nextD = new Date(); nextD.setDate(nextD.getDate()+4);
+          const nextDStr = nextD.toISOString().slice(0,10);
+          await supa('/rest/v1/pipeline_contacts?id=eq.'+o.contact_id,'PATCH',{status:newStatus,last_contact:today(),next_date:nextDStr,next_note:'Cevap yoksa follow-up mesajı at',updated_at:new Date().toISOString()});
+          if(c){ c.status=newStatus; c.last_contact=today(); c.next_date=nextDStr; c.next_note='Cevap yoksa follow-up mesajı at'; }
+          await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:o.contact_id,firm_name:o.firm_name,log_date:today(),tag:'generic',note:'✅ WA otomatik gönderildi (toplu) · Takip 4 gün sonra planlandı'});
+        }
+        outbox = outbox.filter(function(x){return x.id!==o.id;});
+      } catch(e){}
+    } else { fail++; }
+    // WhatsApp rate limit için nazik bekleme
+    await new Promise(function(res){ setTimeout(res, 1200); });
+  }
+  if(btn) btn.disabled=false;
+  renderOutbox(); render();
+  toast('🚀 Bitti: '+ok+' gönderildi'+(fail?', '+fail+' başarısız (test modu kısıtı olabilir)':''));
+}
+
 async function sendDraft(id){
   const o = outbox.find(function(x){return x.id===id;}); if(!o) return;
-  window.open('https://wa.me/'+o.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(o.message),'_blank');
+  const btn = document.querySelector('[data-id="'+id+'"]');
+  toast('📤 Gönderiliyor…');
+  let apiOk = false, apiErr = '';
+  try {
+    const r = await fetch(WORKER_URL+'/wa-send', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ to:o.phone, message:o.message })
+    });
+    const data = await r.json();
+    if(r.ok && data.messages){ apiOk = true; }
+    else { apiErr = (data.error && data.error.message) ? data.error.message : JSON.stringify(data).slice(0,150); }
+  } catch(e){ apiErr = e.message; }
+
+  if(!apiOk){
+    // API başarısız (test modunda doğrulanmamış alıcı vb.) — wa.me linkine düş
+    window.open('https://wa.me/'+o.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(o.message),'_blank');
+    toast('⚠️ Otomatik gönderim başarısız ('+apiErr.slice(0,60)+') — WhatsApp linki açıldı, elle gönder');
+  } else {
+    toast('✅ WhatsApp üzerinden otomatik gönderildi');
+  }
+
   try {
     await supa('/rest/v1/pipeline_outbox?id=eq.'+id,'PATCH',{status:'sent',sent_at:new Date().toISOString()});
     if(o.contact_id){
@@ -1778,7 +1839,7 @@ async function sendDraft(id){
       const nextDStr = nextD.toISOString().slice(0,10);
       await supa('/rest/v1/pipeline_contacts?id=eq.'+o.contact_id,'PATCH',{status:newStatus,last_contact:today(),next_date:nextDStr,next_note:'Cevap yoksa follow-up mesajı at',updated_at:new Date().toISOString()});
       if(c){ c.status=newStatus; c.last_contact=today(); c.next_date=nextDStr; c.next_note='Cevap yoksa follow-up mesajı at'; }
-      await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:o.contact_id,firm_name:o.firm_name,log_date:today(),tag:'generic',note:'WA mesajı gönderildi ('+(SCEN_LABEL[o.scenario]||o.scenario)+') · Takip 4 gün sonra planlandı'});
+      await supa('/rest/v1/pipeline_logs','POST',{user_id:userId,contact_id:o.contact_id,firm_name:o.firm_name,log_date:today(),tag:'generic',note:(apiOk?'✅ WA otomatik gönderildi':'📱 WA linki açıldı (elle)')+' ('+(SCEN_LABEL[o.scenario]||o.scenario)+') · Takip 4 gün sonra planlandı'});
     }
     outbox = outbox.filter(function(x){return x.id!==id;});
     renderOutbox(); render();
