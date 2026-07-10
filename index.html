@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783520712</title>
+<title>Morello — Proforma Generator v1783663669</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -4459,9 +4459,12 @@ function addItem(id) {
   const lp = getP(item) ?? (currency==='EUR'?item.usd:item.eur);
   if(lp===null||lp===undefined) { showToast('No price in this currency'); return; }
   const autoCbm = CBM_DATA[id] || 0;
-  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:lp, qty:1, cbm:autoCbm, bundled:item.bundled||false});
+  // Inherit current global discount unless this item is discount-exempt
+  const gd = parseFloat(document.getElementById('discVal')?.value) || 0;
+  const up = (gd>0 && !isNoDiscountItem(id)) ? parseFloat((lp*(1-gd/100)).toFixed(2)) : lp;
+  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false});
   renderOrder();
-  showToast('✓ Added: '+item.name.split(' ').slice(0,4).join(' '));
+  showToast('✓ Added: '+item.name.split(' ').slice(0,4).join(' ')+(isNoDiscountItem(id)&&gd>0?' (iskontosuz)':''));
 }
 
 function getNoteTemplateHtml(idx) {
@@ -4526,6 +4529,7 @@ function renderOrder() {
           <div style="flex:1;min-width:0;">
             <div style="font-weight:600;font-size:11px;line-height:1.3;word-break:break-word;">${item.name}</div>
             ${item.bundled?'<div style="font-size:9px;color:var(--gold);">📦 Bundle</div>':''}
+            ${isNoDiscountItem(item.id)?'<div style="font-size:9px;color:var(--danger);">🚫 İskontosuz</div>':''}
             <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
               ${getStockBadgeHtml(item.id)}
               <button class="note-tmpl-btn" onclick="toggleNoteRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${item.note?'✏ '+item.note.slice(0,18)+(item.note.length>18?'…':''):u('add_note')}</button>
@@ -4610,11 +4614,24 @@ function clearOrder() { if(!confirm('Clear all order lines?')) return; orderItem
 // ============================================================
 // DISCOUNT
 // ============================================================
+// Kalemler ki listede iskonto UYGULANMAZ (PDF notları): sandalye, baza farkı, Verona ilave sehpa
+function isNoDiscountItem(id) {
+  if(!id) return false;
+  return /-CHR$/.test(id)          // sandalye (SANDALYE — iskonto uygulanmaz)
+      || /-BAZA/.test(id)           // baza farkı kalemleri
+      || id === 'VER-SEHPA';        // Verona ilave kollu sehpa
+}
+
 function applyDiscount() {
   const v=parseFloat(document.getElementById('discVal').value);
   if(isNaN(v)||v<0||v>100) { showToast('Enter % between 0–100'); return; }
-  orderItems.forEach(i=>{ i.unitPrice=parseFloat((i.listPrice*(1-v/100)).toFixed(2)); });
-  renderOrder(); showToast(`✓ ${v}% applied to all lines`);
+  let skipped=0;
+  orderItems.forEach(i=>{
+    if(isNoDiscountItem(i.id)) { i.unitPrice=i.listPrice; skipped++; }
+    else i.unitPrice=parseFloat((i.listPrice*(1-v/100)).toFixed(2));
+  });
+  renderOrder();
+  showToast(`✓ %${v} uygulandı`+(skipped?` · ${skipped} kalem iskontosuz (sandalye/baza/sehpa)`:''));
 }
 function resetPrices() { orderItems.forEach(i=>i.unitPrice=i.listPrice); renderOrder(); showToast('Prices reset'); }
 
@@ -4902,7 +4919,10 @@ function loadCustomer(i) {
   // Discount
   if(c.discount > 0) {
     document.getElementById('discVal').value = c.discount;
-    orderItems.forEach(it=>{ it.unitPrice=parseFloat((it.listPrice*(1-c.discount/100)).toFixed(2)); });
+    orderItems.forEach(it=>{
+      if(isNoDiscountItem(it.id)) it.unitPrice=it.listPrice;
+      else it.unitPrice=parseFloat((it.listPrice*(1-c.discount/100)).toFixed(2));
+    });
     renderOrder();
     applied.push('%'+c.discount+' indirim');
   }
