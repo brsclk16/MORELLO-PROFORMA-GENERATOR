@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1783663669</title>
+<title>Morello — Proforma Generator v1784269629</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -857,6 +857,7 @@ body {
   color: #111;
   max-width: 800px;
   margin: 0 auto;
+  vertical-align: top;
 }
 .pf-hdr-row {
   display: flex;
@@ -1678,15 +1679,24 @@ body {
 /* ─── PRINT ─── */
 @page { margin: 0; size: A4; }
 @media print {
+  html, body { margin: 0 !important; padding: 0 !important; height: auto !important; }
   body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay):not(#all-docs-overlay) { display: none !important; }
   #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay, #sticky-bar, #wa-modal, #email-modal, #img-lightbox { display: none !important; }
-  #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay, #all-docs-overlay { display: block !important; position: static !important; }
+  #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay, #all-docs-overlay {
+    display: block !important; position: static !important;
+    inset: auto !important; overflow: visible !important; background: #fff !important;
+    margin: 0 !important; padding: 0 !important; height: auto !important;
+  }
   .print-actions, .doc-actions-bar, .summary-actions { display: none !important; }
-  #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print { margin: 0; padding: 14mm 12mm; }
-  #all-docs-print .all-docs-page { padding: 14mm 12mm; }
+  #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print {
+    margin: 0 !important; padding: 12mm 12mm !important; max-width: none !important;
+  }
+  .pf-hdr-row, .doc-hdr { margin-top: 0 !important; padding-top: 0 !important; }
+  #pf-qr-slot { min-height: 0 !important; }
+  #all-docs-print .all-docs-page { padding: 12mm 12mm; }
   .all-docs-page { page-break-after: always; }
   .all-docs-page:last-child { page-break-after: auto; }
-  .all-docs-page + .all-docs-page { margin-top: 0; border-top: none; padding-top: 14mm; }
+  .all-docs-page + .all-docs-page { margin-top: 0; border-top: none; padding-top: 12mm; }
 }
 .all-docs-page { background: #fff; max-width: 830px; margin: 22px auto; padding: 30px 36px; box-shadow: 0 2px 14px rgba(0,0,0,.13); border-radius: 4px; overflow: hidden; }
 #all-docs-print { padding: 4px 14px 40px; }
@@ -5884,7 +5894,7 @@ function computeExpiryDate() {
 
 function buildQRHtml() {
   // Placeholder — filled asynchronously with a SHORT link QR after render (see fillQRSlot)
-  return '<div id="pf-qr-slot" style="margin-top:8px;text-align:right;min-height:76px;"></div>';
+  return '<div id="pf-qr-slot" style="width:72px;height:88px;margin-top:8px;margin-left:auto;text-align:right;overflow:hidden;"></div>';
 }
 
 async function fillQRSlot() {
