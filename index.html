@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784269629</title>
+<title>Morello — Proforma Generator v1784548393</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -2514,9 +2514,10 @@ body {
           <div class="card-body">
             <div class="frow"><label>PI Number</label><input type="text" id="piNumber" placeholder="PI-2026-001"></div>
             <div class="frow"><label>Currency</label>
-              <select id="pfCurrency">
+              <select id="pfCurrency" onchange="setCurrency(this.value)">
                 <option value="EUR">EUR — Euro</option>
                 <option value="USD">USD — US Dollar</option>
+                <option value="TRY">₺ TL — Türk Lirası</option>
               </select>
             </div>
             <div class="frow"><label>Price / Delivery Term</label>
@@ -3737,6 +3738,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if(uiLang==='tr') applyUILang();
   // Load price edits
   loadPriceEdits();
+  // Load saved invoice defaults (term, payment, lead time, validity, lang, currency)
+  loadInvoiceDefaults();
   // Logo preview
   updateLogoPreview();
   loadShipDraft();
@@ -3751,6 +3754,42 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
+// ============================================================
+// INVOICE DEFAULTS (persist term/payment/lead/validity/lang/currency)
+// ============================================================
+const INVOICE_DEFAULT_FIELDS = ['pfLang','pfPriceTerm','pfPayment','pfLeadTime','pfValidity'];
+
+function saveInvoiceDefaults() {
+  const d = {};
+  INVOICE_DEFAULT_FIELDS.forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) d[id] = el.value;
+  });
+  // currency saved separately (already tracked globally)
+  d.currency = currency;
+  localStorage.setItem('morello_invoice_defaults', JSON.stringify(d));
+}
+
+function loadInvoiceDefaults() {
+  let d = {};
+  try { d = JSON.parse(localStorage.getItem('morello_invoice_defaults') || '{}'); } catch(e) { d = {}; }
+  INVOICE_DEFAULT_FIELDS.forEach(function(id){
+    const el = document.getElementById(id);
+    if(el && d[id] !== undefined && d[id] !== '') el.value = d[id];
+  });
+  // Restore currency (applies TL prices, bank, accent)
+  if(d.currency && d.currency !== currency) {
+    setCurrency(d.currency);
+    const cs = document.getElementById('pfCurrency');
+    if(cs) cs.value = d.currency;
+  }
+  // Attach change listeners once so future edits auto-persist
+  INVOICE_DEFAULT_FIELDS.forEach(function(id){
+    const el = document.getElementById(id);
+    if(el && !el._defBound) { el._defBound = true; el.addEventListener('change', saveInvoiceDefaults); }
+  });
+}
 
 // ============================================================
 // CUSTOMER DETAIL
@@ -4670,6 +4709,7 @@ function setCurrency(c) {
   document.getElementById('bankSelect').value=bankKey;
   applyCurrencyAccent(c);
   if(c==='TRY' && missingTL>0) showToast('⚠ Siparişteki '+missingTL+' ürünün TL fiyatı yok (ihracat serisi) — elle fiyat girin');
+  if(typeof saveInvoiceDefaults === 'function') saveInvoiceDefaults();
 }
 function applyCurrencyAccent(c) {
   const hdr = document.querySelector('.hdr');
