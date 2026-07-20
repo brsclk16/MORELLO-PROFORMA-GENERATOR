@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784548393</title>
+<title>Morello — Proforma Generator v1784548583</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -3160,6 +3160,8 @@ async function syncFromCloud() {
       localStorage.setItem('morello_custom_products', JSON.stringify(prods));
     }
     renderCustomers(); renderHistory(); buildCatalog();
+    // Load invoice defaults from cloud (authoritative)
+    await loadInvoiceDefaults();
     showToast('✓ Veriler buluttan yüklendi');
   } catch(e) {
     console.error('Sync error:', e);
@@ -3757,34 +3759,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ============================================================
 // INVOICE DEFAULTS (persist term/payment/lead/validity/lang/currency)
+// Cloud (Supabase user_settings) + localStorage fallback
 // ============================================================
 const INVOICE_DEFAULT_FIELDS = ['pfLang','pfPriceTerm','pfPayment','pfLeadTime','pfValidity'];
 
-function saveInvoiceDefaults() {
+function collectInvoiceDefaults() {
   const d = {};
   INVOICE_DEFAULT_FIELDS.forEach(function(id){
     const el = document.getElementById(id);
     if(el) d[id] = el.value;
   });
-  // currency saved separately (already tracked globally)
   d.currency = currency;
-  localStorage.setItem('morello_invoice_defaults', JSON.stringify(d));
+  return d;
 }
 
-function loadInvoiceDefaults() {
-  let d = {};
-  try { d = JSON.parse(localStorage.getItem('morello_invoice_defaults') || '{}'); } catch(e) { d = {}; }
+async function saveInvoiceDefaults() {
+  const d = collectInvoiceDefaults();
+  // Always cache locally for instant load / offline
+  try { localStorage.setItem('morello_invoice_defaults', JSON.stringify(d)); } catch(e) {}
+  // Persist to cloud when logged in
+  if(currentUserId) {
+    try {
+      const payload = { user_id: currentUserId, key: 'invoice_defaults', value: d };
+      // upsert: delete-then-insert keyed by user_id+key
+      await supaFetch('/rest/v1/user_settings?user_id=eq.'+currentUserId+'&key=eq.invoice_defaults', 'DELETE').catch(function(){});
+      await supaFetch('/rest/v1/user_settings', 'POST', payload);
+    } catch(e) { console.warn('cloud save invoice defaults failed', e); }
+  }
+}
+
+function applyInvoiceDefaults(d) {
+  if(!d) return;
   INVOICE_DEFAULT_FIELDS.forEach(function(id){
     const el = document.getElementById(id);
     if(el && d[id] !== undefined && d[id] !== '') el.value = d[id];
   });
-  // Restore currency (applies TL prices, bank, accent)
   if(d.currency && d.currency !== currency) {
     setCurrency(d.currency);
     const cs = document.getElementById('pfCurrency');
     if(cs) cs.value = d.currency;
   }
-  // Attach change listeners once so future edits auto-persist
+}
+
+async function loadInvoiceDefaults() {
+  // 1) instant from localStorage
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem('morello_invoice_defaults') || '{}'); } catch(e) {}
+  applyInvoiceDefaults(local);
+  // 2) authoritative from cloud (overrides if present)
+  if(currentUserId) {
+    try {
+      const rows = await supaFetch('/rest/v1/user_settings?user_id=eq.'+currentUserId+'&key=eq.invoice_defaults&select=value&limit=1');
+      if(Array.isArray(rows) && rows.length && rows[0].value) {
+        applyInvoiceDefaults(rows[0].value);
+        try { localStorage.setItem('morello_invoice_defaults', JSON.stringify(rows[0].value)); } catch(e) {}
+      }
+    } catch(e) { console.warn('cloud load invoice defaults failed', e); }
+  }
+  // Bind change listeners once
   INVOICE_DEFAULT_FIELDS.forEach(function(id){
     const el = document.getElementById(id);
     if(el && !el._defBound) { el._defBound = true; el.addEventListener('change', saveInvoiceDefaults); }
