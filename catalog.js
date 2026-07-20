@@ -48,6 +48,14 @@ const CATALOG = {
       {id:'NAPOLI-WARD',name:'Napoli Wardrobe',eur:723,usd:833},
       {id:'NAPOLI-BED-SET',name:'Napoli Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1319,usd:1520,bundled:true},
     ]},
+    'ATİNA': { badge:'YENİ', items:[
+      {id:'ATINA-BED',name:'Atina Bedstead 180×200',eur:330,usd:380},
+      {id:'ATINA-BED-160',name:'Atina Bedstead 160×200',eur:330,usd:380},
+      {id:'ATINA-NIGHT',name:'Atina Nightstand',eur:67,usd:77},
+      {id:'ATINA-DRESS',name:'Atina Dresser',eur:198,usd:228},
+      {id:'ATINA-WARD',name:'Atina Wardrobe',eur:723,usd:833},
+      {id:'ATINA-BED-SET',name:'Atina Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1319,usd:1520,bundled:true},
+    ]},
     'BEYZA': { badge:'USD', items:[
       {id:'BEYZA-BED',name:'Beyza Bedstead with Storage 180×200',eur:null,usd:420},
       {id:'BEYZA-BED-160',name:'Beyza Bedstead with Storage 160×200',eur:null,usd:420},
@@ -105,6 +113,14 @@ const CATALOG = {
       {id:'NAPOLI-CHR',name:'Napoli Chair',eur:86,usd:99},
       {id:'NAPOLI-COF',name:'Napoli Coffee Table',eur:117,usd:135},
       {id:'NAPOLI-DIN-SET',name:'Napoli Dining Set (Table+6 Chairs+Console)',eur:1249,usd:1439,bundled:true},
+    ]},
+    'ATİNA': { badge:'YENİ', items:[
+      {id:'ATINA-CONS',name:'Atina Console with Mirror',eur:334,usd:385},
+      {id:'ATINA-TV',name:'Atina TV Unit',eur:309,usd:357},
+      {id:'ATINA-TBL',name:'Atina Dining Table (170–205 cm)',eur:374,usd:430},
+      {id:'ATINA-CHR',name:'Atina Chair',eur:86,usd:99},
+      {id:'ATINA-COF',name:'Atina Coffee Table',eur:117,usd:135},
+      {id:'ATINA-DIN-SET',name:'Atina Dining Set (Table+6 Chairs+Console)',eur:1249,usd:1439,bundled:true},
     ]},
   }},
   'Sofa Set': { icon:'🛋', series: {
@@ -220,6 +236,15 @@ const CATALOG = {
       {id:'NAPOLI-SET-221',name:'Napoli Sofa Set (2×Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
       {id:'NAPOLI-SET-321',name:'Napoli Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
     ]},
+    'ATİNA': { badge:'YENİ', items:[
+      {id:'ATINA-3S',name:'Atina Three Seater',eur:532,usd:613},
+      {id:'ATINA-2S',name:'Atina Two Seater (190 cm)',eur:532,usd:613},
+      {id:'ATINA-BRG',name:'Atina Bergere',eur:187,usd:216},
+      {id:'ATINA-SF-SET',name:'Atina Sofa Set (2×Three Seater+2×Bergere)',eur:1439,usd:1658,bundled:true},
+      {id:'ATINA-SET-331',name:'Atina Sofa Set (2×Three Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
+      {id:'ATINA-SET-221',name:'Atina Sofa Set (2×Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
+      {id:'ATINA-SET-321',name:'Atina Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
+    ]},
   }
 }};
 
@@ -263,6 +288,13 @@ const TL_PRICES = {
   'NAPOLI-CONS': 17700, 'NAPOLI-CONS-AYNA': 4700, 'NAPOLI-TBL': 19800,
   'NAPOLI-CHR': 4534, 'NAPOLI-DIN-SET': 66200, 'NAPOLI-TV': 16400, 'NAPOLI-COF': 6200,
   'NAPOLI-3S': 28200, 'NAPOLI-2S': 28200, 'NAPOLI-BRG': 9925, 'NAPOLI-SF-SET': 76250, 'NAPOLI-SET-331': 66325, 'NAPOLI-SET-321': 66325, 'NAPOLI-SET-221': 66325,
+
+  // ═══ ATİNA (Napoli ile aynı fiyat) ═══
+  'ATINA-WARD': 38300, 'ATINA-NIGHT': 3550, 'ATINA-DRESS': 10500,
+  'ATINA-BED': 17500, 'ATINA-BED-160': 17500, 'ATINA-BED-SET': 69900,
+  'ATINA-CONS': 17700, 'ATINA-CONS-AYNA': 4700, 'ATINA-TBL': 19800,
+  'ATINA-CHR': 4534, 'ATINA-DIN-SET': 66200, 'ATINA-TV': 16400, 'ATINA-COF': 6200,
+  'ATINA-3S': 28200, 'ATINA-2S': 28200, 'ATINA-BRG': 9925, 'ATINA-SF-SET': 76250, 'ATINA-SET-331': 66325, 'ATINA-SET-321': 66325, 'ATINA-SET-221': 66325,
 };
 
 // Baza farkı (iskontosuz, ayrı kalem): 160 karyola +3700 ₺, 180 karyola +5250 ₺
