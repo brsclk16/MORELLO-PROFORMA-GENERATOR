@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784617046</title>
+<title>Morello — Proforma Generator v1784622746</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1677,9 +1677,9 @@ body {
 .btn-gold:hover { background: var(--gold-mid); }
 
 /* ─── PRINT ─── */
-@page { margin: 0; size: A4; }
+@page { margin: 12mm; size: A4; }
 @media print {
-  html, body { margin: 0 !important; padding: 0 !important; height: auto !important; }
+  html, body { margin: 0 !important; padding: 0 !important; height: auto !important; background:#fff !important; }
   body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay):not(#all-docs-overlay) { display: none !important; }
   #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay, #sticky-bar, #wa-modal, #email-modal, #img-lightbox { display: none !important; }
   #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay, #all-docs-overlay {
@@ -1687,12 +1687,21 @@ body {
     inset: auto !important; overflow: visible !important; background: #fff !important;
     margin: 0 !important; padding: 0 !important; height: auto !important;
   }
-  .print-actions, .doc-actions-bar, .summary-actions { display: none !important; position: static !important; height: 0 !important; overflow: hidden !important; }
-  #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print {
-    margin: 0 !important; padding: 10mm 12mm 12mm 12mm !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important;
+  .print-actions, .doc-actions-bar, .summary-actions { display: none !important; }
+  #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print {
+    margin: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important;
   }
   .pf-hdr-row, .doc-hdr { margin-top: 0 !important; padding-top: 0 !important; }
   #pf-qr-slot { min-height: 0 !important; }
+  /* Proforma printing: content moved to body, everything else hidden */
+  body.printing-proforma > * { display: none !important; }
+  body.printing-proforma > #proforma-print {
+    display: block !important; position: static !important;
+    margin: 0 !important; padding: 0 !important;
+    width: 100% !important; max-width: 100% !important; box-sizing: border-box !important;
+    background: #fff !important;
+  }
+  body.printing-proforma #proforma-print > *:first-child { margin-top: 0 !important; }
   #all-docs-print .all-docs-page { padding: 12mm 12mm; }
   .all-docs-page { page-break-after: always; }
   .all-docs-page:last-child { page-break-after: auto; }
@@ -5718,22 +5727,22 @@ function showPrint() {
 }
 
 function doProformaPrint() {
+  const printEl = document.getElementById('proforma-print');
   const overlay = document.getElementById('print-overlay');
-  const actions = overlay ? overlay.querySelector('.print-actions') : null;
-  // Temporarily remove the actions bar from the DOM so it can't reserve any space
-  let placeholder = null;
-  if(actions) {
-    placeholder = document.createComment('print-actions');
-    actions.parentNode.replaceChild(placeholder, actions);
-  }
-  // Scroll the print content to very top
-  if(overlay) overlay.scrollTop = 0;
+  if(!printEl) { window.print(); return; }
+  // Move the proforma content to be a direct child of <body>, add a print-mode class.
+  const marker = document.createComment('pf-return');
+  printEl.parentNode.insertBefore(marker, printEl);
+  document.body.appendChild(printEl);
+  document.body.classList.add('printing-proforma');
   window.scrollTo(0,0);
   window.print();
-  // Restore the actions bar after the print dialog closes
-  if(actions && placeholder) {
-    setTimeout(function(){ placeholder.parentNode.replaceChild(actions, placeholder); }, 300);
-  }
+  // Restore after dialog
+  setTimeout(function(){
+    document.body.classList.remove('printing-proforma');
+    if(marker.parentNode) marker.parentNode.insertBefore(printEl, marker);
+    if(marker.parentNode) marker.parentNode.removeChild(marker);
+  }, 400);
 }
 
 function closePrint() {
