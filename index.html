@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784614282</title>
+<title>Morello — Proforma Generator v1784614474</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -6001,7 +6001,6 @@ function randomId(n) {
 async function createShortLink() {
   if(!orderItems.length) return null;
   const pi = document.getElementById('piNumber')?.value || '';
-  // Reuse if already created for identical payload this session
   const longLink = buildShareLinkSilent();
   if(!longLink) return null;
   const payloadB64 = longLink.split('#')[1];
@@ -6009,11 +6008,7 @@ async function createShortLink() {
   if(shortLinkCache[cacheKey]) return shortLinkCache[cacheKey];
   const id = randomId(8);
   try {
-    const r = await supaFetch('/rest/v1/proforma_links', {
-      method: 'POST',
-      headers: { 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ id: id, pi: pi, payload: payloadB64 })
-    });
+    await supaFetch('/rest/v1/proforma_links', 'POST', { id: id, pi: pi, payload: payloadB64 });
     const short = 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/view.html#s='+id;
     shortLinkCache[cacheKey] = short;
     return short;
