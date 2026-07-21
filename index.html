@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784614474</title>
+<title>Morello — Proforma Generator v1784616009</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1689,8 +1689,9 @@ body {
   }
   .print-actions, .doc-actions-bar, .summary-actions { display: none !important; }
   #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print {
-    margin: 0 !important; padding: 12mm 12mm !important; max-width: none !important;
+    margin: 0 !important; padding: 8mm 12mm 12mm 12mm !important; max-width: none !important;
   }
+  #proforma-print > *:first-child, #proforma-print .pf-hdr-row:first-child { margin-top: 0 !important; padding-top: 0 !important; }
   .pf-hdr-row, .doc-hdr { margin-top: 0 !important; padding-top: 0 !important; }
   #pf-qr-slot { min-height: 0 !important; }
   #all-docs-print .all-docs-page { padding: 12mm 12mm; }
@@ -1704,7 +1705,10 @@ body {
 @media print {
   .all-docs-page { max-width: none; margin: 0; padding: 14mm 12mm; box-shadow: none; border-radius: 0; }
   #all-docs-print { padding: 0; }
+  .pf-container-page { page-break-before: always; break-before: page; padding-top: 6mm; }
 }
+/* On-screen: visually separate the container page too */
+.pf-container-page { margin-top: 22px; padding-top: 18px; border-top: 2px dashed #D8D2C8; }
 
 /* ─── PROFORMA TOTALS ─── */
 .pf-tots {
@@ -1742,8 +1746,7 @@ body {
 .pf-saving span { color: #059669 !important; }
 
 /* ─── PROFORMA CONTAINER SECTION ─── */
-.pf-cont-section {
-  margin-bottom: 18px;
+.pf-cont-section {  margin-bottom: 18px;
   padding: 14px 16px;
   background: #FAFAFA;
   border: 1px solid #E8E8E8;
@@ -5613,8 +5616,8 @@ function showPrint() {
     listTotal+=lp*qty; grandTotal+=lineTotal; cbm+=(item.cbm||0)*qty;
     const pfImgSrc=IMGS[item.id]||'';
     const pfImg=pfImgSrc
-      ?('<img src="'+pfImgSrc+'" style="width:60px;height:48px;object-fit:contain;display:block;margin:0 auto;border-radius:3px;border:1px solid #E5E7EB;">')
-      :'<div style="width:60px;height:48px;background:#F3F4F6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:18px;">&#128230;</div>';
+      ?('<img src="'+pfImgSrc+'" style="width:92px;height:74px;object-fit:contain;display:block;margin:0 auto;border-radius:4px;border:1px solid #E5E7EB;">')
+      :'<div style="width:92px;height:74px;background:#F3F4F6;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:26px;">&#128230;</div>';
     const noteLine=item.note?('<div style="font-size:8px;color:#888;margin-top:2px;font-style:italic;">'+item.note+'</div>'):'';
     const endCL=item.endCustomer?('<div style="font-size:8px;font-weight:700;color:#5B21B6;margin-top:2px;">&#128100; '+item.endCustomer+'</div>'):'';
     const sd=getStock(); const sv=sd[item.id]||'In Stock';
@@ -5622,7 +5625,7 @@ function showPrint() {
     const bundleL=item.bundled?'<span style="font-size:7px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:2px;font-weight:700;">SET</span>':'';
     rows+='<tr>'
       +'<td class="pf-c" style="color:#999;width:22px;">'+(i+1)+'</td>'
-      +'<td style="width:72px;text-align:center;padding:4px;">'+pfImg+'</td>'
+      +'<td style="width:104px;text-align:center;padding:5px;">'+pfImg+'</td>'
       +'<td><div style="font-weight:600;font-size:10px;">'+item.name+' '+bundleL+'</div>'+noteLine+endCL+stL+'</td>'
       +'<td class="pf-c">'+qty+'</td>'
       +'<td class="pf-r" style="font-size:9px;color:#999;text-decoration:line-through;">'+sym+lp.toFixed(2)+'</td>'
@@ -5679,7 +5682,7 @@ function showPrint() {
     +'</div>'
     +'<table class="pf-table"><thead><tr>'
       +'<th class="pf-c" style="width:22px;">'+t.noCol+'</th>'
-      +'<th style="width:72px;text-align:center;">Img</th>'
+      +'<th style="width:104px;text-align:center;">Img</th>'
       +'<th>'+t.descCol+'</th>'
       +'<th class="pf-c" style="width:36px;">'+t.qtyCol+'</th>'
       +'<th class="pf-r" style="width:65px;">'+t.listCol+'</th>'
@@ -5698,7 +5701,6 @@ function showPrint() {
       +(cur!=='TRY'?'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>Kur ('+(fxLock.lockedAt?'kayıt anı':'şu an')+')</span><span>1 '+cur+' = '+(cur==='EUR'?fxLock.eurTry:fxLock.usdTry).toFixed(2)+' ₺</span></div>'
         +'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>₺ Karşılığı</span><span>₺'+(grandTotal*(cur==='EUR'?fxLock.eurTry:fxLock.usdTry)).toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>':'')
     +'</div></div>'
-    +buildContainerHTML(cbm)
     +'<div class="pf-bank"><div class="pf-bank-title">'+t.bankTitle+'</div>'
       +'<div class="pf-bank-row"><span class="pf-bk">Beneficiary:</span><span style="font-weight:700;color:#111;">SELINA MOBILYA ORMAN URN. SAN. TIC. LTD. STI.</span></div>'
       +'<div class="pf-bank-row"><span class="pf-bk">'+t.bankName+'</span><span>'+bank.name+'</span></div>'
@@ -5709,7 +5711,8 @@ function showPrint() {
     +'<div class="pf-sigs">'
       +'<div class="pf-sig">'+t.buyerSig+'</div>'
       +'<div class="pf-sig">'+t.sellerSig+getSignatureHtml('Morello Mobilya')+'</div>'
-    +'</div>';
+    +'</div>'
+    +'<div class="pf-container-page">'+buildContainerHTML(cbm)+'</div>';
   document.getElementById('print-overlay').style.display='block';
   window.scrollTo(0,0);
   fillQRSlot();
