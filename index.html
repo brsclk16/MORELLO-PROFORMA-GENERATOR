@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784616719</title>
+<title>Morello — Proforma Generator v1784617046</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -2759,7 +2759,7 @@ body {
 <div id="print-overlay" style="display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow-y:auto;">
   <div class="print-actions">
     <button class="btn btn-outline" onclick="closePrint()">✕ Kapat</button>
-    <button class="btn btn-gold" onclick="window.print()">🖨 Proforma PDF</button>
+    <button class="btn btn-gold" onclick="doProformaPrint()">🖨 Proforma PDF</button>
     <button class="btn btn-outline" onclick="closePrint();showPackingList()">📋 Packing List</button>
     <button class="btn btn-outline" onclick="closePrint();showCI()">💼 Commercial Invoice</button>
     <button class="btn btn-outline" onclick="closePrint();showCeki()">📄 Çeki Listesi</button>
@@ -5715,6 +5715,25 @@ function showPrint() {
   document.getElementById('print-overlay').style.display='block';
   window.scrollTo(0,0);
   fillQRSlot();
+}
+
+function doProformaPrint() {
+  const overlay = document.getElementById('print-overlay');
+  const actions = overlay ? overlay.querySelector('.print-actions') : null;
+  // Temporarily remove the actions bar from the DOM so it can't reserve any space
+  let placeholder = null;
+  if(actions) {
+    placeholder = document.createComment('print-actions');
+    actions.parentNode.replaceChild(placeholder, actions);
+  }
+  // Scroll the print content to very top
+  if(overlay) overlay.scrollTop = 0;
+  window.scrollTo(0,0);
+  window.print();
+  // Restore the actions bar after the print dialog closes
+  if(actions && placeholder) {
+    setTimeout(function(){ placeholder.parentNode.replaceChild(actions, placeholder); }, 300);
+  }
 }
 
 function closePrint() {
