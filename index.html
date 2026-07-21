@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784632175</title>
+<title>Morello — Proforma Generator v1784635667</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1693,19 +1693,6 @@ body {
   }
   #proforma-print > *:first-child, .pf-hdr-row:first-child, .doc-hdr { margin-top: 0 !important; padding-top: 0 !important; }
   #pf-qr-slot { min-height: 0 !important; }
-  /* Body-level isolation (set by beforeprint): only the moved print doc shows, flush to top */
-  body.is-printing > *:not(#proforma-print):not(#irsaliye-print):not(#pl-print):not(#ci-print):not(#ceki-print):not(#talimat-print):not(#all-docs-print) { display: none !important; }
-  body.is-printing > #proforma-print,
-  body.is-printing > #irsaliye-print,
-  body.is-printing > #pl-print,
-  body.is-printing > #ci-print,
-  body.is-printing > #ceki-print,
-  body.is-printing > #talimat-print,
-  body.is-printing > #all-docs-print {
-    display: block !important; position: static !important; margin: 0 !important;
-    width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; background:#fff !important;
-  }
-  body.is-printing > #proforma-print > *:first-child { margin-top: 0 !important; padding-top: 0 !important; }
   #all-docs-print .all-docs-page { padding: 0 !important; }
   .all-docs-page { page-break-after: always; }
   .all-docs-page:last-child { page-break-after: auto; }
@@ -5736,43 +5723,6 @@ function doProformaPrint() {
   window.scrollTo(0,0);
   window.print();
 }
-
-// Isolate the visible print document at the body level during printing so no
-// ancestor/overlay layout can introduce phantom top whitespace. Works for both
-// the on-screen print buttons and the browser's native Ctrl+P.
-(function(){
-  let moved = null, marker = null;
-  function activeOverlayPrintEl() {
-    const map = [
-      ['print-overlay','proforma-print'], ['irsaliye-overlay','irsaliye-print'],
-      ['pl-overlay','pl-print'], ['ci-overlay','ci-print'],
-      ['ceki-overlay','ceki-print'], ['talimat-overlay','talimat-print'],
-      ['all-docs-overlay','all-docs-print']
-    ];
-    for(const [ov, pr] of map) {
-      const oEl = document.getElementById(ov);
-      if(oEl && getComputedStyle(oEl).display !== 'none') return document.getElementById(pr);
-    }
-    return null;
-  }
-  window.addEventListener('beforeprint', function(){
-    const el = activeOverlayPrintEl();
-    if(!el || moved) return;
-    marker = document.createComment('print-return');
-    el.parentNode.insertBefore(marker, el);
-    document.body.appendChild(el);
-    document.body.classList.add('is-printing');
-    moved = el;
-  });
-  window.addEventListener('afterprint', function(){
-    if(moved && marker && marker.parentNode) {
-      marker.parentNode.insertBefore(moved, marker);
-      marker.parentNode.removeChild(marker);
-    }
-    document.body.classList.remove('is-printing');
-    moved = null; marker = null;
-  });
-})();
 
 function closePrint() {
   document.getElementById('print-overlay').style.display='none';
