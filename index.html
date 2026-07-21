@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784616473</title>
+<title>Morello — Proforma Generator v1784616719</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1687,17 +1687,10 @@ body {
     inset: auto !important; overflow: visible !important; background: #fff !important;
     margin: 0 !important; padding: 0 !important; height: auto !important;
   }
-  .print-actions, .doc-actions-bar, .summary-actions {
-    display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important;
-    position: absolute !important; visibility: hidden !important;
-  }
-  #print-overlay > .print-actions { position: absolute !important; top: 0 !important; }
-  #proforma-print { margin-top: 0 !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; }
-  #print-overlay { position: absolute !important; top: 0 !important; left: 0 !important; }
+  .print-actions, .doc-actions-bar, .summary-actions { display: none !important; position: static !important; height: 0 !important; overflow: hidden !important; }
   #proforma-print, #irsaliye-print, #pl-print, #ci-print, #ceki-print, #talimat-print {
-    margin: 0 !important; padding: 8mm 12mm 12mm 12mm !important; max-width: none !important;
+    margin: 0 !important; padding: 10mm 12mm 12mm 12mm !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important;
   }
-  #proforma-print > *:first-child, #proforma-print .pf-hdr-row:first-child { margin-top: 0 !important; padding-top: 0 !important; }
   .pf-hdr-row, .doc-hdr { margin-top: 0 !important; padding-top: 0 !important; }
   #pf-qr-slot { min-height: 0 !important; }
   #all-docs-print .all-docs-page { padding: 12mm 12mm; }
