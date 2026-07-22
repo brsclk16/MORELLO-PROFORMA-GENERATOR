@@ -1,7 +1,7 @@
 // CORE CONSTANTS
 const SOFA_SUFFIXES = ['3S','2S','BRG','SGL','CRN','SF-SET','SET-331','SET-221','SET-321'];
 const SOFA_UNIT_CBM = {'3S':1.585,'2S':1.585,'BRG':0.451,'SGL':0.451,'CRN':2.681,'SF-SET':3.619,'SET-331':2.970,'SET-221':2.970,'SET-321':2.970};
-const VEHICLES = [{id:'20dc',label:'20DC',m3:33.2},{id:'40hc',label:'40HC',m3:76.0},{id:'stdtir',label:'Std TIR',m3:79.0},{id:'megatir',label:'Mega TIR',m3:100.0}];
+const VEHICLES = [{id:'20dc',label:'20DC',m3:30.0},{id:'40hc',label:'40HC',m3:70.0},{id:'stdtir',label:'Std TIR',m3:79.0},{id:'megatir',label:'Mega TIR',m3:100.0}];
 
 // ============================================================
 // GTİP CODES
@@ -2639,7 +2639,7 @@ function buildContainerHTML(furnitureCBM) {
   if(pfIsSofa) { orderItems.forEach(function(i){ pfCBM += getSofaUnitCBM(i.id)*i.qty; }); }
   else { pfCBM = furnitureCBM; }
   if(pfCBM<=0) return '';
-  const pfV=[{label:'20DC',m3:33.2},{label:'40HC',m3:76.0},{label:'Std TIR',m3:79.0},{label:'Mega TIR',m3:100.0}];
+  const pfV=[{label:'20DC',m3:30.0},{label:'40HC',m3:70.0},{label:'Std TIR',m3:79.0},{label:'Mega TIR',m3:100.0}];
   let boxes='';
   pfV.forEach(function(v){
     var n=Math.ceil(pfCBM/v.m3);
@@ -2951,9 +2951,9 @@ function updateStickyBar() {
   document.getElementById('sb-total').textContent   = sym+total.toFixed(2);
   document.getElementById('sb-cbm').textContent     = cbm.toFixed(2)+' m³';
   // Best container
-  const VEHS = [{l:'20DC',m:33.2},{l:'40HC',m:76},{l:'TIR',m:79},{l:'Mega TIR',m:100}];
+  const VEHS = [{l:'20DC',m:30},{l:'40HC',m:70},{l:'TIR',m:79},{l:'Mega TIR',m:100}];
   const bestV = VEHS.find(v=>v.m>=cbm);
-  const contTxt = bestV ? '~1× '+bestV.l+' ('+Math.round(cbm/bestV.m*100)+'% dolu)' : '~'+Math.ceil(cbm/76)+'× 40HC';
+  const contTxt = bestV ? '~1× '+bestV.l+' ('+Math.round(cbm/bestV.m*100)+'% dolu)' : '~'+Math.ceil(cbm/70)+'× 40HC';
   document.getElementById('sb-container').textContent = contTxt;
 }
 
