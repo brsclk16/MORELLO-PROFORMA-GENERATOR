@@ -1,9 +1,11 @@
 // Morello PWA Service Worker
-const CACHE_NAME = 'morello-v5';
+const CACHE_NAME = 'morello-v6';
 const ASSETS = [
   '/MORELLO-PROFORMA-GENERATOR/',
   '/MORELLO-PROFORMA-GENERATOR/index.html',
   '/MORELLO-PROFORMA-GENERATOR/catalog.js',
+  '/MORELLO-PROFORMA-GENERATOR/styles.css',
+  '/MORELLO-PROFORMA-GENERATOR/app.js',
 ];
 
 // Install: cache core assets
