@@ -15,11 +15,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784704874</title>
+<title>Morello — Proforma Generator v1784705198</title>
 <link rel="stylesheet" href="styles.css?v=1784704418">
 <style>
 /* Critical: history list scroll (inline so it applies even if styles.css is stale-cached) */
-#histList { max-height: 58vh !important; overflow-y: auto !important; overflow-x: hidden; padding-right: 4px; }
+#tab-history { overflow-y: hidden; }
+#tab-history .card:has(#histList) { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+#tab-history .card:has(#histList) .card-hdr, #tab-history .card:has(#histList) .hist-filter-row { flex-shrink: 0; }
+#histList { flex: 1; overflow-y: auto; min-height: 0; }
 </style>
 <!-- Product images loaded from separate file to keep index.html lean -->
 <script src="catalog.js?v=1784704418"></script>
