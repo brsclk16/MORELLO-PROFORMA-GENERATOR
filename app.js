@@ -983,6 +983,7 @@ async function loadInvoiceDefaults() {
 // ============================================================
 function showCustDetail(companyName) {
   const hist = getHistory();
+  hist.forEach(function(h,i){ h._ri=i; });
   // Match history entries for this company
   const custHist = hist.filter(h => {
     if(h.trashed) return false;
@@ -1016,7 +1017,7 @@ function showCustDetail(companyName) {
     document.getElementById('cdm-history').innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">Bu firma için proforma kaydı yok</div>';
   } else {
     document.getElementById('cdm-history').innerHTML = custHist.map(function(h,i){
-      const realIdx = hist.findIndex(function(x){ return x.pi===h.pi && x.date===h.date; });
+      const realIdx = h._ri;
       const sc = stClass[h.status||'Draft'] || 'st-draft';
       return '<div class="cdm-hist-row" onclick="loadHistory('+realIdx+');closeCustDetail();showTab(\'order\')">' +
         '<span class="cdm-pi" '+(h.fx&&h.currency!=='TRY'?'title="Kayıt anındaki kur: 1'+h.currency+'='+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'₺"':'')+'>'+h.pi+'</span>' +
@@ -1326,6 +1327,7 @@ function renderArchive() {
   const curF   = document.getElementById('arch-cur')?.value||'all';
 
   let hist = getHistory();
+  hist.forEach(function(h,i){ h._ri=i; });
   if(search) hist = hist.filter(h => (h.pi||'').toLowerCase().includes(search)||(h.buyer||'').toLowerCase().includes(search));
   if(yearF!=='all') hist = hist.filter(h => (h.pi||'').includes(yearF)||(h.date||'').includes(yearF));
   if(curF!=='all') hist = hist.filter(h => (h.currency||'')=== curF);
@@ -1355,7 +1357,7 @@ function renderArchive() {
 
   const stClass={'Draft':'st-draft','Sent':'st-sent','Confirmed':'st-confirmed','Production':'st-production','Shipped':'st-shipped'};
   tbody.innerHTML = hist.map(function(h){
-    const realIdx = allHist.findIndex(function(x){ return x.pi===h.pi&&x.date===h.date; });
+    const realIdx = h._ri;
     const sc = stClass[h.status||'Draft']||'st-draft';
     return '<tr onclick="loadHistory('+realIdx+');showTab(\'order\')">' +
       '<td class="arch-pi">'+h.pi+'</td>'+
@@ -2221,7 +2223,7 @@ function saveCurrentAsCust() {
 // PROFORMA HISTORY (localStorage)
 // ============================================================
 function getHistory() { try { return JSON.parse(localStorage.getItem('morello_history')||'[]'); } catch{return[];} }
-function saveHistory(arr) { localStorage.setItem('morello_history', JSON.stringify(arr)); }
+function saveHistory(arr) { localStorage.setItem('morello_history', JSON.stringify(arr, function(k,v){ return k==='_ri'?undefined:v; })); }
 
 function saveToHistory() {
   if(!orderItems.length) { showToast('Add products first'); return; }
@@ -2394,6 +2396,7 @@ function renderHistory() {
   const search=(document.getElementById('histSearch')?.value||'').toLowerCase();
   const statusFilter=document.getElementById('histStatusFilter')?.value||'all';
   let hist=getHistory();
+  hist.forEach(function(h,i){ h._ri=i; }); // stamp real index BEFORE filtering (PI+date can be duplicated)
   const isTrashView = statusFilter==='trash';
   // Filter
   hist = isTrashView ? hist.filter(h=>h.trashed) : hist.filter(h=>!h.trashed);
@@ -2405,8 +2408,8 @@ function renderHistory() {
   list.innerHTML='<div style="padding:5px 12px;font-size:10px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);">'+hist.length+' proforma'+(isTrashView?' (çöp kutusu)':(search||statusFilter!=='all'?' (filtered)':''))+'</div>';
   const ul=document.createElement('div'); ul.className='hist-list';
   hist.forEach((h,i) => {
-    // Find real index in full history for cycleStatus/load/delete
-    const realIdx=allHist.findIndex(x=>x.pi===h.pi&&x.date===h.date);
+    // Real index in full history (stamped before filtering — safe with duplicate PI+date)
+    const realIdx=h._ri;
     const row=document.createElement('div'); row.className='hist-item';
     const stClass=['st-draft','st-sent','st-confirmed','st-production','st-shipped','st-draft'];
     const stLabels=['Draft','Sent','Confirmed','Production','Shipped','Lost'];
