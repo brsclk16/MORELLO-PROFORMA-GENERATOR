@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784705502</title>
+<title>Morello — Proforma Generator v1784711755</title>
 <link rel="stylesheet" href="styles.css?v=1784704418">
 <style>
 /* Critical: history list scroll (inline so it applies even if styles.css is stale-cached) */
@@ -904,9 +904,9 @@
       <!-- Image drop zone -->
       <div class="import-drop-zone" id="import-drop" onclick="document.getElementById('import-file').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleImportDrop(event)">
         <div class="drop-icon">📋</div>
-        <p><strong>Ekran görüntüsü bırak</strong> veya tıkla</p>
-        <p style="font-size:10px;margin-top:4px;">PNG, JPG, PDF desteklenir</p>
-        <input type="file" id="import-file" accept="image/*,.pdf" style="display:none" onchange="handleImportFile(event)">
+        <p><strong>Dosya bırak</strong> veya tıkla</p>
+        <p style="font-size:10px;margin-top:4px;">PNG, JPG, PDF, Excel (XLSX/XLS/CSV) desteklenir</p>
+        <input type="file" id="import-file" accept="image/*,.pdf,.xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(event)">
       </div>
       
       <div style="text-align:center;color:var(--muted);font-size:11px;margin:8px 0;">— veya —</div>
@@ -974,5 +974,6 @@ Snejana Raleva - 1 adet Istanbul Gardolap"></textarea>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="app.js?v=1784704418"></script></body>
 </html>
