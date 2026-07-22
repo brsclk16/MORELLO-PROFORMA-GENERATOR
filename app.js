@@ -1023,7 +1023,7 @@ function showCustDetail(companyName) {
         '<span class="cdm-pi" '+(h.fx&&h.currency!=='TRY'?'title="Kayıt anındaki kur: 1'+h.currency+'='+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'₺"':'')+'>'+h.pi+'</span>' +
         '<span class="cdm-date">'+h.date+'</span>' +
         '<button class="status-badge '+sc+'" onclick="event.stopPropagation();cycleStatus('+realIdx+',event)" style="font-size:9px;">'+( h.status||'Draft')+'</button>' +
-        (h.cbm&&h.cbm!='0.00'?'<span style="font-size:10px;color:var(--muted);">'+h.cbm+' m³</span>':'') +
+        ((function(){var c=recalcHistCBM(h);return c&&c!='0.00'?'<span style="font-size:10px;color:var(--muted);">'+c+' m³</span>':'';})()) +
         '<span class="cdm-total">'+h.total+'</span>' +
         '<button class="status-badge" title="Tekrar Sipariş" style="font-size:9px;" onclick="event.stopPropagation();reorderFromHistory('+realIdx+');closeCustDetail();">🔁</button>' +
         '</div>';
@@ -1404,7 +1404,7 @@ function renderArchive() {
       '<td class="arch-firm">'+(h.buyer||'—')+'</td>'+
       '<td style="color:var(--muted);font-size:10px;">'+(h.date||'—')+'</td>'+
       '<td><button class="status-badge '+sc+'" onclick="event.stopPropagation();cycleStatus('+realIdx+',event)" style="font-size:9px;">'+(h.status||'Draft')+'</button></td>'+
-      '<td style="text-align:right;color:var(--muted);font-size:10px;">'+(h.cbm&&h.cbm!='0.00'?h.cbm+' m³':'—')+'</td>'+
+      '<td style="text-align:right;color:var(--muted);font-size:10px;">'+((function(){var c=recalcHistCBM(h);return c&&c!='0.00'?c+' m³':'—';})())+'</td>'+
       '<td class="arch-total">'+(h.total||'—')+'</td>'+
       '<td style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();loadHistory('+realIdx+');showPrint()" style="font-size:9px;padding:2px 6px;">PDF</button></td>'+
       '</tr>';
@@ -2263,6 +2263,18 @@ function saveCurrentAsCust() {
 // PROFORMA HISTORY (localStorage)
 // ============================================================
 function getHistory() { try { return JSON.parse(localStorage.getItem('morello_history')||'[]'); } catch{return[];} }
+// Recompute a record's total CBM from current CBM_DATA (so recalibrated volumes reflect in old records).
+// Falls back to the stored per-item cbm, then the stored total.
+function recalcHistCBM(h) {
+  if(!h || !Array.isArray(h.items) || !h.items.length) return h && h.cbm ? h.cbm : '0.00';
+  let total = 0, ok = false;
+  h.items.forEach(function(it){
+    const cur = (typeof CBM_DATA!=='undefined' && CBM_DATA[it.id]!=null) ? CBM_DATA[it.id] : (it.cbm||0);
+    if(cur) ok = true;
+    total += cur * (it.qty||1);
+  });
+  return ok ? total.toFixed(2) : (h.cbm||'0.00');
+}
 function saveHistory(arr) { localStorage.setItem('morello_history', JSON.stringify(arr, function(k,v){ return k==='_ri'?undefined:v; })); }
 
 function saveToHistory() {
@@ -2465,7 +2477,7 @@ function renderHistory() {
           <span class="hist-pi">${h.pi}</span>
           ${isTrashView ? '' : '<button class="status-badge '+stCls+'" onclick="cycleStatus('+realIdx+',event)">'+(h.status||'Draft')+'</button>'}
         </div>
-        <div class="hist-buyer">${h.buyer} · ${h.date}${h.cbm&&h.cbm!='0.00'?' · <span class="hist-cbm">'+h.cbm+' m³</span>':''}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span>${h.approval?' <span class="hist-cbm" style="color:var(--success);" title="'+h.approval.name+' tarafından onaylandı — '+new Date(h.approval.at).toLocaleString('tr-TR')+'">✅ '+h.approval.name+'</span>':''}${(function(){const tot=piTotalNum(h),paid=piPaidNum(h);if(paid<=0)return '';const rem=tot-paid;return rem>0.01?' <span class="hist-cbm" style="color:var(--warning);" title="Alınan: '+paid.toFixed(0)+' / Kalan: '+rem.toFixed(0)+'">💰 %'+Math.round(paid/tot*100)+'</span>':' <span class="hist-cbm" style="color:var(--success);" title="Tamamı tahsil edildi">💰 ödendi</span>';})()}${/\-R\d+$/.test(h.pi)?' <span class="hist-cbm" style="color:#A78BFA;cursor:pointer;" title="Önceki revizyonla karşılaştır" onclick="event.stopPropagation();showRevisionDiff('+realIdx+')">🔄 diff</span>':''}${h.status==='Lost'&&h.lostReason?' <span class="hist-cbm" style="color:var(--danger);">📉 '+h.lostReason+'</span>':''}</div>
+        <div class="hist-buyer">${h.buyer} · ${h.date}${(function(){var c=recalcHistCBM(h);return c&&c!='0.00'?' · <span class="hist-cbm">'+c+' m³</span>':'';})()}${h.fx&&h.currency!=='TRY'?' · <span class="hist-cbm" title="Kayıt anındaki kur">₺'+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'</span>':''} <span class="hist-cbm" data-view-pi="${h.pi}" style="color:#60A5FA;"></span>${h.approval?' <span class="hist-cbm" style="color:var(--success);" title="'+h.approval.name+' tarafından onaylandı — '+new Date(h.approval.at).toLocaleString('tr-TR')+'">✅ '+h.approval.name+'</span>':''}${(function(){const tot=piTotalNum(h),paid=piPaidNum(h);if(paid<=0)return '';const rem=tot-paid;return rem>0.01?' <span class="hist-cbm" style="color:var(--warning);" title="Alınan: '+paid.toFixed(0)+' / Kalan: '+rem.toFixed(0)+'">💰 %'+Math.round(paid/tot*100)+'</span>':' <span class="hist-cbm" style="color:var(--success);" title="Tamamı tahsil edildi">💰 ödendi</span>';})()}${/\-R\d+$/.test(h.pi)?' <span class="hist-cbm" style="color:#A78BFA;cursor:pointer;" title="Önceki revizyonla karşılaştır" onclick="event.stopPropagation();showRevisionDiff('+realIdx+')">🔄 diff</span>':''}${h.status==='Lost'&&h.lostReason?' <span class="hist-cbm" style="color:var(--danger);">📉 '+h.lostReason+'</span>':''}</div>
       </div>
       <div class="hist-total">${h.total}</div>
       <div class="hist-actions">${actionsHtml}</div>`;
@@ -2479,6 +2491,8 @@ function loadHistory(i) {
   const h=getHistory()[i]; if(!h) return;
   if(!confirm(`Load proforma ${h.pi}? Current order will be replaced.`)) return;
   orderItems=JSON.parse(JSON.stringify(h.items));
+  // Refresh CBM from current CBM_DATA so old records pick up recalibrated volumes
+  orderItems.forEach(function(it){ if(CBM_DATA[it.id]!=null) it.cbm = CBM_DATA[it.id]; });
   currency=h.currency;
   document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.textContent===currency));
   document.getElementById('buyerCompany').value=h.buyer_data?.company||'';
