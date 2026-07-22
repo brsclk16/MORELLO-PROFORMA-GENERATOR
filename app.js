@@ -1139,6 +1139,46 @@ function handleImportFile(e) {
 }
 
 function processImportFile(file) {
+  const name = (file.name||'').toLowerCase();
+  const isSheet = /\.(xlsx|xls|csv)$/.test(name);
+
+  if(isSheet) {
+    // Excel/CSV: parse client-side with SheetJS, dump as text into the text area,
+    // then the existing AI parse flow handles product matching.
+    if(typeof XLSX === 'undefined') { showToast('Excel kütüphanesi yüklenemedi — sayfayı yenile'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        let text = '';
+        wb.SheetNames.forEach(function(sn){
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, blankrows: false });
+          if(!rows.length) return;
+          if(wb.SheetNames.length > 1) text += '--- ' + sn + ' ---\n';
+          rows.forEach(function(r){
+            const line = (r||[]).map(function(cell){ return cell===undefined||cell===null?'':String(cell).trim(); }).join('\t').trim();
+            if(line) text += line + '\n';
+          });
+        });
+        if(!text.trim()) { showToast('Excel dosyası boş görünüyor'); return; }
+        // Cap extremely large sheets to keep the AI prompt sane
+        if(text.length > 12000) text = text.slice(0, 12000) + '\n… (kısaltıldı)';
+        document.getElementById('import-text').value = text;
+        importImageB64 = null;
+        const drop = document.getElementById('import-drop');
+        drop.querySelector('.drop-icon').textContent = '📊';
+        drop.querySelector('p').innerHTML = '<strong>' + file.name + '</strong> okundu — içerik metin kutusuna aktarıldı';
+        showToast('📊 Excel okundu — "AI ile Parse Et" butonuna bas');
+      } catch(err) {
+        console.error('xlsx parse fail', err);
+        showToast('Excel okunamadı: ' + (err.message||'bilinmeyen hata').slice(0,60));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    return;
+  }
+
+  // Images / PDF: existing behavior (sent to AI as image)
   const reader = new FileReader();
   reader.onload = function(e) {
     importImageB64 = e.target.result.split(',')[1];
