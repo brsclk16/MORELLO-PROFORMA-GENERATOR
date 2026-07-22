@@ -39,7 +39,8 @@ function updateContainer(cbmOverride) {
     if(needed===1&&fill>bestF){bestF=fill;bestV=v;}
     const color=fill>=80?'#059669':fill>=50?'#F59E0B':'#EF4444';
     const bg=fill>=80?'#D1FAE5':fill>=50?'#FEF3C7':'#FEF2F2';
-    const setsLine=isSofa&&totalCBM>0?('<div style="font-size:8.5px;color:'+color+';font-weight:700;">'+Math.floor(cap/3.619)+' sets/vehicle</div>'):'';
+    const avgSetCbm = (isSofa && orderItems.length) ? (totalCBM / orderItems.reduce(function(s,i){return s+(i.qty||1);},0)) : 3.1;
+    const setsLine=isSofa&&totalCBM>0&&avgSetCbm>0?('<div style="font-size:8.5px;color:'+color+';font-weight:700;">'+Math.floor(cap/avgSetCbm)+' sets/vehicle</div>'):'';
     const div=document.createElement('div');
     div.className='cont-box';
     div.style.cssText='border:1px solid '+color+';background:'+bg+';padding:10px;text-align:center;border-radius:4px;';
@@ -2622,6 +2623,9 @@ function isSofaItem(itemId) {
   return SOFA_SUFFIXES.some(function(s){ return itemId.endsWith('-'+s); });
 }
 function getSofaUnitCBM(itemId) {
+  // Use the calibrated CBM_DATA as the single source of truth.
+  if(typeof CBM_DATA!=='undefined' && CBM_DATA[itemId]!=null) return CBM_DATA[itemId];
+  // Fallback to suffix table only if an item is missing from CBM_DATA
   for(var i=0;i<SOFA_SUFFIXES.length;i++){
     if(itemId.endsWith('-'+SOFA_SUFFIXES[i])) return SOFA_UNIT_CBM[SOFA_SUFFIXES[i]]||0;
   }
