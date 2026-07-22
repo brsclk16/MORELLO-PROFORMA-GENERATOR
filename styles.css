@@ -593,6 +593,11 @@ body {
 .empty-order p { font-size: 13px; }
 .empty-cust, .empty-hist { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 .empty-cust .ei, .empty-hist .ei { font-size: 32px; margin-bottom: 8px; opacity: .5; display: block; }
+/* Proforma history: scroll within a bounded height instead of stretching the page */
+#histList { max-height: 60vh; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+#histList::-webkit-scrollbar { width: 8px; }
+#histList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#histList::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* ─── TOTALS BAR ─── */
 .totals-bar {
