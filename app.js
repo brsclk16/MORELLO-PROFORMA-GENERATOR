@@ -3212,13 +3212,19 @@ function randomId(n) {
   for(let i=0;i<n;i++) s += chars[Math.floor(Math.random()*chars.length)];
   return s;
 }
+function djb2Hash(str) {
+  let h = 5381;
+  for(let i=0;i<str.length;i++){ h = ((h<<5)+h) ^ str.charCodeAt(i); }
+  return (h>>>0).toString(36);
+}
 async function createShortLink() {
   if(!orderItems.length) return null;
   const pi = document.getElementById('piNumber')?.value || '';
   const longLink = buildShareLinkSilent();
   if(!longLink) return null;
   const payloadB64 = longLink.split('#')[1];
-  const cacheKey = pi + ':' + payloadB64.length + ':' + payloadB64.slice(0,40);
+  // Cache key = hash of the FULL payload, so any change in items/prices/qty produces a new link
+  const cacheKey = djb2Hash(payloadB64);
   if(shortLinkCache[cacheKey]) return shortLinkCache[cacheKey];
   const id = randomId(8);
   try {
