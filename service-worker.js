@@ -1,5 +1,5 @@
 // Morello PWA Service Worker
-const CACHE_NAME = 'morello-v6';
+const CACHE_NAME = 'morello-v7';
 const ASSETS = [
   '/MORELLO-PROFORMA-GENERATOR/',
   '/MORELLO-PROFORMA-GENERATOR/index.html',
