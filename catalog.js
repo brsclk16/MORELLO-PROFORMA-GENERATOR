@@ -8,6 +8,8 @@ const CATALOG = {
       {id:'ROMA-NIGHT',name:'Roma Nightstand',eur:70,usd:70},
       {id:'ROMA-DRESS',name:'Roma Dresser with Mirror',eur:205,usd:220},
       {id:'ROMA-POUF',name:'Roma Pouf',eur:50,usd:45},
+      {id:'ROMA-CHEST',name:'Roma Chest of Drawers',eur:140,usd:140},
+      {id:'ROMA-BENCH',name:'Roma Bench',eur:150,usd:135},
       {id:'ROMA-WARD',name:'Roma Wardrobe',eur:720,usd:810},
       {id:'ROMA-BED-SET',name:'Roma Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1500,usd:1590,bundled:true},
     ]},
@@ -17,6 +19,8 @@ const CATALOG = {
       {id:'IST-NIGHT',name:'Istanbul Nightstand',eur:65,usd:70},
       {id:'IST-DRESS',name:'Istanbul Dresser with Mirror',eur:195,usd:210},
       {id:'IST-POUF',name:'Istanbul Pouf',eur:50,usd:40},
+      {id:'IST-CHEST',name:'Istanbul Chest of Drawers',eur:130,usd:140},
+      {id:'IST-BENCH',name:'Istanbul Bench',eur:150,usd:120},
       {id:'IST-WARD',name:'Istanbul 5-Door Wardrobe',eur:680,usd:730},
       {id:'IST-BED-SET',name:'Istanbul Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1440,usd:1500,bundled:true},
     ]},
@@ -25,6 +29,8 @@ const CATALOG = {
       {id:'ZENA-BED-160',name:'Zena Bedstead 160×200',eur:300,usd:420},
       {id:'ZENA-NIGHT',name:'Zena Nightstand',eur:60,usd:60},
       {id:'ZENA-DRESS',name:'Zena Dresser',eur:175,usd:190},
+      {id:'ZENA-CHEST',name:'Zena Chest of Drawers',eur:120,usd:120},
+      {id:'ZENA-BENCH',name:'Zena Bench',eur:120,usd:120},
       {id:'ZENA-WARD',name:'Zena Wardrobe',eur:640,usd:700},
       {id:'ZENA-BED-SET',name:'Zena Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1235,usd:1430,bundled:true},
     ]},
@@ -34,6 +40,7 @@ const CATALOG = {
       {id:'MIRAY-NIGHT',name:'Miray Nightstand',eur:null,usd:60},
       {id:'MIRAY-DRESS',name:'Miray Dresser with Mirror',eur:null,usd:180},
       {id:'MIRAY-POUF',name:'Miray Pouf',eur:null,usd:40},
+      {id:'MIRAY-BENCH',name:'Miray Bench',eur:null,usd:120},
       {id:'MIRAY-CHEST',name:'Miray Chest of Drawers',eur:null,usd:175},
       {id:'MIRAY-W4',name:'Miray 4-Door Wardrobe',eur:null,usd:550},
       {id:'MIRAY-W5',name:'Miray 5-Door Wardrobe',eur:null,usd:610},
@@ -45,6 +52,8 @@ const CATALOG = {
       {id:'NAPOLI-BED-160',name:'Napoli Bedstead 160×200',eur:330,usd:380},
       {id:'NAPOLI-NIGHT',name:'Napoli Nightstand',eur:67,usd:77},
       {id:'NAPOLI-DRESS',name:'Napoli Dresser',eur:198,usd:228},
+      {id:'NAPOLI-CHEST',name:'Napoli Chest of Drawers',eur:134,usd:154},
+      {id:'NAPOLI-BENCH',name:'Napoli Bench',eur:132,usd:150},
       {id:'NAPOLI-WARD',name:'Napoli Wardrobe',eur:723,usd:833},
       {id:'NAPOLI-BED-SET',name:'Napoli Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1319,usd:1520,bundled:true},
     ]},
@@ -53,6 +62,8 @@ const CATALOG = {
       {id:'ATINA-BED-160',name:'Atina Bedstead 160×200',eur:330,usd:380},
       {id:'ATINA-NIGHT',name:'Atina Nightstand',eur:67,usd:77},
       {id:'ATINA-DRESS',name:'Atina Dresser',eur:198,usd:228},
+      {id:'ATINA-CHEST',name:'Atina Chest of Drawers',eur:134,usd:154},
+      {id:'ATINA-BENCH',name:'Atina Bench',eur:132,usd:150},
       {id:'ATINA-WARD',name:'Atina Wardrobe',eur:723,usd:833},
       {id:'ATINA-BED-SET',name:'Atina Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1319,usd:1520,bundled:true},
     ]},
@@ -63,6 +74,8 @@ const CATALOG = {
       {id:'BEYZA-WARD',name:'Beyza Wardrobe',eur:null,usd:700},
       {id:'BEYZA-DRESS',name:'Beyza Dresser with Mirror',eur:null,usd:190},
       {id:'BEYZA-POUF',name:'Beyza Pouf',eur:null,usd:40},
+      {id:'BEYZA-CHEST',name:'Beyza Chest of Drawers',eur:null,usd:120},
+      {id:'BEYZA-BENCH',name:'Beyza Bench',eur:null,usd:120},
       {id:'BEYZA-BED-SET',name:'Beyza Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:null,usd:1430,bundled:true},
     ]},
   }},
@@ -250,7 +263,7 @@ const CATALOG = {
 
 const TL_PRICES = {
   // ═══ ROMA YATAK ODASI ═══
-  'ROMA-WARD': 39800, 'ROMA-NIGHT': 3800, 'ROMA-DRESS': 11300,
+  'ROMA-WARD': 39800, 'ROMA-NIGHT': 3800, 'ROMA-CHEST': 7600, 'ROMA-BENCH': 7300, 'ROMA-DRESS': 11300,
   'ROMA-BED': 17500, 'ROMA-BED-160': 17500, 'ROMA-BED-SET': 72600,
   // ROMA MODÜL DOLAP (kapak çeşitleri)
   'ROMA-DOOR-CAM1': 11575, 'ROMA-DOOR-AHSAP1': 10400, 'ROMA-DOOR-CEK2': 20080,
@@ -262,7 +275,7 @@ const TL_PRICES = {
   'ROMA-3S': 29400, 'ROMA-2S': 29400, 'ROMA-BRG': 10300, 'ROMA-SF-SET': 79400, 'ROMA-SET-331': 69100, 'ROMA-SET-321': 69100, 'ROMA-SET-221': 69100,
 
   // ═══ İSTANBUL YATAK ODASI ═══
-  'IST-WARD': 38300, 'IST-NIGHT': 3550, 'IST-DRESS': 10500,
+  'IST-WARD': 38300, 'IST-NIGHT': 3550, 'IST-CHEST': 7100, 'IST-BENCH': 6100, 'IST-DRESS': 10500,
   'IST-BED': 17500, 'IST-BED-160': 17500, 'IST-BED-SET': 69900,
   // ═══ İSTANBUL YEMEK ODASI ═══
   'IST-CONS': 17700, 'IST-CONS-AYNA': 4700, 'IST-TBL': 19800,
@@ -283,14 +296,14 @@ const TL_PRICES = {
   'MIRAY-3S': 25250, 'MIRAY-2S': 25250, 'MIRAY-BRG': 8875, 'MIRAY-SF-SET': 68250, 'MIRAY-SET-331': 59375, 'MIRAY-SET-321': 59375, 'MIRAY-SET-221': 59375, 'MIRAY-CRN': 45350,
 
   // ═══ NAPOLİ (YENİ MODEL) — İstanbul ile aynı ═══
-  'NAPOLI-WARD': 38300, 'NAPOLI-NIGHT': 3550, 'NAPOLI-DRESS': 10500,
+  'NAPOLI-WARD': 38300, 'NAPOLI-NIGHT': 3550, 'NAPOLI-CHEST': 7100, 'NAPOLI-BENCH': 6900, 'NAPOLI-DRESS': 10500,
   'NAPOLI-BED': 17500, 'NAPOLI-BED-160': 17500, 'NAPOLI-BED-SET': 69900,
   'NAPOLI-CONS': 17700, 'NAPOLI-CONS-AYNA': 4700, 'NAPOLI-TBL': 19800,
   'NAPOLI-CHR': 4534, 'NAPOLI-DIN-SET': 66200, 'NAPOLI-TV': 16400, 'NAPOLI-COF': 6200,
   'NAPOLI-3S': 28200, 'NAPOLI-2S': 28200, 'NAPOLI-BRG': 9925, 'NAPOLI-SF-SET': 76250, 'NAPOLI-SET-331': 66325, 'NAPOLI-SET-321': 66325, 'NAPOLI-SET-221': 66325,
 
   // ═══ ATİNA (Napoli ile aynı fiyat) ═══
-  'ATINA-WARD': 38300, 'ATINA-NIGHT': 3550, 'ATINA-DRESS': 10500,
+  'ATINA-WARD': 38300, 'ATINA-NIGHT': 3550, 'ATINA-CHEST': 7100, 'ATINA-BENCH': 6900, 'ATINA-DRESS': 10500,
   'ATINA-BED': 17500, 'ATINA-BED-160': 17500, 'ATINA-BED-SET': 69900,
   'ATINA-CONS': 17700, 'ATINA-CONS-AYNA': 4700, 'ATINA-TBL': 19800,
   'ATINA-CHR': 4534, 'ATINA-DIN-SET': 66200, 'ATINA-TV': 16400, 'ATINA-COF': 6200,
