@@ -2917,9 +2917,18 @@ function showPrint() {
       +'<div class="pf-sig">'+t.sellerSig+getSignatureHtml('Morello Mobilya')+'</div>'
     +'</div>'
     +'<div class="pf-container-page">'+buildContainerHTML(cbm)+'</div>';
-  document.getElementById('print-overlay').style.display='block';
+  setOv('print-overlay', true);
   window.scrollTo(0,0);
   fillQRSlot();
+}
+
+// Belge overlay'lerini açıp kapatan tek nokta — yazdırma sırasında sadece
+// gerçekten açık olan belge basılsın diye data-open attribute'unu da senkron tutar.
+function setOv(id, on) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = on ? 'block' : 'none';
+  el.setAttribute('data-open', on ? 'true' : 'false');
 }
 
 function doProformaPrint() {
@@ -2930,7 +2939,7 @@ function doProformaPrint() {
 }
 
 function closePrint() {
-  document.getElementById('print-overlay').style.display='none';
+  setOv('print-overlay', false);
 }
 
 
@@ -4278,7 +4287,7 @@ function showDepositInvoice(histIdx) {
   +'</div>';
 
   document.getElementById('all-docs-print').innerHTML = '<div class="all-docs-page">'+html+'</div>';
-  document.getElementById('all-docs-overlay').style.display = 'block';
+  setOv('all-docs-overlay', true);
   window.scrollTo(0,0);
 }
 
@@ -4611,10 +4620,10 @@ function showPackingList() {
       +'</tr></tfoot>'
     +'</table>'
     +'</div>';
-  document.getElementById('pl-overlay').style.display='block'; window.scrollTo(0,0);
+  setOv('pl-overlay', true); window.scrollTo(0,0);
   } catch(e) { console.error('PL error:', e); showToast('Hata: ' + e.message); }
 }
-function closePL() { document.getElementById('pl-overlay').style.display='none'; }
+function closePL() { setOv('pl-overlay', false); }
 
 // ============================================================
 // COMMERCIAL INVOICE
@@ -4683,9 +4692,9 @@ function showCI() {
       +'<div class="doc-footer-row"><span class="doc-footer-key">Terms:</span><span>By Vessel</span></div>'
     +'</div>'
     +'</div>';
-  document.getElementById('ci-overlay').style.display='block'; window.scrollTo(0,0);
+  setOv('ci-overlay', true); window.scrollTo(0,0);
 }
-function closeCI() { document.getElementById('ci-overlay').style.display='none'; }
+function closeCI() { setOv('ci-overlay', false); }
 
 // ============================================================
 // CEKI LISTESI
@@ -4757,9 +4766,9 @@ function showCeki() {
     +'</table>'
     +shipBoxHtml
     +'</div>';
-  document.getElementById('ceki-overlay').style.display='block'; window.scrollTo(0,0);
+  setOv('ceki-overlay', true); window.scrollTo(0,0);
 }
-function closeCeki() { document.getElementById('ceki-overlay').style.display='none'; }
+function closeCeki() { setOv('ceki-overlay', false); }
 
 // ============================================================
 // TALIMAT
@@ -4850,9 +4859,9 @@ function showTalimat() {
       +'<div class="doc-sig-line">Onaylayan</div>'
     +'</div>'
     +'</div>';
-  document.getElementById('talimat-overlay').style.display='block'; window.scrollTo(0,0);
+  setOv('talimat-overlay', true); window.scrollTo(0,0);
 }
-function closeTalimat() { document.getElementById('talimat-overlay').style.display='none'; }
+function closeTalimat() { setOv('talimat-overlay', false); }
 
 // ============================================================
 // IRSALIYE
@@ -4878,9 +4887,9 @@ function showIrsaliye() {
   });
   const contHtml=buildContainerHTML(totalCBM);
   document.getElementById('irsaliye-print').innerHTML='<div class="irs-hdr"><div>'+getPfLogoHtml()+'<div class="irs-title-sub" style="margin-top:4px;">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.</div><div style="font-size:9px;color:#888;">Yeniceк\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / Bursa</div></div><div style="text-align:right;"><div class="irs-title">\u0130RSAL\u0130YE</div><div class="irs-title-sub">WAYBILL / DELIVERY NOTE</div><div style="font-size:9.5px;color:#888;margin-top:6px;line-height:1.8;"><div>Belge No: <strong>'+piNo+'-WB</strong></div><div>Tarih: '+dateStr+'</div><div>Teslim \u015eekli: '+priceTerm+'</div></div></div></div><div class="irs-info-grid"><div><div class="irs-sec-lbl">G\u00f6nderen / Shipper</div><div class="irs-frow"><span class="irs-fk">Firma:</span><span class="irs-fv">SEL\u0130NA MOB\u0130LYA ORMAN \u00dcRN.SAN.T\u0130C.LTD.\u015eT\u0130.</span></div><div class="irs-frow"><span class="irs-fk">Adres:</span><span class="irs-fv">Yeniceк\u00f6y Mah. Mobilya Cad. No:30, \u0130neg\u00f6l / BURSA / T\u00dcRK\u0130YE</span></div><div class="irs-frow"><span class="irs-fk">Tel:</span><span class="irs-fv">+90 224 714 13 03</span></div></div><div><div class="irs-sec-lbl">Al\u0131c\u0131 / Consignee</div><div class="irs-frow"><span class="irs-fk">Firma:</span><span class="irs-fv">'+buyer+'</span></div>'+(buyerContact?'<div class="irs-frow"><span class="irs-fk">Yetkili:</span><span class="irs-fv">'+buyerContact+'</span></div>':'')+(buyerAddress?'<div class="irs-frow"><span class="irs-fk">Adres:</span><span class="irs-fv">'+buyerAddress+'</span></div>':'')+(buyerCountry?'<div class="irs-frow"><span class="irs-fk">\u00dclke:</span><span class="irs-fv">'+buyerCountry+'</span></div>':'')+'<div class="irs-frow"><span class="irs-fk">Ref:</span><span class="irs-fv">'+piNo+'</span></div></div></div><table class="irs-table"><thead><tr><th class="c" style="width:24px;">No</th><th>\u00dcr\u00fcn Ad\u0131 / Description</th><th class="c" style="width:40px;">Adet</th><th class="c" style="width:60px;">Paket</th><th class="c" style="width:60px;">CBM</th><th class="c" style="width:70px;">A\u011f\u0131rl\u0131k</th><th style="width:80px;">Parti No</th></tr></thead><tbody>'+rows+'</tbody></table><div class="irs-totals"><div class="irs-totals-box"><div class="irs-trow"><span>Toplam Kalem</span><span>'+orderItems.length+'</span></div><div class="irs-trow"><span>Toplam Adet</span><span>'+totalQty+'</span></div><div class="irs-trow"><span>Toplam Paket</span><span style="font-weight:700;color:#5B21B6;">'+(totalPkgs||'\u2014')+'</span></div><div class="irs-trow"><span>Toplam CBM</span><span>'+totalCBM.toFixed(2)+' m\u00b3</span></div><div class="irs-trow"><span>Est. A\u011f\u0131rl\u0131k</span><span>'+totalGW.toFixed(0)+' kg</span></div></div></div>'+contHtml+'<div class="irs-notes"><strong>NOTLAR:</strong> Bu belge nakliye ve teslimat ama\u00e7l\u0131d\u0131r, ticari de\u011fer i\u00e7ermez.</div><div class="irs-sig"><div class="irs-sig-box">Haz\u0131rlayan<br><span style="font-weight:400;font-size:8px;">Selina Mobilya</span>'+getSignatureHtml('')+'</div><div class="irs-sig-box">Teslim Eden</div><div class="irs-sig-box">Teslim Alan<br><span style="font-weight:400;font-size:8px;">'+buyer+'</span></div></div>';
-  document.getElementById('irsaliye-overlay').style.display='block'; window.scrollTo(0,0);
+  setOv('irsaliye-overlay', true); window.scrollTo(0,0);
 }
-function closeIrsaliye() { document.getElementById('irsaliye-overlay').style.display='none'; }
+function closeIrsaliye() { setOv('irsaliye-overlay', false); }
 
 // ============================================================
 // GENERATE ALL DOCUMENTS (combined print)
@@ -4891,34 +4900,34 @@ function generateAllDocuments() {
   // Build each document's HTML by invoking existing builders, then read back their content
   showPrint();
   const piHtml = document.getElementById('proforma-print').innerHTML;
-  document.getElementById('print-overlay').style.display = 'none';
+  setOv('print-overlay', false);
 
   showPackingList();
   const plHtml = document.getElementById('pl-print').innerHTML;
-  document.getElementById('pl-overlay').style.display = 'none';
+  setOv('pl-overlay', false);
 
   showCI();
   const ciHtml = document.getElementById('ci-print').innerHTML;
-  document.getElementById('ci-overlay').style.display = 'none';
+  setOv('ci-overlay', false);
 
   showCeki();
   const cekiHtml = document.getElementById('ceki-print').innerHTML;
-  document.getElementById('ceki-overlay').style.display = 'none';
+  setOv('ceki-overlay', false);
 
   showTalimat();
   const talimatHtml = document.getElementById('talimat-print').innerHTML;
-  document.getElementById('talimat-overlay').style.display = 'none';
+  setOv('talimat-overlay', false);
 
   showIrsaliye();
   const irsHtml = document.getElementById('irsaliye-print').innerHTML;
-  document.getElementById('irsaliye-overlay').style.display = 'none';
+  setOv('irsaliye-overlay', false);
 
   const pages = [piHtml, plHtml, ciHtml, cekiHtml, talimatHtml, irsHtml];
   document.getElementById('all-docs-print').innerHTML = pages.map(function(p){
     return '<div class="all-docs-page">'+p+'</div>';
   }).join('');
 
-  document.getElementById('all-docs-overlay').style.display = 'block';
+  setOv('all-docs-overlay', true);
   window.scrollTo(0,0);
   // Fill any QR slots in the combined view
   createShortLink().then(function(short){
@@ -4930,7 +4939,7 @@ function generateAllDocuments() {
     });
   });
 }
-function closeAllDocuments() { document.getElementById('all-docs-overlay').style.display='none'; }
+function closeAllDocuments() { setOv('all-docs-overlay', false); }
 
 // ============================================================
 // REPORTS
