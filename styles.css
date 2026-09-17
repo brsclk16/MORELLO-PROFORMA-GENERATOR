@@ -1679,7 +1679,14 @@ body {
   html, body { margin: 0 !important; padding: 0 !important; height: auto !important; background:#fff !important; }
   body > *:not(#print-overlay):not(#irsaliye-overlay):not(#pl-overlay):not(#ci-overlay):not(#ceki-overlay):not(#talimat-overlay):not(#all-docs-overlay) { display: none !important; }
   #summary-overlay, #cust-detail-overlay, #import-overlay, #login-overlay, #sticky-bar, #wa-modal, #email-modal, #img-lightbox { display: none !important; }
+  /* Sadece o an gerçekten açık (data-open="true") olan belge overlay'i yazdırılır.
+     Önceden açılıp kapatılmış başka bir belgenin (ör. eski müşterinin packing list'i)
+     arka planda kalması yazdırmaya karışmasın diye önce hepsi kapatılır. */
   #print-overlay, #irsaliye-overlay, #pl-overlay, #ci-overlay, #ceki-overlay, #talimat-overlay, #all-docs-overlay {
+    display: none !important;
+  }
+  #print-overlay[data-open="true"], #irsaliye-overlay[data-open="true"], #pl-overlay[data-open="true"],
+  #ci-overlay[data-open="true"], #ceki-overlay[data-open="true"], #talimat-overlay[data-open="true"], #all-docs-overlay[data-open="true"] {
     display: block !important; position: static !important;
     inset: auto !important; overflow: visible !important; background: #fff !important;
     margin: 0 !important; padding: 0 !important; height: auto !important;
