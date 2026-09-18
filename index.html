@@ -647,7 +647,7 @@
         <div class="card">
           <div class="card-hdr"><h3>📄 Invoice Details</h3></div>
           <div class="card-body">
-            <div class="frow"><label>PI Number</label><input type="text" id="piNumber" placeholder="PI-2026-001"></div>
+            <div class="frow"><label>PI Number</label><input type="text" id="piNumber" placeholder="PI-2026-001" oninput="refreshDepositMini()"></div>
             <div class="frow"><label>Currency</label>
               <select id="pfCurrency" onchange="setCurrency(this.value)">
                 <option value="EUR">EUR — Euro</option>
@@ -681,6 +681,8 @@
             <div class="frow"><label>Lead Time</label><input type="text" id="pfLeadTime" value="25–30 days after deposit"></div>
             <div class="frow"><label>Date</label><input type="date" id="pfDate"></div>
             <div class="frow"><label>Validity</label><input type="text" id="pfValidity" value="10 days"></div>
+            <button class="btn btn-gold btn-sm" style="width:100%;margin-top:6px;" onclick="openDepositEntry()">💳 Depozito / Ödeme Gir</button>
+            <div id="deposit-status-mini" style="font-size:10.5px;color:var(--muted);margin-top:6px;"></div>
           </div>
         </div>
       </div>
