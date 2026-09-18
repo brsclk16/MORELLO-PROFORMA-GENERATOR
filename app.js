@@ -2564,6 +2564,7 @@ function loadHistory(i) {
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
   if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; }
+  refreshDepositMini();
   loadShipDraft(h.shipment || {});
   loadedFxLock = h.fx || null;
   renderOrder(); buildCatalog(); showTab('order'); showToast('✓ Loaded: '+h.pi+(h.fx?' · Kilitli kur: 1'+h.currency+'='+(h.currency==='USD'?h.fx.usdTry:h.fx.eurTry).toFixed(2)+'₺':''));
@@ -2906,6 +2907,12 @@ function showPrint() {
   const saving=listTotal-grandTotal;
   const deposit=grandTotal*0.3;
   const balance=grandTotal*0.7;
+  // Gerçek ödeme durumu: bu PI numarasıyla kayıtlı geçmiş varsa ve ödeme girilmişse,
+  // teorik %30/%70 yerine (veya yanında) fiilen alınan/kalan tutarı göster.
+  const matchingHist = getHistory().find(h => h.pi === pi);
+  const realPaid = matchingHist ? piPaidNum(matchingHist) : 0;
+  const realRemaining = grandTotal - realPaid;
+  const hasRealPayment = realPaid > 0.005;
   const noteText=(t.noteText||'').replace('{validity}',validity);
   const bankCur=cur==='EUR'?'eur':cur==='USD'?'usd':'try';
   const banks={
@@ -2964,8 +2971,11 @@ function showPrint() {
       +'<div class="pf-tot-row"><span>'+t.listTotal+'</span><span>'+sym+listTotal.toFixed(2)+'</span></div>'
       +(saving>0?'<div class="pf-tot-row pf-saving"><span>'+t.saving+'</span><span>− '+sym+saving.toFixed(2)+'</span></div>':'')
       +'<div class="pf-tot-row pf-grand"><span>'+t.grandTotal+'</span><span>'+sym+grandTotal.toFixed(2)+'</span></div>'
-      +'<div class="pf-tot-row"><span>'+t.deposit+'</span><span>'+sym+deposit.toFixed(2)+'</span></div>'
-      +'<div class="pf-tot-row"><span>'+t.balance+'</span><span>'+sym+balance.toFixed(2)+'</span></div>'
+      +(hasRealPayment
+        ? '<div class="pf-tot-row" style="color:#15803D;font-weight:700;"><span>Alınan Ödeme / Received</span><span>'+sym+realPaid.toFixed(2)+'</span></div>'
+          +'<div class="pf-tot-row" style="font-weight:700;'+(realRemaining>0.01?'color:#B91C1C;':'color:#15803D;')+'"><span>'+(realRemaining>0.01?'Kalan Bakiye / Balance Due':'✓ Tamamı Ödendi / Fully Paid')+'</span><span>'+sym+Math.max(0,realRemaining).toFixed(2)+'</span></div>'
+        : '<div class="pf-tot-row"><span>'+t.deposit+'</span><span>'+sym+deposit.toFixed(2)+'</span></div>'
+          +'<div class="pf-tot-row"><span>'+t.balance+'</span><span>'+sym+balance.toFixed(2)+'</span></div>')
       +'<div class="pf-tot-row"><span>'+t.cbmTotal+'</span><span>'+cbm.toFixed(2)+' m\u00b3</span></div>'
       +(cur!=='TRY'?'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>Kur ('+(fxLock.lockedAt?'kayıt anı':'şu an')+')</span><span>1 '+cur+' = '+(cur==='EUR'?fxLock.eurTry:fxLock.usdTry).toFixed(2)+' ₺</span></div>'
         +'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>₺ Karşılığı</span><span>₺'+(grandTotal*(cur==='EUR'?fxLock.eurTry:fxLock.usdTry)).toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>':'')
@@ -4047,6 +4057,42 @@ async function shareSummaryCardWA() {
 function piTotalNum(h) { return parseFloat(String(h.total).replace(/[^0-9.]/g,'')) || 0; }
 function piPaidNum(h) { return (h.payments||[]).reduce(function(s,p){ return s+(parseFloat(p.amount)||0); }, 0); }
 
+// Sipariş ekranından, ilgili proformayı Geçmiş'e gitmeden doğrudan bulup
+// ödeme/depozito giriş penceresini açar. Kayıtlı değilse önce otomatik kaydeder.
+function openDepositEntry() {
+  const pi = document.getElementById('piNumber')?.value?.trim();
+  if (!pi) { showToast('Önce PI Number girin'); return; }
+  let hist = getHistory();
+  let idx = hist.findIndex(h => h.pi === pi);
+  if (idx < 0) {
+    saveToHistory();
+    hist = getHistory();
+    idx = hist.findIndex(h => h.pi === pi);
+    if (idx < 0) { showToast('Proforma kaydedilemedi, önce 💾 Save ile kaydedin'); return; }
+    showToast('Proforma otomatik kaydedildi, şimdi ödeme girebilirsiniz');
+  }
+  showPayments(idx);
+}
+
+// PI Number değiştikçe (veya sekme açıldıkça) o proformanın güncel ödeme
+// durumunu Invoice Details kartının altında küçük bir özet olarak gösterir.
+function refreshDepositMini() {
+  const el = document.getElementById('deposit-status-mini');
+  if (!el) return;
+  const pi = document.getElementById('piNumber')?.value?.trim();
+  if (!pi) { el.textContent = ''; return; }
+  const h = getHistory().find(x => x.pi === pi);
+  if (!h) { el.textContent = ''; return; }
+  const sym = h.currency==='TRY'?'₺':h.currency==='EUR'?'€':'$';
+  const total = piTotalNum(h);
+  const paid = piPaidNum(h);
+  if (paid <= 0) { el.textContent = ''; return; }
+  const remaining = total - paid;
+  el.innerHTML = remaining <= 0.01
+    ? '<span style="color:var(--success);font-weight:700;">✓ Tamamı Ödendi (' + sym + paid.toFixed(2) + ')</span>'
+    : '<span style="color:var(--success);font-weight:700;">Alınan: ' + sym + paid.toFixed(2) + '</span> · <span style="color:var(--danger);font-weight:700;">Kalan: ' + sym + remaining.toFixed(2) + '</span>';
+}
+
 function showPayments(histIdx) {
   const h = getHistory()[histIdx];
   if(!h) return;
@@ -4103,6 +4149,7 @@ function addPayment(histIdx) {
   if(h._supa_id) saveHistoryToCloud(h);
   document.getElementById('pay-modal').remove();
   renderHistory();
+  refreshDepositMini();
   showToast('\ud83d\udcb0 \u00d6deme kaydedildi');
   showPayments(histIdx);
 }
@@ -4115,6 +4162,7 @@ function deletePayment(histIdx, payIdx) {
   if(hist[histIdx]._supa_id) saveHistoryToCloud(hist[histIdx]);
   document.getElementById('pay-modal').remove();
   renderHistory();
+  refreshDepositMini();
   showPayments(histIdx);
 }
 
