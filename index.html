@@ -637,7 +637,7 @@
             <div class="frow"><label>Address</label><input type="text" id="buyerAddress" placeholder="Address"></div>
             <div class="frow"><label>Sevkiyat Adresi (farklıysa)</label><input type="text" id="buyerShipAddress" placeholder="Boşsa yukarıdaki adres kullanılır"></div>
             <div class="frow"><label>Vergi No / VAT No</label><input type="text" id="buyerTaxId" placeholder="Tax ID / VAT Number"></div>
-            <div class="frow"><label>Country</label><input type="text" id="buyerCountry" placeholder="Country"></div>
+            <div class="frow"><label>Country</label><select id="buyerCountry" onchange="onBuyerCountryChange()"></select></div>
             <div class="frow"><label>Phone</label><input type="text" id="buyerPhone" placeholder="+XXX XXX XXX"></div>
             <div class="frow"><label>Email</label><input type="email" id="buyerEmail" placeholder="email@company.com"></div>
             <button class="btn btn-gold btn-sm" onclick="saveCurrentAsCust()">💾 Save as Customer</button>
@@ -719,7 +719,7 @@
     <h3 id="custModalTitle">➕ New Customer</h3>
     <div class="frow"><label>Company Name *</label><input type="text" id="mc-company" placeholder="Company Name"></div>
     <div class="frow"><label>Contact Person</label><input type="text" id="mc-contact" placeholder="Contact Person"></div>
-    <div class="frow"><label>Country</label><input type="text" id="mc-country" placeholder="Country"></div>
+    <div class="frow"><label>Country</label><select id="mc-country" onchange="onMcCountryChange()"></select></div>
     <div class="frow"><label>Phone</label><input type="text" id="mc-phone" placeholder="+XXX XXX XXX"></div>
     <div class="frow"><label>Email</label><input type="email" id="mc-email" placeholder="email@company.com"></div>
     <div class="frow"><label>Address</label><input type="text" id="mc-address" placeholder="Address"></div>
