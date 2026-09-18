@@ -1237,7 +1237,12 @@ async function runImportParse() {
 
   const userContent = [];
   if(importImageB64) {
-    userContent.push({type:'image', source:{type:'base64', media_type:importImageB64.type, data:importImageB64.data}});
+    const isPdf = importImageB64.type === 'application/pdf';
+    if(isPdf) {
+      userContent.push({type:'document', source:{type:'base64', media_type:'application/pdf', data:importImageB64.data}});
+    } else {
+      userContent.push({type:'image', source:{type:'base64', media_type:importImageB64.type, data:importImageB64.data}});
+    }
     userContent.push({type:'text', text: text || 'Bu siparis listesini parse et. Her satirdaki urunu katalogtaki urunle eslestir.'});
   } else {
     userContent.push({type:'text', text:text});
