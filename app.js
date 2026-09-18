@@ -1978,6 +1978,30 @@ function saveCustomers(arr) {
   // Cloud sync handled per-operation
 }
 
+// Müşteri kartına tıklanınca doğrudan düzenleme modalını açar — ayrı bir "Details"
+// sekmesine gitmeye gerek kalmadan. Pipeline listesinden gelen (henüz kaydedilmemiş)
+// firmalar ilk tıklamada otomatik olarak düzenlenebilir bir kayda dönüştürülür.
+function quickEditFromCard(source, idx) {
+  if (source === 'saved') { openEditCustomer(idx); return; }
+  const pc = PIPELINE_COMPANIES[idx];
+  if (!pc) return;
+  const saved = getCustomers();
+  const shortName = pc.name.split('/')[0].trim().toUpperCase().slice(0,10);
+  let existingIdx = saved.findIndex(s => s.company.toUpperCase().includes(shortName));
+  if (existingIdx < 0) {
+    saved.push({
+      company: pc.name, contact:'', country: ENGLISH_TO_TR_COUNTRY[pc.country]||'',
+      phone:'', email:'', address:'', shipAddress:'', taxId:'', segment:'',
+      discount:0, note:'', defaults:{ currency: pc.currency||'USD', lang: pc.lang||'en' }
+    });
+    saveCustomers(saved);
+    existingIdx = saved.length - 1;
+    showToast('✓ Düzenlenebilir hale getirildi: '+pc.name);
+  }
+  renderCustomers();
+  openEditCustomer(existingIdx);
+}
+
 function renderCustomers() {
   const list = document.getElementById('custList');
   const search = (document.getElementById('custSearch')?.value||'').toLowerCase();
@@ -2047,17 +2071,20 @@ function renderCustomers() {
         </div>
       </div>
       <div class="cust-card-actions">
-        <button class="cust-load-btn" onclick="${loadFn}">⚡ Load</button>
-        <button class="cust-load-btn" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);" onclick="showCustDetail('${c.name}')">📊</button>
+        <button class="cust-load-btn" onclick="event.stopPropagation();${loadFn}">⚡ Load</button>
+        <button class="cust-load-btn" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);" onclick="event.stopPropagation();showCustDetail('${c.name}')">📊</button>
         <span class="last-activity ${laClass}">${laTxt}</span>
         <span class="cust-lang-badge">${langLabels[c.lang]||'EN'} · ${c.currency||'USD'}</span>
         ${c.discount>0?`<span class="disc-profile-badge">%${c.discount}</span>`:''}
         ${defaultsBadge}
         ${segBadge}
         ${templBadge}
-        ${c.source==='saved'?`<button class="cust-del-btn" title="Düzenle" onclick="openEditCustomer(${c.savedIdx})">✏</button>`:''}
-        ${delBtn}
+        ${c.source==='saved'?`<button class="cust-del-btn" title="Düzenle" onclick="event.stopPropagation();openEditCustomer(${c.savedIdx})">✏</button>`:''}
+        ${delBtn.replace('onclick="','onclick="event.stopPropagation();')}
       </div>`;
+    card.style.cursor='pointer';
+    card.title='Düzenlemek için tıkla';
+    card.onclick=function(){ quickEditFromCard(c.source, c.source==='pipeline'?c.pipelineIdx:c.savedIdx); };
     grid.appendChild(card);
   });
 
@@ -2070,11 +2097,14 @@ function renderCustomers() {
 }
 
 // ── Ülke listesi (pipeline.html ile aynı 86 ülke — iki sistem arasında tutarlılık için) ──
-const COUNTRY_LIST = ['Türkiye','Nijerya','Irak','Libya','Suudi Arabistan','Rusya','Kazakistan','Ürdün','Romanya','Lübnan','Fas','Kenya','BAE','Kosova','Gürcistan','Bulgaristan','Almanya','Senegal','Bahreyn','Mısır','Pakistan','Kuzey Makedonya','Katar','ABD','Sırbistan','Azerbaycan','Hindistan','Yunanistan','Somali','Sudan','Gana','Gine','Kongo (DRC)','Kongo','Fildişi Sahili','Fransa','İtalya','İngiltere','Belçika','İsviçre','Avusturya','Ukrayna','Özbekistan','Tacikistan','Kuveyt','Umman','Uganda','Tanzanya','Etiyopya','Kamerun','Moritanya','Mali','Gabon','Angola','Bosna-Hersek','Moğolistan','İsveç','Danimarka','Ermenistan','Karadağ','Arnavutluk','Hollanda','İran','Yemen','Suriye','Filistin','İspanya','Polonya','Sierra Leone','Ruanda','Zimbabve','KKTC','Kıbrıs','Çin','Cezayir','Tunus','Güney Afrika','Benin','Togo','Liberya','Gambiya','Burkina Faso','Bangladeş','Zambiya','Hırvatistan'];
+const COUNTRY_LIST = ['Türkiye','Nijerya','Irak','Libya','Suudi Arabistan','Rusya','Kazakistan','Ürdün','Romanya','Lübnan','Fas','Kenya','BAE','Kosova','Gürcistan','Bulgaristan','Almanya','Senegal','Bahreyn','Mısır','Pakistan','Kuzey Makedonya','Katar','ABD','Sırbistan','Azerbaycan','Hindistan','Yunanistan','Somali','Sudan','Gana','Gine','Kongo (DRC)','Kongo','Fildişi Sahili','Fransa','İtalya','İngiltere','Belçika','İsviçre','Avusturya','Ukrayna','Özbekistan','Tacikistan','Kuveyt','Umman','Uganda','Tanzanya','Etiyopya','Kamerun','Moritanya','Mali','Gabon','Angola','Bosna-Hersek','Moğolistan','İsveç','Danimarka','Ermenistan','Karadağ','Arnavutluk','Hollanda','İran','Yemen','Suriye','Filistin','İspanya','Polonya','Sierra Leone','Ruanda','Zimbabve','KKTC','Kıbrıs','Çin','Cezayir','Tunus','Güney Afrika','Benin','Togo','Liberya','Gambiya','Burkina Faso','Bangladeş','Zambiya','Hırvatistan','Kanada','İrlanda'];
+
+// Bu sistemin eski (pipeline stub) firma listesi ülkeleri İngilizce tutuyordu — Türkçe listeyle eşleştirme
+const ENGLISH_TO_TR_COUNTRY = {'Germany':'Almanya','Iraq':'Irak','Canada':'Kanada','Bulgaria':'Bulgaristan','USA':'ABD','Guinea':'Gine','Austria':'Avusturya','Azerbaijan':'Azerbaycan','North Macedonia':'Kuzey Makedonya','Russia':'Rusya','Switzerland':'İsviçre','Romania':'Romanya','Nigeria':'Nijerya','Egypt':'Mısır','Georgia':'Gürcistan','Somalia':'Somali','Kosovo':'Kosova','Ireland':'İrlanda','Armenia':'Ermenistan','Unknown':''};
 
 // ── Avrupa (Euro) ülkeleri: Eurozone + Euro bölgesi dışı kalan diğer Avrupa ülkeleri de dahil ──
 // Bunların dışındaki her ülke USD'ye düşer. Almanya'da yalnızca "Erva" firması TL'ye özel istisna.
-const EUROPE_EUR_COUNTRIES = new Set(['Almanya','Avusturya','Fransa','İtalya','İspanya','Hollanda','Belçika','İsveç','Danimarka','Polonya','Romanya','Bulgaristan','Yunanistan','Kuzey Makedonya','Kosova','Sırbistan','Bosna-Hersek','Arnavutluk','Hırvatistan','İsviçre','İngiltere','Karadağ','Ukrayna','Kıbrıs']);
+const EUROPE_EUR_COUNTRIES = new Set(['Almanya','Avusturya','Fransa','İtalya','İspanya','Hollanda','Belçika','İsveç','Danimarka','Polonya','Romanya','Bulgaristan','Yunanistan','Kuzey Makedonya','Kosova','Sırbistan','Bosna-Hersek','Arnavutluk','Hırvatistan','İsviçre','İngiltere','Karadağ','Ukrayna','Kıbrıs','İrlanda']);
 
 function countryToCurrency(country, companyName) {
   if (country === 'Türkiye') return 'TRY';
