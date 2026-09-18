@@ -2069,6 +2069,42 @@ function renderCustomers() {
   list.appendChild(grid);
 }
 
+// ── Ülke listesi (pipeline.html ile aynı 86 ülke — iki sistem arasında tutarlılık için) ──
+const COUNTRY_LIST = ['Türkiye','Nijerya','Irak','Libya','Suudi Arabistan','Rusya','Kazakistan','Ürdün','Romanya','Lübnan','Fas','Kenya','BAE','Kosova','Gürcistan','Bulgaristan','Almanya','Senegal','Bahreyn','Mısır','Pakistan','Kuzey Makedonya','Katar','ABD','Sırbistan','Azerbaycan','Hindistan','Yunanistan','Somali','Sudan','Gana','Gine','Kongo (DRC)','Kongo','Fildişi Sahili','Fransa','İtalya','İngiltere','Belçika','İsviçre','Avusturya','Ukrayna','Özbekistan','Tacikistan','Kuveyt','Umman','Uganda','Tanzanya','Etiyopya','Kamerun','Moritanya','Mali','Gabon','Angola','Bosna-Hersek','Moğolistan','İsveç','Danimarka','Ermenistan','Karadağ','Arnavutluk','Hollanda','İran','Yemen','Suriye','Filistin','İspanya','Polonya','Sierra Leone','Ruanda','Zimbabve','KKTC','Kıbrıs','Çin','Cezayir','Tunus','Güney Afrika','Benin','Togo','Liberya','Gambiya','Burkina Faso','Bangladeş','Zambiya','Hırvatistan'];
+
+// ── Avrupa (Euro) ülkeleri: Eurozone + Euro bölgesi dışı kalan diğer Avrupa ülkeleri de dahil ──
+// Bunların dışındaki her ülke USD'ye düşer. Almanya'da yalnızca "Erva" firması TL'ye özel istisna.
+const EUROPE_EUR_COUNTRIES = new Set(['Almanya','Avusturya','Fransa','İtalya','İspanya','Hollanda','Belçika','İsveç','Danimarka','Polonya','Romanya','Bulgaristan','Yunanistan','Kuzey Makedonya','Kosova','Sırbistan','Bosna-Hersek','Arnavutluk','Hırvatistan','İsviçre','İngiltere','Karadağ','Ukrayna','Kıbrıs']);
+
+function countryToCurrency(country, companyName) {
+  if (country === 'Türkiye') return 'TRY';
+  if (country === 'Almanya' && /erva/i.test(companyName||'')) return 'TRY'; // özel istisna: Erva Home
+  if (EUROPE_EUR_COUNTRIES.has(country)) return 'EUR';
+  return 'USD';
+}
+
+function populateCountrySelects() {
+  const opts = '<option value="">— seç —</option>' + COUNTRY_LIST.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  ['mc-country','buyerCountry'].forEach(function(id){ const el=document.getElementById(id); if(el && !el.dataset.filled){ el.innerHTML = opts; el.dataset.filled='1'; } });
+}
+populateCountrySelects();
+
+function onMcCountryChange() {
+  const country = document.getElementById('mc-country').value;
+  const company = document.getElementById('mc-company').value;
+  const cur = countryToCurrency(country, company);
+  const el = document.getElementById('mc-currency');
+  if (el) el.value = cur;
+}
+
+function onBuyerCountryChange() {
+  const country = document.getElementById('buyerCountry').value;
+  const company = document.getElementById('buyerCompany').value;
+  const cur = countryToCurrency(country, company);
+  setCurrency(cur);
+  const el = document.getElementById('pfCurrency'); if (el) el.value = cur;
+}
+
 const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-shipaddress','mc-taxid','mc-segment','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime','mc-creditlimit'];
 let editingCustomerIdx = null;
 
