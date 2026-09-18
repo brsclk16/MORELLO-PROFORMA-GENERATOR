@@ -708,7 +708,7 @@ const I18N = {
     buyer: 'Buyer Information',
     invoice: 'Invoice Details',
     company: 'Company:', contact: 'Contact:', address: 'Address:',
-    country: 'Country:', phone: 'Phone:', email: 'Email:',
+    country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:',
     piNum: 'PI Number:', currency: 'Currency:', priceTerm: 'Price Term:',
     payment: 'Payment:', leadTime: 'Lead Time:',
     noCol: 'No', descCol: 'Description', qtyCol: 'Qty',
@@ -730,7 +730,7 @@ const I18N = {
     buyer: 'Informations Acheteur',
     invoice: 'Détails de la Facture',
     company: 'Société :', contact: 'Contact :', address: 'Adresse :',
-    country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :',
+    country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :',
     piNum: 'N° Proforma :', currency: 'Devise :', priceTerm: 'Incoterm :',
     payment: 'Conditions de paiement :', leadTime: 'Délai de livraison :',
     noCol: 'N°', descCol: 'Désignation', qtyCol: 'Qté',
@@ -752,7 +752,7 @@ const I18N = {
     buyer: 'معلومات المشتري',
     invoice: 'تفاصيل الفاتورة',
     company: 'الشركة:', contact: 'جهة الاتصال:', address: 'العنوان:',
-    country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:',
+    country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:',
     piNum: 'رقم الفاتورة:', currency: 'العملة:', priceTerm: 'شرط التسليم:',
     payment: 'شروط الدفع:', leadTime: 'مدة التسليم:',
     noCol: 'م', descCol: 'الوصف', qtyCol: 'الكمية',
@@ -774,7 +774,7 @@ const I18N = {
     buyer: 'Käuferinformationen',
     invoice: 'Rechnungsdetails',
     company: 'Firma:', contact: 'Ansprechpartner:', address: 'Adresse:',
-    country: 'Land:', phone: 'Telefon:', email: 'E-Mail:',
+    country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:',
     piNum: 'PI-Nummer:', currency: 'Währung:', priceTerm: 'Lieferbedingung:',
     payment: 'Zahlungsbedingungen:', leadTime: 'Lieferzeit:',
     noCol: 'Nr', descCol: 'Beschreibung', qtyCol: 'Menge',
@@ -797,7 +797,7 @@ const I18N = {
     buyer: 'Alıcı Bilgileri',
     invoice: 'Fatura Detayları',
     company: 'Firma:', contact: 'Yetkili:', address: 'Adres:',
-    country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:',
+    country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:',
     piNum: 'Proforma No:', currency: 'Döviz:', priceTerm: 'Teslim Şekli:',
     payment: 'Ödeme Koşulları:', leadTime: 'Teslimat Süresi:',
     noCol: 'S.No', descCol: 'Ürün Adı', qtyCol: 'Adet',
@@ -2027,6 +2027,11 @@ function renderCustomers() {
     const defaultsBadge = c.source==='saved' && (getCustomers()[c.savedIdx]?.defaults) 
       ? Object.keys(getCustomers()[c.savedIdx].defaults||{}).length > 0 
         ? '<span class="disc-profile-badge" title="Varsayılan ayarlar mevcut" style="background:#5B21B6;color:#fff;">⚡</span>' : '' : '';
+    const savedCustRec = c.source==='saved' ? getCustomers()[c.savedIdx] : null;
+    const segMap = { new:{l:'Yeni',bg:'#E5E7EB',fg:'#374151'}, standard:{l:'Standart',bg:'#DBEAFE',fg:'#1D4ED8'}, gold:{l:'Gold',bg:'#FEF3C7',fg:'#B45309'}, platinum:{l:'Platinum',bg:'#EDE9FE',fg:'#6D28D9'} };
+    const seg = savedCustRec?.segment;
+    const segBadge = seg && segMap[seg] ? '<span class="disc-profile-badge" style="background:'+segMap[seg].bg+';color:'+segMap[seg].fg+';">'+segMap[seg].l+'</span>' : '';
+    const templBadge = savedCustRec?.template?.length ? '<span class="disc-profile-badge" title="Kayıtlı sipariş şablonu var ('+savedCustRec.template.length+' kalem)" style="background:#065F46;color:#fff;">📦</span>' : '';
     card.innerHTML=`
       <div class="cust-card-top">
         <div class="cust-flag">${c.flag||'🏳️'}</div>
@@ -2043,6 +2048,8 @@ function renderCustomers() {
         <span class="cust-lang-badge">${langLabels[c.lang]||'EN'} · ${c.currency||'USD'}</span>
         ${c.discount>0?`<span class="disc-profile-badge">%${c.discount}</span>`:''}
         ${defaultsBadge}
+        ${segBadge}
+        ${templBadge}
         ${c.source==='saved'?`<button class="cust-del-btn" title="Düzenle" onclick="openEditCustomer(${c.savedIdx})">✏</button>`:''}
         ${delBtn}
       </div>`;
@@ -2057,7 +2064,7 @@ function renderCustomers() {
   list.appendChild(grid);
 }
 
-const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime','mc-creditlimit'];
+const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-shipaddress','mc-taxid','mc-segment','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime','mc-creditlimit'];
 let editingCustomerIdx = null;
 
 function openNewCustomer() {
@@ -2078,6 +2085,9 @@ function openEditCustomer(i) {
   document.getElementById('mc-phone').value     = c.phone     || '';
   document.getElementById('mc-email').value     = c.email     || '';
   document.getElementById('mc-address').value   = c.address   || '';
+  document.getElementById('mc-shipaddress').value = c.shipAddress || '';
+  document.getElementById('mc-taxid').value     = c.taxId     || '';
+  document.getElementById('mc-segment').value   = c.segment   || '';
   document.getElementById('mc-discount').value  = c.discount  || '';
   document.getElementById('mc-note').value      = c.note      || '';
   document.getElementById('mc-currency').value  = c.defaults?.currency  || '';
@@ -2127,6 +2137,16 @@ function findSimilarCustomer(company, custs) {
   return bestScore >= 0.82 ? best : null;
 }
 
+// Segment seçilince, indirim alanı boşsa o segmente uygun tipik indirimi öner
+// (kullanıcı sonradan değiştirebilir, sadece hızlandırma amaçlı)
+function segmentDefaultDiscount(sel) {
+  const map = { new: 0, standard: 3, gold: 5, platinum: 8 };
+  const discEl = document.getElementById('mc-discount');
+  if (discEl && !discEl.value && sel.value in map) {
+    discEl.value = map[sel.value];
+  }
+}
+
 function saveCustomer() {
   const company = document.getElementById('mc-company').value.trim();
   if(!company) { showToast('Company name required'); return; }
@@ -2149,6 +2169,9 @@ function saveCustomer() {
     phone:    document.getElementById('mc-phone').value.trim(),
     email:    document.getElementById('mc-email').value.trim(),
     address:  document.getElementById('mc-address').value.trim(),
+    shipAddress: document.getElementById('mc-shipaddress').value.trim(),
+    taxId:    document.getElementById('mc-taxid').value.trim(),
+    segment:  document.getElementById('mc-segment').value || '',
     discount: disc,
     creditLimit: parseFloat(document.getElementById('mc-creditlimit').value) || 0,
     note:     document.getElementById('mc-note').value.trim(),
@@ -2182,6 +2205,8 @@ function loadCustomer(i) {
   document.getElementById('buyerPhone').value    = c.phone    || '';
   document.getElementById('buyerEmail').value    = c.email    || '';
   document.getElementById('buyerAddress').value  = c.address  || '';
+  document.getElementById('buyerShipAddress').value = c.shipAddress || '';
+  document.getElementById('buyerTaxId').value    = c.taxId    || '';
 
   const d = c.defaults || {};
   const applied = [];
@@ -2211,6 +2236,18 @@ function loadCustomer(i) {
   showToast('✓ Yüklendi: '+c.company+summary);
   showTab('order');
   setTimeout(function(){ checkCreditLimit(c.company); }, 900);
+
+  // Kayıtlı sipariş şablonu varsa, mevcut satırların üzerine yüklemeyi teklif et
+  if (c.template && c.template.length) {
+    setTimeout(function(){
+      const ok = confirm('"'+c.company+'" için kayıtlı bir sipariş şablonu var ('+c.template.length+' kalem).\n\nŞimdi yüklensin mi? Mevcut sipariş satırları değişecek.');
+      if (ok) {
+        orderItems = JSON.parse(JSON.stringify(c.template));
+        renderOrder();
+        showToast('📦 Şablon yüklendi: '+c.template.length+' kalem');
+      }
+    }, 1100);
+  }
 }
 
 function deleteCustomer(i) {
@@ -2250,13 +2287,35 @@ function saveCurrentAsCust() {
     leadTime: document.getElementById('pfLeadTime')?.value||null,
   };
   Object.keys(currentDefaults).forEach(k=>{ if(!currentDefaults[k]) delete currentDefaults[k]; });
-  const obj={company, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, discount:disc, defaults:currentDefaults};
+  const obj={company, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'', discount:disc, defaults:currentDefaults};
   if(existing>=0) {
     custs[existing]={...custs[existing], ...obj};
     saveCustomers(custs); showToast(u('toast_cust_updated')+' '+company+' (varsayılanlar güncellendi)');
   } else {
     custs.push(obj); saveCustomers(custs); showToast(u('toast_cust_saved')+' '+company);
   }
+  renderCustomers();
+}
+
+// Mevcut sipariş satırlarını, kayıtlı müşteri kaydına "tipik sipariş şablonu" olarak kaydeder.
+// Sonraki seferde bu müşteri yüklendiğinde tek onayla aynı kalemler tekrar eklenebilir.
+function saveOrderTemplate() {
+  if (!orderItems.length) { showToast('Şablon olarak kaydedilecek ürün yok'); return; }
+  const company = document.getElementById('buyerCompany').value.trim();
+  if (!company) { showToast('Önce firma adını gir'); return; }
+  const custs = getCustomers();
+  const idx = custs.findIndex(c=>c.company.toLowerCase()===company.toLowerCase());
+  if (idx < 0) {
+    if (!confirm('"'+company+'" kayıtlı müşteri değil. Önce müşteri olarak kaydedilsin mi?')) return;
+    saveCurrentAsCust();
+  }
+  const custs2 = getCustomers();
+  const idx2 = custs2.findIndex(c=>c.company.toLowerCase()===company.toLowerCase());
+  if (idx2 < 0) { showToast('Müşteri kaydı bulunamadı'); return; }
+  custs2[idx2].template = JSON.parse(JSON.stringify(orderItems));
+  custs2[idx2].templateSavedAt = new Date().toISOString();
+  saveCustomers(custs2);
+  showToast('📦 Sipariş şablonu kaydedildi: '+orderItems.length+' kalem');
   renderCustomers();
 }
 
@@ -2286,7 +2345,7 @@ function saveToHistory() {
   const sym = currency==='EUR'?'€':'$';
   const hist = getHistory();
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
-  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
+  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
   if(hist.length>50) hist.splice(50);
   loadedFxLock = hist[0].fx;
   saveHistory(hist);
@@ -2502,6 +2561,8 @@ function loadHistory(i) {
   document.getElementById('buyerPhone').value=h.buyer_data?.phone||'';
   document.getElementById('buyerEmail').value=h.buyer_data?.email||'';
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
+  document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
+  document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
   if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; }
   loadShipDraft(h.shipment || {});
   loadedFxLock = h.fx || null;
@@ -2530,6 +2591,8 @@ function reorderFromHistory(i) {
   document.getElementById('buyerPhone').value=h.buyer_data?.phone||'';
   document.getElementById('buyerEmail').value=h.buyer_data?.email||'';
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
+  document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
+  document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
   if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; }
   document.getElementById('piNumber').value = getNextPI();
   document.getElementById('pfDate').value = new Date().toISOString().split('T')[0];
@@ -2809,6 +2872,7 @@ function showPrint() {
   const buyerCn = document.getElementById('buyerCountry')?.value||'';
   const buyerPh = document.getElementById('buyerPhone')?.value||'';
   const buyerEm = document.getElementById('buyerEmail')?.value||'';
+  const buyerTax = document.getElementById('buyerTaxId')?.value||'';
   const fxLock = getLockedFX();
 
   let listTotal=0, grandTotal=0, cbm=0;
@@ -2874,6 +2938,7 @@ function showPrint() {
         +(buyerCn?'<div class="pf-party-row"><span class="pf-pk">'+t.country+'</span><span>'+buyerCn+'</span></div>':'')
         +(buyerPh?'<div class="pf-party-row"><span class="pf-pk">'+t.phone+'</span><span>'+buyerPh+'</span></div>':'')
         +(buyerEm?'<div class="pf-party-row"><span class="pf-pk">'+t.email+'</span><span>'+buyerEm+'</span></div>':'')
+        +(buyerTax?'<div class="pf-party-row"><span class="pf-pk">'+(t.taxId||'Tax ID:')+'</span><span>'+buyerTax+'</span></div>':'')
       +'</div>'
       +'<div class="pf-party"><div class="pf-party-lbl">'+t.invoice+'</div>'
         +'<div class="pf-party-row"><span class="pf-pk">'+t.piNum+'</span><span>'+pi+'</span></div>'
@@ -4637,6 +4702,7 @@ function showCI() {
   const buyerCt=document.getElementById('buyerContact')?.value||'';
   const buyerAd=document.getElementById('buyerAddress')?.value||'';
   const buyerCn=document.getElementById('buyerCountry')?.value||'';
+  const buyerTax=document.getElementById('buyerTaxId')?.value||'';
   let rows='';
   orderItems.forEach(item=>{
     rows+='<tr>'
@@ -4667,7 +4733,7 @@ function showCI() {
       +'<div class="doc-party-box">'
         +'<div class="doc-party-label">Buyer</div>'
         +(buyerCo?'<div class="doc-party-name">'+buyerCo+'</div>':'<div class="doc-party-name" style="color:#bbb;font-style:italic;">\u2014</div>')
-        +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+'</div>'
+        +'<div class="doc-party-detail">'+(buyerCt?buyerCt+'<br>':'')+buyerAd+(buyerCn?'<br>'+buyerCn:'')+(buyerTax?'<br>Tax ID: '+buyerTax:'')+'</div>'
       +'</div>'
     +'</div>'
     +buildShipInfoBoxHtml()
@@ -4875,7 +4941,7 @@ function showIrsaliye() {
   const buyer=document.getElementById('buyerCompany')?.value||'\u2014';
   const buyerContact=document.getElementById('buyerContact')?.value||'';
   const buyerCountry=document.getElementById('buyerCountry')?.value||'';
-  const buyerAddress=document.getElementById('buyerAddress')?.value||'';
+  const buyerAddress=document.getElementById('buyerShipAddress')?.value.trim() || document.getElementById('buyerAddress')?.value||'';
   let totalQty=0,totalCBM=0,totalGW=0,totalPkgs=0; let rows='';
   orderItems.forEach((item,idx)=>{
     const pd=PACKAGE_DATA[item.id]; const pkgs=pd?pd.pkgs*item.qty:'\u2014'; const gw=pd?pd.kg*item.qty:(item.cbm?(item.cbm*item.qty*180).toFixed(0):'\u2014');
