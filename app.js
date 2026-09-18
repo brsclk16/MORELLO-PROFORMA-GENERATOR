@@ -2114,7 +2114,8 @@ function countryToCurrency(country, companyName) {
 }
 
 function populateCountrySelects() {
-  const opts = '<option value="">— seç —</option>' + COUNTRY_LIST.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  const sorted = COUNTRY_LIST.slice().sort(function(a,b){ return a.localeCompare(b,'tr'); });
+  const opts = '<option value="">— seç —</option>' + sorted.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   ['mc-country','buyerCountry'].forEach(function(id){ const el=document.getElementById(id); if(el && !el.dataset.filled){ el.innerHTML = opts; el.dataset.filled='1'; } });
 }
 populateCountrySelects();
