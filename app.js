@@ -708,7 +708,7 @@ const I18N = {
     buyer: 'Buyer Information',
     invoice: 'Invoice Details',
     company: 'Company:', contact: 'Contact:', address: 'Address:',
-    country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:', freight: 'Freight:', insurance: 'Insurance:',
+    country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:', freight: 'Freight:', insurance: 'Insurance:', containerFee: 'Container Fee:',
     piNum: 'PI Number:', currency: 'Currency:', priceTerm: 'Price Term:',
     payment: 'Payment:', leadTime: 'Lead Time:',
     noCol: 'No', descCol: 'Description', qtyCol: 'Qty',
@@ -730,7 +730,7 @@ const I18N = {
     buyer: 'Informations Acheteur',
     invoice: 'Détails de la Facture',
     company: 'Société :', contact: 'Contact :', address: 'Adresse :',
-    country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :', freight: 'Fret :', insurance: 'Assurance :',
+    country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :', freight: 'Fret :', insurance: 'Assurance :', containerFee: 'Frais de conteneur :',
     piNum: 'N° Proforma :', currency: 'Devise :', priceTerm: 'Incoterm :',
     payment: 'Conditions de paiement :', leadTime: 'Délai de livraison :',
     noCol: 'N°', descCol: 'Désignation', qtyCol: 'Qté',
@@ -752,7 +752,7 @@ const I18N = {
     buyer: 'معلومات المشتري',
     invoice: 'تفاصيل الفاتورة',
     company: 'الشركة:', contact: 'جهة الاتصال:', address: 'العنوان:',
-    country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:', freight: 'الشحن:', insurance: 'التأمين:',
+    country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:', freight: 'الشحن:', insurance: 'التأمين:', containerFee: 'رسوم الحاوية:',
     piNum: 'رقم الفاتورة:', currency: 'العملة:', priceTerm: 'شرط التسليم:',
     payment: 'شروط الدفع:', leadTime: 'مدة التسليم:',
     noCol: 'م', descCol: 'الوصف', qtyCol: 'الكمية',
@@ -774,7 +774,7 @@ const I18N = {
     buyer: 'Käuferinformationen',
     invoice: 'Rechnungsdetails',
     company: 'Firma:', contact: 'Ansprechpartner:', address: 'Adresse:',
-    country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:', freight: 'Fracht:', insurance: 'Versicherung:',
+    country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:', freight: 'Fracht:', insurance: 'Versicherung:', containerFee: 'Containergebühr:',
     piNum: 'PI-Nummer:', currency: 'Währung:', priceTerm: 'Lieferbedingung:',
     payment: 'Zahlungsbedingungen:', leadTime: 'Lieferzeit:',
     noCol: 'Nr', descCol: 'Beschreibung', qtyCol: 'Menge',
@@ -797,7 +797,7 @@ const I18N = {
     buyer: 'Alıcı Bilgileri',
     invoice: 'Fatura Detayları',
     company: 'Firma:', contact: 'Yetkili:', address: 'Adres:',
-    country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:', freight: 'Navlun:', insurance: 'Sigorta:',
+    country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:', freight: 'Navlun:', insurance: 'Sigorta:', containerFee: 'Konteyner Bedeli:',
     piNum: 'Proforma No:', currency: 'Döviz:', priceTerm: 'Teslim Şekli:',
     payment: 'Ödeme Koşulları:', leadTime: 'Teslimat Süresi:',
     noCol: 'S.No', descCol: 'Ürün Adı', qtyCol: 'Adet',
@@ -2229,7 +2229,8 @@ function getFreightInsurance() {
   const term = document.getElementById('pfPriceTerm')?.value || 'EXW';
   const freight = FREIGHT_TERMS.has(term) ? (parseFloat(document.getElementById('pfFreight')?.value)||0) : 0;
   const insurance = INSURANCE_TERMS.has(term) ? (parseFloat(document.getElementById('pfInsurance')?.value)||0) : 0;
-  return { freight, insurance };
+  const containerFee = parseFloat(document.getElementById('pfContainerFee')?.value)||0;
+  return { freight, insurance, containerFee };
 }
 
 function segmentDefaultDiscount(sel) {
@@ -2439,7 +2440,7 @@ function saveToHistory() {
   const sym = currency==='EUR'?'€':'$';
   const hist = getHistory();
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
-  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value, freight:parseFloat(document.getElementById('pfFreight')?.value)||0, insurance:parseFloat(document.getElementById('pfInsurance')?.value)||0 }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
+  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value, freight:parseFloat(document.getElementById('pfFreight')?.value)||0, insurance:parseFloat(document.getElementById('pfInsurance')?.value)||0, containerFee:parseFloat(document.getElementById('pfContainerFee')?.value)||0 }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
   if(hist.length>50) hist.splice(50);
   loadedFxLock = hist[0].fx;
   saveHistory(hist);
@@ -2657,7 +2658,7 @@ function loadHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
-  if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; }
+  if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; document.getElementById('pfContainerFee').value=h.settings.containerFee||''; }
   updateIncotermFields();
   refreshDepositMini();
   loadShipDraft(h.shipment || {});
@@ -2689,7 +2690,7 @@ function reorderFromHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
-  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; }
+  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; document.getElementById('pfContainerFee').value=h.settings.containerFee||''; }
   updateIncotermFields();
   document.getElementById('piNumber').value = getNextPI();
   document.getElementById('pfDate').value = new Date().toISOString().split('T')[0];
@@ -3003,8 +3004,8 @@ function showPrint() {
   const saving=listTotal-grandTotal;
   const deposit=grandTotal*0.3;
   const balance=grandTotal*0.7;
-  const { freight, insurance } = getFreightInsurance();
-  const grandTotalWithShip = grandTotal + freight + insurance;
+  const { freight, insurance, containerFee } = getFreightInsurance();
+  const grandTotalWithShip = grandTotal + freight + insurance + containerFee;
   const depositWS = grandTotalWithShip*0.3;
   const balanceWS = grandTotalWithShip*0.7;
   // Gerçek ödeme durumu: bu PI numarasıyla kayıtlı geçmiş varsa ve ödeme girilmişse,
@@ -3073,7 +3074,8 @@ function showPrint() {
       +'<div class="pf-tot-row pf-grand"><span>'+t.grandTotal+'</span><span>'+sym+grandTotal.toFixed(2)+'</span></div>'
       +(freight>0?'<div class="pf-tot-row"><span>'+(t.freight||'Freight:')+'</span><span>'+sym+freight.toFixed(2)+'</span></div>':'')
       +(insurance>0?'<div class="pf-tot-row"><span>'+(t.insurance||'Insurance:')+'</span><span>'+sym+insurance.toFixed(2)+'</span></div>':'')
-      +((freight>0||insurance>0)?'<div class="pf-tot-row pf-grand" style="border-top:1px solid #ddd;"><span>'+priceTerm+' '+t.grandTotal+'</span><span>'+sym+grandTotalWithShip.toFixed(2)+'</span></div>':'')
+      +(containerFee>0?'<div class="pf-tot-row"><span>'+(t.containerFee||'Container Fee:')+'</span><span>'+sym+containerFee.toFixed(2)+'</span></div>':'')
+      +((freight>0||insurance>0||containerFee>0)?'<div class="pf-tot-row pf-grand" style="border-top:1px solid #ddd;"><span>'+priceTerm+' '+t.grandTotal+'</span><span>'+sym+grandTotalWithShip.toFixed(2)+'</span></div>':'')
       +(hasRealPayment
         ? '<div class="pf-tot-row" style="color:#15803D;font-weight:700;"><span>Alınan Ödeme / Received</span><span>'+sym+realPaid.toFixed(2)+'</span></div>'
           +'<div class="pf-tot-row" style="font-weight:700;'+(realRemaining>0.01?'color:#B91C1C;':'color:#15803D;')+'"><span>'+(realRemaining>0.01?'Kalan Bakiye / Balance Due':'✓ Tamamı Ödendi / Fully Paid')+'</span><span>'+sym+Math.max(0,realRemaining).toFixed(2)+'</span></div>'
@@ -4904,13 +4906,14 @@ function showCI() {
       +'</tr></tfoot>'
     +'</table>'
     +(function(){
-      const {freight,insurance}=getFreightInsurance();
-      if(!freight && !insurance) return '';
-      const ciGrand = totalVal + freight + insurance;
+      const {freight,insurance,containerFee}=getFreightInsurance();
+      if(!freight && !insurance && !containerFee) return '';
+      const ciGrand = totalVal + freight + insurance + containerFee;
       return '<div style="margin-top:6px;text-align:right;font-size:11px;">'
         +'<div>Goods Total: <strong>'+sym+totalVal.toFixed(2)+'</strong></div>'
         +(freight?'<div>Freight: <strong>'+sym+freight.toFixed(2)+'</strong></div>':'')
         +(insurance?'<div>Insurance: <strong>'+sym+insurance.toFixed(2)+'</strong></div>':'')
+        +(containerFee?'<div>Container Fee: <strong>'+sym+containerFee.toFixed(2)+'</strong></div>':'')
         +'<div style="font-size:13px;margin-top:3px;">'+priceTerm+' Total: <strong>'+sym+ciGrand.toFixed(2)+'</strong></div>'
       +'</div>';
     })()
