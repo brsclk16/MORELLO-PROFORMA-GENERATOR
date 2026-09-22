@@ -708,7 +708,7 @@ const I18N = {
     buyer: 'Buyer Information',
     invoice: 'Invoice Details',
     company: 'Company:', contact: 'Contact:', address: 'Address:',
-    country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:',
+    country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:', freight: 'Freight:', insurance: 'Insurance:',
     piNum: 'PI Number:', currency: 'Currency:', priceTerm: 'Price Term:',
     payment: 'Payment:', leadTime: 'Lead Time:',
     noCol: 'No', descCol: 'Description', qtyCol: 'Qty',
@@ -730,7 +730,7 @@ const I18N = {
     buyer: 'Informations Acheteur',
     invoice: 'Détails de la Facture',
     company: 'Société :', contact: 'Contact :', address: 'Adresse :',
-    country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :',
+    country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :', freight: 'Fret :', insurance: 'Assurance :',
     piNum: 'N° Proforma :', currency: 'Devise :', priceTerm: 'Incoterm :',
     payment: 'Conditions de paiement :', leadTime: 'Délai de livraison :',
     noCol: 'N°', descCol: 'Désignation', qtyCol: 'Qté',
@@ -752,7 +752,7 @@ const I18N = {
     buyer: 'معلومات المشتري',
     invoice: 'تفاصيل الفاتورة',
     company: 'الشركة:', contact: 'جهة الاتصال:', address: 'العنوان:',
-    country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:',
+    country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:', freight: 'الشحن:', insurance: 'التأمين:',
     piNum: 'رقم الفاتورة:', currency: 'العملة:', priceTerm: 'شرط التسليم:',
     payment: 'شروط الدفع:', leadTime: 'مدة التسليم:',
     noCol: 'م', descCol: 'الوصف', qtyCol: 'الكمية',
@@ -774,7 +774,7 @@ const I18N = {
     buyer: 'Käuferinformationen',
     invoice: 'Rechnungsdetails',
     company: 'Firma:', contact: 'Ansprechpartner:', address: 'Adresse:',
-    country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:',
+    country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:', freight: 'Fracht:', insurance: 'Versicherung:',
     piNum: 'PI-Nummer:', currency: 'Währung:', priceTerm: 'Lieferbedingung:',
     payment: 'Zahlungsbedingungen:', leadTime: 'Lieferzeit:',
     noCol: 'Nr', descCol: 'Beschreibung', qtyCol: 'Menge',
@@ -797,7 +797,7 @@ const I18N = {
     buyer: 'Alıcı Bilgileri',
     invoice: 'Fatura Detayları',
     company: 'Firma:', contact: 'Yetkili:', address: 'Adres:',
-    country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:',
+    country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:', freight: 'Navlun:', insurance: 'Sigorta:',
     piNum: 'Proforma No:', currency: 'Döviz:', priceTerm: 'Teslim Şekli:',
     payment: 'Ödeme Koşulları:', leadTime: 'Teslimat Süresi:',
     noCol: 'S.No', descCol: 'Ürün Adı', qtyCol: 'Adet',
@@ -2211,6 +2211,27 @@ function findSimilarCustomer(company, custs) {
 
 // Segment seçilince, indirim alanı boşsa o segmente uygun tipik indirimi öner
 // (kullanıcı sonradan değiştirebilir, sadece hızlandırma amaçlı)
+// Incoterm'e göre Navlun/Sigorta alanlarını göster/gizle.
+// CFR/CIF/CPT/CIP/DAP/DDP navlunu satıcı üstlenir -> alan görünür.
+// Sadece CIF/CIP'de sigorta satıcı tarafından ayrıca belgelenir.
+const FREIGHT_TERMS = new Set(['CFR','CIF','CPT','CIP','DAP','DDP']);
+const INSURANCE_TERMS = new Set(['CIF','CIP']);
+function updateIncotermFields() {
+  const term = document.getElementById('pfPriceTerm')?.value || 'EXW';
+  const fRow = document.getElementById('pf-freight-row');
+  const iRow = document.getElementById('pf-insurance-row');
+  if (fRow) fRow.style.display = FREIGHT_TERMS.has(term) ? 'block' : 'none';
+  if (iRow) iRow.style.display = INSURANCE_TERMS.has(term) ? 'block' : 'none';
+  if (!FREIGHT_TERMS.has(term)) { const el=document.getElementById('pfFreight'); if(el) el.value=''; }
+  if (!INSURANCE_TERMS.has(term)) { const el=document.getElementById('pfInsurance'); if(el) el.value=''; }
+}
+function getFreightInsurance() {
+  const term = document.getElementById('pfPriceTerm')?.value || 'EXW';
+  const freight = FREIGHT_TERMS.has(term) ? (parseFloat(document.getElementById('pfFreight')?.value)||0) : 0;
+  const insurance = INSURANCE_TERMS.has(term) ? (parseFloat(document.getElementById('pfInsurance')?.value)||0) : 0;
+  return { freight, insurance };
+}
+
 function segmentDefaultDiscount(sel) {
   const map = { new: 0, standard: 3, gold: 5, platinum: 8 };
   const discEl = document.getElementById('mc-discount');
@@ -2289,6 +2310,7 @@ function loadCustomer(i) {
   if(d.lang) { const el=document.getElementById('pfLang'); if(el) { el.value=d.lang; applied.push(d.lang.toUpperCase()); } }
   // Incoterm / price term
   if(d.incoterm) { const el=document.getElementById('pfPriceTerm'); if(el) { el.value=d.incoterm; applied.push(d.incoterm); } }
+  updateIncotermFields();
   // Payment terms
   if(d.payment) { const el=document.getElementById('pfPayment'); if(el) el.value=d.payment; }
   // Lead time
@@ -2417,7 +2439,7 @@ function saveToHistory() {
   const sym = currency==='EUR'?'€':'$';
   const hist = getHistory();
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
-  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
+  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value, freight:parseFloat(document.getElementById('pfFreight')?.value)||0, insurance:parseFloat(document.getElementById('pfInsurance')?.value)||0 }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
   if(hist.length>50) hist.splice(50);
   loadedFxLock = hist[0].fx;
   saveHistory(hist);
@@ -2635,7 +2657,8 @@ function loadHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
-  if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; }
+  if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; }
+  updateIncotermFields();
   refreshDepositMini();
   loadShipDraft(h.shipment || {});
   loadedFxLock = h.fx || null;
@@ -2666,7 +2689,8 @@ function reorderFromHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
-  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; }
+  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; }
+  updateIncotermFields();
   document.getElementById('piNumber').value = getNextPI();
   document.getElementById('pfDate').value = new Date().toISOString().split('T')[0];
   clearShipDraft();
@@ -2979,11 +3003,15 @@ function showPrint() {
   const saving=listTotal-grandTotal;
   const deposit=grandTotal*0.3;
   const balance=grandTotal*0.7;
+  const { freight, insurance } = getFreightInsurance();
+  const grandTotalWithShip = grandTotal + freight + insurance;
+  const depositWS = grandTotalWithShip*0.3;
+  const balanceWS = grandTotalWithShip*0.7;
   // Gerçek ödeme durumu: bu PI numarasıyla kayıtlı geçmiş varsa ve ödeme girilmişse,
   // teorik %30/%70 yerine (veya yanında) fiilen alınan/kalan tutarı göster.
   const matchingHist = getHistory().find(h => h.pi === pi);
   const realPaid = matchingHist ? piPaidNum(matchingHist) : 0;
-  const realRemaining = grandTotal - realPaid;
+  const realRemaining = grandTotalWithShip - realPaid;
   const hasRealPayment = realPaid > 0.005;
   const noteText=(t.noteText||'').replace('{validity}',validity);
   const bankCur=cur==='EUR'?'eur':cur==='USD'?'usd':'try';
@@ -3043,14 +3071,17 @@ function showPrint() {
       +'<div class="pf-tot-row"><span>'+t.listTotal+'</span><span>'+sym+listTotal.toFixed(2)+'</span></div>'
       +(saving>0?'<div class="pf-tot-row pf-saving"><span>'+t.saving+'</span><span>− '+sym+saving.toFixed(2)+'</span></div>':'')
       +'<div class="pf-tot-row pf-grand"><span>'+t.grandTotal+'</span><span>'+sym+grandTotal.toFixed(2)+'</span></div>'
+      +(freight>0?'<div class="pf-tot-row"><span>'+(t.freight||'Freight:')+'</span><span>'+sym+freight.toFixed(2)+'</span></div>':'')
+      +(insurance>0?'<div class="pf-tot-row"><span>'+(t.insurance||'Insurance:')+'</span><span>'+sym+insurance.toFixed(2)+'</span></div>':'')
+      +((freight>0||insurance>0)?'<div class="pf-tot-row pf-grand" style="border-top:1px solid #ddd;"><span>'+priceTerm+' '+t.grandTotal+'</span><span>'+sym+grandTotalWithShip.toFixed(2)+'</span></div>':'')
       +(hasRealPayment
         ? '<div class="pf-tot-row" style="color:#15803D;font-weight:700;"><span>Alınan Ödeme / Received</span><span>'+sym+realPaid.toFixed(2)+'</span></div>'
           +'<div class="pf-tot-row" style="font-weight:700;'+(realRemaining>0.01?'color:#B91C1C;':'color:#15803D;')+'"><span>'+(realRemaining>0.01?'Kalan Bakiye / Balance Due':'✓ Tamamı Ödendi / Fully Paid')+'</span><span>'+sym+Math.max(0,realRemaining).toFixed(2)+'</span></div>'
-        : '<div class="pf-tot-row"><span>'+t.deposit+'</span><span>'+sym+deposit.toFixed(2)+'</span></div>'
-          +'<div class="pf-tot-row"><span>'+t.balance+'</span><span>'+sym+balance.toFixed(2)+'</span></div>')
+        : '<div class="pf-tot-row"><span>'+t.deposit+'</span><span>'+sym+depositWS.toFixed(2)+'</span></div>'
+          +'<div class="pf-tot-row"><span>'+t.balance+'</span><span>'+sym+balanceWS.toFixed(2)+'</span></div>')
       +'<div class="pf-tot-row"><span>'+t.cbmTotal+'</span><span>'+cbm.toFixed(2)+' m\u00b3</span></div>'
       +(cur!=='TRY'?'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>Kur ('+(fxLock.lockedAt?'kayıt anı':'şu an')+')</span><span>1 '+cur+' = '+(cur==='EUR'?fxLock.eurTry:fxLock.usdTry).toFixed(2)+' ₺</span></div>'
-        +'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>₺ Karşılığı</span><span>₺'+(grandTotal*(cur==='EUR'?fxLock.eurTry:fxLock.usdTry)).toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>':'')
+        +'<div class="pf-tot-row" style="font-size:8.5px;color:#888;"><span>₺ Karşılığı</span><span>₺'+(grandTotalWithShip*(cur==='EUR'?fxLock.eurTry:fxLock.usdTry)).toLocaleString('tr-TR',{maximumFractionDigits:0})+'</span></div>':'')
     +'</div></div>'
     +'<div class="pf-bank"><div class="pf-bank-title">'+t.bankTitle+'</div>'
       +'<div class="pf-bank-row"><span class="pf-bk">Beneficiary:</span><span style="font-weight:700;color:#111;">SELINA MOBILYA ORMAN URN. SAN. TIC. LTD. STI.</span></div>'
@@ -4872,6 +4903,17 @@ function showCI() {
         +'<td class="r"><strong>'+sym+totalVal.toFixed(2)+'</strong></td>'
       +'</tr></tfoot>'
     +'</table>'
+    +(function(){
+      const {freight,insurance}=getFreightInsurance();
+      if(!freight && !insurance) return '';
+      const ciGrand = totalVal + freight + insurance;
+      return '<div style="margin-top:6px;text-align:right;font-size:11px;">'
+        +'<div>Goods Total: <strong>'+sym+totalVal.toFixed(2)+'</strong></div>'
+        +(freight?'<div>Freight: <strong>'+sym+freight.toFixed(2)+'</strong></div>':'')
+        +(insurance?'<div>Insurance: <strong>'+sym+insurance.toFixed(2)+'</strong></div>':'')
+        +'<div style="font-size:13px;margin-top:3px;">'+priceTerm+' Total: <strong>'+sym+ciGrand.toFixed(2)+'</strong></div>'
+      +'</div>';
+    })()
     +'<div class="doc-footer-box">'
       +'<div class="doc-footer-row"><span class="doc-footer-key">Payment:</span><span>Cash Against Goods</span></div>'
       +'<div class="doc-footer-row"><span class="doc-footer-key">Bank:</span><span>T\u00dcRK\u0130YE \u0130\u015e BANKASI A.\u015e. \u0130NEGOL OSB \u015eUBES\u0130 \u2014 IBAN: TR52 0006 4000 0022 2480 0012 20 \u2014 SWIFT: ISBKTRIS</span></div>'
