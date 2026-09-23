@@ -715,7 +715,7 @@ const I18N = {
     country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:', freight: 'Freight:', insurance: 'Insurance:', containerFee: 'Container Fee:',
     piNum: 'PI Number:', currency: 'Currency:', priceTerm: 'Price Term:',
     payment: 'Payment:', leadTime: 'Lead Time:',
-    noCol: 'No', descCol: 'Description', qtyCol: 'Qty',
+    noCol: 'No', descCol: 'Description', fabricColPf: 'Fabric', qtyCol: 'Qty',
     listCol: 'List Price', unitCol: 'Unit Price', discCol: 'Discount', totalCol: 'Total',
     cbmCol: 'CBM', listTotal: 'List Total', saving: 'Total Saving',
     cbmTotal: 'Total CBM', deposit: 'Deposit (30%)', balance: 'Balance (70%)',
@@ -737,7 +737,7 @@ const I18N = {
     country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :', freight: 'Fret :', insurance: 'Assurance :', containerFee: 'Frais de conteneur :',
     piNum: 'N° Proforma :', currency: 'Devise :', priceTerm: 'Incoterm :',
     payment: 'Conditions de paiement :', leadTime: 'Délai de livraison :',
-    noCol: 'N°', descCol: 'Désignation', qtyCol: 'Qté',
+    noCol: 'N°', descCol: 'Désignation', fabricColPf: 'Tissu', qtyCol: 'Qté',
     listCol: 'Prix catalogue', unitCol: 'Prix unitaire', discCol: 'Remise', totalCol: 'Montant',
     cbmCol: 'Volume', listTotal: 'Total catalogue', saving: 'Économie totale',
     cbmTotal: 'Volume total', deposit: 'Acompte (30%)', balance: 'Solde (70%)',
@@ -759,7 +759,7 @@ const I18N = {
     country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:', freight: 'الشحن:', insurance: 'التأمين:', containerFee: 'رسوم الحاوية:',
     piNum: 'رقم الفاتورة:', currency: 'العملة:', priceTerm: 'شرط التسليم:',
     payment: 'شروط الدفع:', leadTime: 'مدة التسليم:',
-    noCol: 'م', descCol: 'الوصف', qtyCol: 'الكمية',
+    noCol: 'م', descCol: 'الوصف', fabricColPf: 'القماش', qtyCol: 'الكمية',
     listCol: 'سعر القائمة', unitCol: 'سعر الوحدة', discCol: 'الخصم', totalCol: 'الإجمالي',
     cbmCol: 'م³', listTotal: 'إجمالي القائمة', saving: 'إجمالي الوفر',
     cbmTotal: 'إجمالي الحجم', deposit: 'دفعة مقدمة (30%)', balance: 'الرصيد (70%)',
@@ -781,7 +781,7 @@ const I18N = {
     country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:', freight: 'Fracht:', insurance: 'Versicherung:', containerFee: 'Containergebühr:',
     piNum: 'PI-Nummer:', currency: 'Währung:', priceTerm: 'Lieferbedingung:',
     payment: 'Zahlungsbedingungen:', leadTime: 'Lieferzeit:',
-    noCol: 'Nr', descCol: 'Beschreibung', qtyCol: 'Menge',
+    noCol: 'Nr', descCol: 'Beschreibung', fabricColPf: 'Stoff', qtyCol: 'Menge',
     listCol: 'Listenpreis', unitCol: 'Einzelpreis', discCol: 'Rabatt', totalCol: 'Gesamt',
     cbmCol: 'CBM', listTotal: 'Listengesamtbetrag', saving: 'Ersparnis gesamt',
     cbmTotal: 'Gesamtvolumen', deposit: 'Anzahlung (30%)', balance: 'Restbetrag (70%)',
@@ -804,7 +804,7 @@ const I18N = {
     country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:', freight: 'Navlun:', insurance: 'Sigorta:', containerFee: 'Konteyner Bedeli:',
     piNum: 'Proforma No:', currency: 'Döviz:', priceTerm: 'Teslim Şekli:',
     payment: 'Ödeme Koşulları:', leadTime: 'Teslimat Süresi:',
-    noCol: 'S.No', descCol: 'Ürün Adı', qtyCol: 'Adet',
+    noCol: 'S.No', descCol: 'Ürün Adı', fabricColPf: 'Kumaş', qtyCol: 'Adet',
     listCol: 'Liste Fiyatı', unitCol: 'Birim Fiyat', discCol: 'İskonto', totalCol: 'Toplam',
     cbmCol: 'CBM', listTotal: 'Liste Toplamı', saving: 'Toplam İndirim',
     cbmTotal: 'Toplam CBM', deposit: 'Peşinat (%30)', balance: 'Kalan (%70)',
@@ -3119,19 +3119,26 @@ function showPrint() {
     const noteLine=item.note?('<div style="font-size:8px;color:#888;margin-top:2px;font-style:italic;">'+item.note+'</div>'):'';
     const endCL=item.endCustomer?('<div style="font-size:8px;font-weight:700;color:#5B21B6;margin-top:2px;">&#128100; '+item.endCustomer+'</div>'):'';
     const fabricCodesPf = Array.isArray(item.fabrics) ? item.fabrics.filter(Boolean) : (item.fabric?[item.fabric]:[]);
-    const fabricLine = fabricCodesPf.length ? fabricCodesPf.map(function(code){
-      const furl=(typeof fabricUrl==='function')?fabricUrl(code):'';
-      return '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;">'
-        +(furl?'<img src="'+furl+'" style="width:16px;height:16px;object-fit:cover;border-radius:2px;border:1px solid #E5E7EB;">':'')
-        +'<span style="font-size:8px;color:#666;">&#129525; '+code+'</span></div>';
-    }).join('') : '';
+    // Big, clean swatch chips in their own column — large enough to actually judge the
+    // texture/weave by eye, not just a colour hint. Multiple codes (set items) stack.
+    const fabricCell = fabricCodesPf.length ? '<div style="display:flex;flex-direction:column;gap:6px;align-items:center;">'
+      +fabricCodesPf.map(function(code){
+        const furl=(typeof fabricUrl==='function')?fabricUrl(code):'';
+        return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">'
+          +(furl
+            ?('<img src="'+furl+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #D9D2C5;box-shadow:0 1px 2px rgba(0,0,0,.08);">')
+            :('<div style="width:60px;height:60px;border-radius:6px;border:1px dashed #D9D2C5;display:flex;align-items:center;justify-content:center;font-size:20px;color:#B0A99A;">&#129525;</div>'))
+          +'<span style="font-size:8px;color:#666;font-weight:600;letter-spacing:.2px;">'+code+'</span></div>';
+      }).join('')
+      +'</div>' : '<span style="color:#ccc;font-size:9px;">&#8212;</span>';
     const sd=getStock(); const sv=sd[item.id]||'In Stock';
     const stL=sv!=='In Stock'?('<div style="font-size:7.5px;font-weight:700;color:#B45309;margin-top:1px;">&#9201; '+sv+'</div>'):'';
     const bundleL=item.bundled?'<span style="font-size:7px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:2px;font-weight:700;">SET</span>':'';
     rows+='<tr>'
       +'<td class="pf-c" style="color:#999;width:22px;">'+(i+1)+'</td>'
       +'<td style="width:104px;text-align:center;padding:5px;">'+pfImg+'</td>'
-      +'<td><div style="font-weight:600;font-size:10px;">'+item.name+' '+bundleL+'</div>'+fabricLine+noteLine+endCL+stL+'</td>'
+      +'<td><div style="font-weight:600;font-size:10px;">'+item.name+' '+bundleL+'</div>'+noteLine+endCL+stL+'</td>'
+      +'<td class="pf-c" style="width:80px;padding:6px 4px;">'+fabricCell+'</td>'
       +'<td class="pf-c">'+qty+'</td>'
       +'<td class="pf-r" style="font-size:9px;color:#999;text-decoration:line-through;">'+sym+lp.toFixed(2)+'</td>'
       +'<td class="pf-r">'+sym+up.toFixed(2)+'</td>'
@@ -3200,6 +3207,7 @@ function showPrint() {
       +'<th class="pf-c" style="width:22px;">'+t.noCol+'</th>'
       +'<th style="width:104px;text-align:center;">Img</th>'
       +'<th>'+t.descCol+'</th>'
+      +'<th class="pf-c" style="width:80px;">'+(t.fabricColPf||'Fabric')+'</th>'
       +'<th class="pf-c" style="width:36px;">'+t.qtyCol+'</th>'
       +'<th class="pf-r" style="width:65px;">'+t.listCol+'</th>'
       +'<th class="pf-r" style="width:65px;">'+t.unitCol+'</th>'
