@@ -1659,7 +1659,7 @@ function toggleFabricRow(idx) {
   if(!isOpen) { const sel=row.querySelector('select,input'); if(sel) sel.focus(); }
 }
 function fabricOptionsHtml(selected) {
-  const codes=(typeof FABRIC_MANIFEST==='object'&&FABRIC_MANIFEST)?Object.keys(FABRIC_MANIFEST).sort():[];
+  const codes=(typeof FABRIC_MANIFEST==='object'&&FABRIC_MANIFEST)?Object.keys(FABRIC_MANIFEST).sort(function(a,b){return a.localeCompare(b,'tr',{numeric:true,sensitivity:'base'});}):[];
   let html='<option value="">'+u('fabric_placeholder')+'</option>';
   codes.forEach(function(code){
     html+='<option value="'+code+'"'+(code===selected?' selected':'')+'>'+code+'</option>';
@@ -1839,6 +1839,18 @@ function isMultiFabricSetItem(id) {
     if(it) return !!it.bundled;
   }
   return false;
+}
+// History'den (veya eski taslaklardan) yüklenen kalemler eski tekli 'fabric'
+// alanıyla kaydedilmiş olabilir; set kalemlerini çoklu kumaş dizisine taşır
+// ki "+ Kumaş" butonu ve kartela satırı her zaman görünsün.
+function migrateFabricsField(items) {
+  (items||[]).forEach(function(it){
+    if(isMultiFabricSetItem(it.id) && !Array.isArray(it.fabrics)) {
+      it.fabrics = it.fabric ? [it.fabric] : [''];
+    }
+    if(it.fabricOpen===undefined) it.fabricOpen = isFabricCategoryItem(it.id);
+  });
+  return items;
 }
 
 // ============================================================
@@ -2455,6 +2467,7 @@ function loadCustomer(i) {
       const ok = confirm('"'+c.company+'" için kayıtlı bir sipariş şablonu var ('+c.template.length+' kalem).\n\nŞimdi yüklensin mi? Mevcut sipariş satırları değişecek.');
       if (ok) {
         orderItems = JSON.parse(JSON.stringify(c.template));
+        migrateFabricsField(orderItems);
         renderOrder();
         showToast('📦 Şablon yüklendi: '+c.template.length+' kalem');
       }
@@ -2763,6 +2776,7 @@ function loadHistory(i) {
   const h=getHistory()[i]; if(!h) return;
   if(!confirm(`Load proforma ${h.pi}? Current order will be replaced.`)) return;
   orderItems=JSON.parse(JSON.stringify(h.items));
+  migrateFabricsField(orderItems);
   // Refresh CBM from current CBM_DATA so old records pick up recalibrated volumes
   orderItems.forEach(function(it){ if(CBM_DATA[it.id]!=null) it.cbm = CBM_DATA[it.id]; });
   currency=h.currency;
@@ -2787,6 +2801,7 @@ function reorderFromHistory(i) {
   const h=getHistory()[i]; if(!h) return;
   if(!confirm(`"${h.pi}" siparişini temel alarak yeni bir taslak oluşturulsun mu? Yeni bir PI numarası atanacak, eski kayıt değişmeyecek.`)) return;
   orderItems=JSON.parse(JSON.stringify(h.items));
+  migrateFabricsField(orderItems);
   loadedFxLock = null; // fresh draft locks its own rate on next save
   // Reset prices to current list price / re-link package & cbm data in case catalog changed since
   orderItems.forEach(function(it){
