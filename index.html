@@ -43,7 +43,7 @@
   // Fabric (kumaş) swatch images — optional per-order-line feature.
   // Same pattern as IMG_MANIFEST: code -> file extension, files served from imgs/fabrics/<CODE>.<ext>.
   // Empty until the fabric catalogue (codes + swatch photos) is added — see admin instructions in app.js.
-  const FABRIC_MANIFEST = {};
+  const FABRIC_MANIFEST = {'LOFT-01':'jpg'};
   const FABRIC_BASE = 'imgs/fabrics/';
   function fabricUrl(code) {
     if (!code) return '';
