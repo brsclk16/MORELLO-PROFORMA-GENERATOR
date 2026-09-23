@@ -1644,6 +1644,12 @@ function fabricToggleLabel(code) {
   if (!code) return u('add_fabric');
   return '🧵 '+String(code).slice(0,14)+(String(code).length>14?'…':'');
 }
+// Summarizes a multi-fabric array ['LOFT-01','BORNOVA-215'] -> label for the toggle button
+function fabricsToggleLabel(fabrics) {
+  const codes=(fabrics||[]).filter(Boolean);
+  if(!codes.length) return u('add_fabric');
+  return '🧵 '+codes.join(' / ').slice(0,20)+(codes.join(' / ').length>20?'…':'');
+}
 function toggleFabricRow(idx) {
   const row=document.getElementById('fabric-row-'+idx);
   if(!row) return;
@@ -1659,6 +1665,40 @@ function fabricOptionsHtml(selected) {
     html+='<option value="'+code+'"'+(code===selected?' selected':'')+'>'+code+'</option>';
   });
   return html;
+}
+// Renders one row per fabric slot for bundled sets, plus an "add fabric" button —
+// pieces in a set (3+3+1, 3+2+1, etc.) don't have to share the same fabric.
+function fabricMultiRowsHtml(idx, fabrics) {
+  const rows = fabrics.map(function(code,subidx){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
+      +'<div id="fabric-swatch-'+idx+'-'+subidx+'">'+fabricSwatchHtml(code,26)+'</div>'
+      +'<select class="note-inp" data-idx="'+idx+'" data-subidx="'+subidx+'" onchange="selectFabricMulti(this)" style="margin-bottom:0;flex:1;">'+fabricOptionsHtml(code)+'</select>'
+      +(fabrics.length>1?'<button type="button" class="rm-btn" onclick="removeFabricSlot('+idx+','+subidx+')" title="Kaldır">×</button>':'')
+      +'</div>';
+  }).join('');
+  return rows+'<button type="button" class="note-tmpl-btn" onclick="addFabricSlot('+idx+')" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">+ '+u('add_fabric')+'</button>';
+}
+function selectFabricMulti(sel) {
+  const idx=parseInt(sel.dataset.idx), subidx=parseInt(sel.dataset.subidx);
+  if(!orderItems[idx].fabrics) orderItems[idx].fabrics=[];
+  orderItems[idx].fabrics[subidx]=sel.value;
+  const swatchEl=document.getElementById('fabric-swatch-'+idx+'-'+subidx);
+  if(swatchEl) swatchEl.innerHTML=fabricSwatchHtml(sel.value, 26);
+  const toggleBtn=document.querySelector('[onclick="toggleFabricRow('+idx+')"]');
+  if(toggleBtn) toggleBtn.textContent=fabricsToggleLabel(orderItems[idx].fabrics);
+}
+function addFabricSlot(idx) {
+  if(!orderItems[idx].fabrics) orderItems[idx].fabrics=[''];
+  orderItems[idx].fabrics.push('');
+  orderItems[idx].fabricOpen=true;
+  renderOrder();
+}
+function removeFabricSlot(idx, subidx) {
+  if(!orderItems[idx].fabrics) return;
+  orderItems[idx].fabrics.splice(subidx,1);
+  if(!orderItems[idx].fabrics.length) orderItems[idx].fabrics=[''];
+  orderItems[idx].fabricOpen=true;
+  renderOrder();
 }
 function selectFabric(sel) {
   const idx=parseInt(sel.dataset.idx);
@@ -1789,6 +1829,17 @@ function isFabricCategoryItem(id) {
   if(!cat) return false;
   return Object.values(cat.series).some(s => s.items.some(i => i.id===id));
 }
+// Bundled sofa sets (3+3+1, 3+2+1, 2×3+2×1, etc.) can mix fabrics across
+// their pieces, so these items get a multi-fabric picker instead of one code.
+function isMultiFabricSetItem(id) {
+  const cat = CATALOG['Sofa Set'];
+  if(!cat) return false;
+  for(const s of Object.values(cat.series)) {
+    const it = s.items.find(i=>i.id===id);
+    if(it) return !!it.bundled;
+  }
+  return false;
+}
 
 // ============================================================
 // ORDER
@@ -1802,7 +1853,8 @@ function addItem(id) {
   // Inherit current global discount unless this item is discount-exempt
   const gd = parseFloat(document.getElementById('discVal')?.value) || 0;
   const up = (gd>0 && !isNoDiscountItem(id)) ? parseFloat((lp*(1-gd/100)).toFixed(2)) : lp;
-  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:'', fabricOpen:isFabricCategoryItem(id)});
+  const isMultiFab = isMultiFabricSetItem(id);
+  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:'', fabrics: isMultiFab?['']:null, fabricOpen:isFabricCategoryItem(id)});
   renderOrder();
   showToast('✓ Added: '+item.name.split(' ').slice(0,4).join(' ')+(isNoDiscountItem(id)&&gd>0?' (iskontosuz)':''));
 }
@@ -1873,7 +1925,7 @@ function renderOrder() {
             <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
               ${getStockBadgeHtml(item.id)}
               <button class="note-tmpl-btn" onclick="toggleNoteRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${item.note?'✏ '+item.note.slice(0,18)+(item.note.length>18?'…':''):u('add_note')}</button>
-              <button class="note-tmpl-btn" onclick="toggleFabricRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${fabricToggleLabel(item.fabric)}</button>
+              <button class="note-tmpl-btn" onclick="toggleFabricRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${Array.isArray(item.fabrics)?fabricsToggleLabel(item.fabrics):fabricToggleLabel(item.fabric)}</button>
               ${item.endCustomer?'<span style="font-size:8.5px;background:#EDE9FE;color:#5B21B6;padding:1px 5px;border-radius:8px;font-weight:600;">👤 '+item.endCustomer+'</span>':''}
             </div>
             <div id="note-row-${idx}" style="display:none;margin-top:4px;">
@@ -1885,10 +1937,12 @@ function renderOrder() {
               </div>
             </div>
             <div id="fabric-row-${idx}" style="display:${item.fabricOpen?'block':'none'};margin-top:4px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <div id="fabric-swatch-${idx}">${fabricSwatchHtml(item.fabric, 26)}</div>
-                <select class="note-inp" data-idx="${idx}" onchange="selectFabric(this)" style="margin-bottom:0;flex:1;">${fabricOptionsHtml(item.fabric)}</select>
-              </div>
+              ${Array.isArray(item.fabrics) ? fabricMultiRowsHtml(idx, item.fabrics) : (
+                '<div style="display:flex;align-items:center;gap:6px;">'
+                +'<div id="fabric-swatch-'+idx+'">'+fabricSwatchHtml(item.fabric, 26)+'</div>'
+                +'<select class="note-inp" data-idx="'+idx+'" onchange="selectFabric(this)" style="margin-bottom:0;flex:1;">'+fabricOptionsHtml(item.fabric)+'</select>'
+                +'</div>'
+              )}
             </div>
           </div>
         </div>
@@ -3049,10 +3103,13 @@ function showPrint() {
       :'<div style="width:92px;height:74px;background:#F3F4F6;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:26px;">&#128230;</div>';
     const noteLine=item.note?('<div style="font-size:8px;color:#888;margin-top:2px;font-style:italic;">'+item.note+'</div>'):'';
     const endCL=item.endCustomer?('<div style="font-size:8px;font-weight:700;color:#5B21B6;margin-top:2px;">&#128100; '+item.endCustomer+'</div>'):'';
-    const fabricUrlPf=(typeof fabricUrl==='function')?fabricUrl(item.fabric):'';
-    const fabricLine=item.fabric?('<div style="display:flex;align-items:center;gap:4px;margin-top:2px;">'
-      +(fabricUrlPf?'<img src="'+fabricUrlPf+'" style="width:16px;height:16px;object-fit:cover;border-radius:2px;border:1px solid #E5E7EB;">':'')
-      +'<span style="font-size:8px;color:#666;">&#129525; '+item.fabric+'</span></div>'):'';
+    const fabricCodesPf = Array.isArray(item.fabrics) ? item.fabrics.filter(Boolean) : (item.fabric?[item.fabric]:[]);
+    const fabricLine = fabricCodesPf.length ? fabricCodesPf.map(function(code){
+      const furl=(typeof fabricUrl==='function')?fabricUrl(code):'';
+      return '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;">'
+        +(furl?'<img src="'+furl+'" style="width:16px;height:16px;object-fit:cover;border-radius:2px;border:1px solid #E5E7EB;">':'')
+        +'<span style="font-size:8px;color:#666;">&#129525; '+code+'</span></div>';
+    }).join('') : '';
     const sd=getStock(); const sv=sd[item.id]||'In Stock';
     const stL=sv!=='In Stock'?('<div style="font-size:7.5px;font-weight:700;color:#B45309;margin-top:1px;">&#9201; '+sv+'</div>'):'';
     const bundleL=item.bundled?'<span style="font-size:7px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:2px;font-weight:700;">SET</span>':'';
