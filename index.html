@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<title>Morello — Proforma Generator v1784713263</title>
-<link rel="stylesheet" href="styles.css?v=1784704418">
+<title>Morello — Proforma Generator v1790157346</title>
+<link rel="stylesheet" href="styles.css?v=1790157346">
 <style>
 /* Critical: history list scroll (inline so it applies even if styles.css is stale-cached) */
 #tab-history { overflow-y: hidden; }
@@ -25,7 +25,7 @@
 #histList { flex: 1; overflow-y: auto; min-height: 0; }
 </style>
 <!-- Product images loaded from separate file to keep index.html lean -->
-<script src="catalog.js?v=1784704418"></script>
+<script src="catalog.js?v=1790157346"></script>
 <script>
   // Product images are now lazy-loaded as static files from imgs/<ID>.<ext>
   // (replaced the old ~1MB base64 imgs.js). IMG_MANIFEST maps id -> file extension.
@@ -39,6 +39,19 @@
   // Back-compat shim: IMGS[id] returns the URL (was base64). Old call sites keep working.
   const IMGS = new Proxy({}, { get: function(_, id){ return imgUrl(id); }, has: function(_, id){ return !!IMG_MANIFEST[id]; } });
   window.IMGS = IMGS; window.imgUrl = imgUrl;
+
+  // Fabric (kumaş) swatch images — optional per-order-line feature.
+  // Same pattern as IMG_MANIFEST: code -> file extension, files served from imgs/fabrics/<CODE>.<ext>.
+  // Empty until the fabric catalogue (codes + swatch photos) is added — see admin instructions in app.js.
+  const FABRIC_MANIFEST = {};
+  const FABRIC_BASE = 'imgs/fabrics/';
+  function fabricUrl(code) {
+    if (!code) return '';
+    const key = String(code).trim().toUpperCase();
+    const ext = FABRIC_MANIFEST[key];
+    return ext ? (FABRIC_BASE + key + '.' + ext) : '';
+  }
+  window.FABRIC_MANIFEST = FABRIC_MANIFEST; window.fabricUrl = fabricUrl;
 </script>
 </head>
 <body>
@@ -779,6 +792,19 @@
   <div id="img-lightbox-label"></div>
 </div>
 
+<!-- Fabric code autocomplete — populated from FABRIC_MANIFEST -->
+<datalist id="fabricCodes"></datalist>
+<script>
+  (function(){
+    var dl = document.getElementById('fabricCodes');
+    Object.keys(FABRIC_MANIFEST).sort().forEach(function(code){
+      var opt = document.createElement('option');
+      opt.value = code;
+      dl.appendChild(opt);
+    });
+  })();
+</script>
+
 <!-- STICKY BOTTOM BAR -->
 <div id="sticky-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;height:36px;background:var(--accent);color:#fff;align-items:center;padding:0 16px;gap:18px;z-index:800;font-size:11.5px;font-weight:600;box-shadow:0 -2px 12px rgba(0,0,0,.18);">
   <span style="opacity:.6;font-size:9px;letter-spacing:1px;text-transform:uppercase;">Sipariş</span>
@@ -994,5 +1020,5 @@ Snejana Raleva - 1 adet Istanbul Gardolap"></textarea>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="app.js?v=1784704418"></script></body>
+<script src="app.js?v=1790157346"></script></body>
 </html>
