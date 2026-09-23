@@ -492,6 +492,8 @@ const UI_LANG = {
     no_products_yet: 'No products added yet.',
     // Notes
     note_placeholder: 'Note (colour, fabric…)', add_note: '+ Note',
+    // Fabric
+    fabric_placeholder: 'Fabric code (e.g. ANT-14)', add_fabric: '🧵 Fabric', fabric_not_found: 'No swatch image for this code yet',
     // Stock
     in_stock: 'In Stock',
     // Empty states
@@ -586,6 +588,8 @@ const UI_LANG = {
     no_products_yet: 'Henüz ürün eklenmedi.',
     // Notes
     note_placeholder: 'Not (renk, kumaş…)', add_note: '+ Not',
+    // Fabric
+    fabric_placeholder: 'Kumaş kodu (örn: ANT-14)', add_fabric: '🧵 Kumaş', fabric_not_found: 'Bu kod için henüz kartela görseli yok',
     // Stock
     in_stock: 'Stokta',
     // Empty states
@@ -1620,6 +1624,43 @@ function applyNoteTmplBtn(btn) {
 }
 
 // ============================================================
+// FABRIC (KUMAŞ) — optional per-line swatch, off by default
+// ============================================================
+// FABRIC_MANIFEST (defined in index.html) maps fabric code -> file extension,
+// same pattern as IMG_MANIFEST for products. Empty until the fabric catalog
+// images are uploaded to imgs/fabrics/<CODE>.<ext>.
+function fabricSwatchHtml(code, size) {
+  size = size || 26;
+  const url = (typeof fabricUrl === 'function') ? fabricUrl(code) : '';
+  if (url) {
+    return '<img src="'+url+'" loading="lazy" onclick="openLightbox(\''+url+'\',\''+String(code||'').replace(/'/g,'')+'\')" title="'+String(code||'').replace(/"/g,'')+'" style="width:'+size+'px;height:'+size+'px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;flex-shrink:0;">';
+  }
+  if (code) {
+    return '<div title="'+u('fabric_not_found')+'" style="width:'+size+'px;height:'+size+'px;border-radius:4px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:'+Math.round(size*0.55)+'px;flex-shrink:0;color:var(--muted);">🧵</div>';
+  }
+  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:4px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:'+Math.round(size*0.55)+'px;flex-shrink:0;color:var(--muted);opacity:.4;">🧵</div>';
+}
+function fabricToggleLabel(code) {
+  if (!code) return u('add_fabric');
+  return '🧵 '+String(code).slice(0,14)+(String(code).length>14?'…':'');
+}
+function toggleFabricRow(idx) {
+  const row=document.getElementById('fabric-row-'+idx);
+  if(!row) return;
+  const isOpen=row.style.display!=='none';
+  row.style.display=isOpen?'none':'block';
+  if(!isOpen) { const inp=row.querySelector('input'); if(inp) inp.focus(); }
+}
+function liveFabric(inp) {
+  const idx=parseInt(inp.dataset.idx);
+  orderItems[idx].fabric=inp.value.trim();
+  const swatchEl=document.getElementById('fabric-swatch-'+idx);
+  if(swatchEl) swatchEl.innerHTML=fabricSwatchHtml(orderItems[idx].fabric, 26);
+  const toggleBtn=document.querySelector('[onclick="toggleFabricRow('+idx+')"]');
+  if(toggleBtn) toggleBtn.textContent=fabricToggleLabel(orderItems[idx].fabric);
+}
+
+// ============================================================
 // RENDER MARGIN (placeholder if missing)
 // ============================================================
 function renderMargin() {}
@@ -1746,7 +1787,7 @@ function addItem(id) {
   // Inherit current global discount unless this item is discount-exempt
   const gd = parseFloat(document.getElementById('discVal')?.value) || 0;
   const up = (gd>0 && !isNoDiscountItem(id)) ? parseFloat((lp*(1-gd/100)).toFixed(2)) : lp;
-  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false});
+  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:''});
   renderOrder();
   showToast('✓ Added: '+item.name.split(' ').slice(0,4).join(' ')+(isNoDiscountItem(id)&&gd>0?' (iskontosuz)':''));
 }
@@ -1817,6 +1858,7 @@ function renderOrder() {
             <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
               ${getStockBadgeHtml(item.id)}
               <button class="note-tmpl-btn" onclick="toggleNoteRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${item.note?'✏ '+item.note.slice(0,18)+(item.note.length>18?'…':''):u('add_note')}</button>
+              <button class="note-tmpl-btn" onclick="toggleFabricRow(${idx})" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">${fabricToggleLabel(item.fabric)}</button>
               ${item.endCustomer?'<span style="font-size:8.5px;background:#EDE9FE;color:#5B21B6;padding:1px 5px;border-radius:8px;font-weight:600;">👤 '+item.endCustomer+'</span>':''}
             </div>
             <div id="note-row-${idx}" style="display:none;margin-top:4px;">
@@ -1825,6 +1867,12 @@ function renderOrder() {
               <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
                 <span style="font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Son Alıcı:</span>
                 <input class="note-inp" type="text" value="${item.endCustomer||''}" placeholder="Müşteri adı (opsiyonel)" data-idx="${idx}" oninput="liveEndCustomer(this)" style="margin-bottom:0;">
+              </div>
+            </div>
+            <div id="fabric-row-${idx}" style="display:none;margin-top:4px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div id="fabric-swatch-${idx}">${fabricSwatchHtml(item.fabric, 26)}</div>
+                <input class="note-inp" list="fabricCodes" type="text" value="${item.fabric||''}" placeholder="${u('fabric_placeholder')}" data-idx="${idx}" oninput="liveFabric(this)" style="margin-bottom:0;flex:1;">
               </div>
             </div>
           </div>
@@ -2986,13 +3034,17 @@ function showPrint() {
       :'<div style="width:92px;height:74px;background:#F3F4F6;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:26px;">&#128230;</div>';
     const noteLine=item.note?('<div style="font-size:8px;color:#888;margin-top:2px;font-style:italic;">'+item.note+'</div>'):'';
     const endCL=item.endCustomer?('<div style="font-size:8px;font-weight:700;color:#5B21B6;margin-top:2px;">&#128100; '+item.endCustomer+'</div>'):'';
+    const fabricUrlPf=(typeof fabricUrl==='function')?fabricUrl(item.fabric):'';
+    const fabricLine=item.fabric?('<div style="display:flex;align-items:center;gap:4px;margin-top:2px;">'
+      +(fabricUrlPf?'<img src="'+fabricUrlPf+'" style="width:16px;height:16px;object-fit:cover;border-radius:2px;border:1px solid #E5E7EB;">':'')
+      +'<span style="font-size:8px;color:#666;">&#129525; '+item.fabric+'</span></div>'):'';
     const sd=getStock(); const sv=sd[item.id]||'In Stock';
     const stL=sv!=='In Stock'?('<div style="font-size:7.5px;font-weight:700;color:#B45309;margin-top:1px;">&#9201; '+sv+'</div>'):'';
     const bundleL=item.bundled?'<span style="font-size:7px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:2px;font-weight:700;">SET</span>':'';
     rows+='<tr>'
       +'<td class="pf-c" style="color:#999;width:22px;">'+(i+1)+'</td>'
       +'<td style="width:104px;text-align:center;padding:5px;">'+pfImg+'</td>'
-      +'<td><div style="font-weight:600;font-size:10px;">'+item.name+' '+bundleL+'</div>'+noteLine+endCL+stL+'</td>'
+      +'<td><div style="font-weight:600;font-size:10px;">'+item.name+' '+bundleL+'</div>'+fabricLine+noteLine+endCL+stL+'</td>'
       +'<td class="pf-c">'+qty+'</td>'
       +'<td class="pf-r" style="font-size:9px;color:#999;text-decoration:line-through;">'+sym+lp.toFixed(2)+'</td>'
       +'<td class="pf-r">'+sym+up.toFixed(2)+'</td>'
