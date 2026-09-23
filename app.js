@@ -1649,11 +1649,20 @@ function toggleFabricRow(idx) {
   if(!row) return;
   const isOpen=row.style.display!=='none';
   row.style.display=isOpen?'none':'block';
-  if(!isOpen) { const inp=row.querySelector('input'); if(inp) inp.focus(); }
+  if(orderItems[idx]) orderItems[idx].fabricOpen=!isOpen;
+  if(!isOpen) { const sel=row.querySelector('select,input'); if(sel) sel.focus(); }
 }
-function liveFabric(inp) {
-  const idx=parseInt(inp.dataset.idx);
-  orderItems[idx].fabric=inp.value.trim();
+function fabricOptionsHtml(selected) {
+  const codes=(typeof FABRIC_MANIFEST==='object'&&FABRIC_MANIFEST)?Object.keys(FABRIC_MANIFEST).sort():[];
+  let html='<option value="">'+u('fabric_placeholder')+'</option>';
+  codes.forEach(function(code){
+    html+='<option value="'+code+'"'+(code===selected?' selected':'')+'>'+code+'</option>';
+  });
+  return html;
+}
+function selectFabric(sel) {
+  const idx=parseInt(sel.dataset.idx);
+  orderItems[idx].fabric=sel.value;
   const swatchEl=document.getElementById('fabric-swatch-'+idx);
   if(swatchEl) swatchEl.innerHTML=fabricSwatchHtml(orderItems[idx].fabric, 26);
   const toggleBtn=document.querySelector('[onclick="toggleFabricRow('+idx+')"]');
@@ -1774,6 +1783,12 @@ function fmt(n) {
   return s+parseFloat(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 function findItem(id) { for(const c of Object.values(CATALOG)) for(const s of Object.values(c.series)) { const f=s.items.find(i=>i.id===id); if(f)return f; } return null; }
+// Sofa/koltuk takımı items auto-open the fabric (kartela) picker when added to an order
+function isFabricCategoryItem(id) {
+  const cat = CATALOG['Sofa Set'];
+  if(!cat) return false;
+  return Object.values(cat.series).some(s => s.items.some(i => i.id===id));
+}
 
 // ============================================================
 // ORDER
@@ -1787,7 +1802,7 @@ function addItem(id) {
   // Inherit current global discount unless this item is discount-exempt
   const gd = parseFloat(document.getElementById('discVal')?.value) || 0;
   const up = (gd>0 && !isNoDiscountItem(id)) ? parseFloat((lp*(1-gd/100)).toFixed(2)) : lp;
-  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:''});
+  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:'', fabricOpen:isFabricCategoryItem(id)});
   renderOrder();
   showToast('✓ Added: '+item.name.split(' ').slice(0,4).join(' ')+(isNoDiscountItem(id)&&gd>0?' (iskontosuz)':''));
 }
@@ -1869,10 +1884,10 @@ function renderOrder() {
                 <input class="note-inp" type="text" value="${item.endCustomer||''}" placeholder="Müşteri adı (opsiyonel)" data-idx="${idx}" oninput="liveEndCustomer(this)" style="margin-bottom:0;">
               </div>
             </div>
-            <div id="fabric-row-${idx}" style="display:none;margin-top:4px;">
+            <div id="fabric-row-${idx}" style="display:${item.fabricOpen?'block':'none'};margin-top:4px;">
               <div style="display:flex;align-items:center;gap:6px;">
                 <div id="fabric-swatch-${idx}">${fabricSwatchHtml(item.fabric, 26)}</div>
-                <input class="note-inp" list="fabricCodes" type="text" value="${item.fabric||''}" placeholder="${u('fabric_placeholder')}" data-idx="${idx}" oninput="liveFabric(this)" style="margin-bottom:0;flex:1;">
+                <select class="note-inp" data-idx="${idx}" onchange="selectFabric(this)" style="margin-bottom:0;flex:1;">${fabricOptionsHtml(item.fabric)}</select>
               </div>
             </div>
           </div>
