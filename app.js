@@ -715,7 +715,7 @@ const I18N = {
     country: 'Country:', phone: 'Phone:', email: 'Email:', taxId: 'Tax ID:', freight: 'Freight:', insurance: 'Insurance:', containerFee: 'Container Fee:',
     piNum: 'PI Number:', currency: 'Currency:', priceTerm: 'Price Term:',
     payment: 'Payment:', leadTime: 'Lead Time:',
-    noCol: 'No', descCol: 'Description', fabricColPf: 'Fabric', qtyCol: 'Qty',
+    noCol: 'No', descCol: 'Description', fabricColPf: 'Fabric', fabricLegendTitle: 'Fabric Reference', qtyCol: 'Qty',
     listCol: 'List Price', unitCol: 'Unit Price', discCol: 'Discount', totalCol: 'Total',
     cbmCol: 'CBM', listTotal: 'List Total', saving: 'Total Saving',
     cbmTotal: 'Total CBM', deposit: 'Deposit (30%)', balance: 'Balance (70%)',
@@ -737,7 +737,7 @@ const I18N = {
     country: 'Pays :', phone: 'Téléphone :', email: 'E-mail :', taxId: 'N° TVA :', freight: 'Fret :', insurance: 'Assurance :', containerFee: 'Frais de conteneur :',
     piNum: 'N° Proforma :', currency: 'Devise :', priceTerm: 'Incoterm :',
     payment: 'Conditions de paiement :', leadTime: 'Délai de livraison :',
-    noCol: 'N°', descCol: 'Désignation', fabricColPf: 'Tissu', qtyCol: 'Qté',
+    noCol: 'N°', descCol: 'Désignation', fabricColPf: 'Tissu', fabricLegendTitle: 'Référence Tissus', qtyCol: 'Qté',
     listCol: 'Prix catalogue', unitCol: 'Prix unitaire', discCol: 'Remise', totalCol: 'Montant',
     cbmCol: 'Volume', listTotal: 'Total catalogue', saving: 'Économie totale',
     cbmTotal: 'Volume total', deposit: 'Acompte (30%)', balance: 'Solde (70%)',
@@ -759,7 +759,7 @@ const I18N = {
     country: 'البلد:', phone: 'الهاتف:', email: 'البريد الإلكتروني:', taxId: 'الرقم الضريبي:', freight: 'الشحن:', insurance: 'التأمين:', containerFee: 'رسوم الحاوية:',
     piNum: 'رقم الفاتورة:', currency: 'العملة:', priceTerm: 'شرط التسليم:',
     payment: 'شروط الدفع:', leadTime: 'مدة التسليم:',
-    noCol: 'م', descCol: 'الوصف', fabricColPf: 'القماش', qtyCol: 'الكمية',
+    noCol: 'م', descCol: 'الوصف', fabricColPf: 'القماش', fabricLegendTitle: 'دليل الأقمشة', qtyCol: 'الكمية',
     listCol: 'سعر القائمة', unitCol: 'سعر الوحدة', discCol: 'الخصم', totalCol: 'الإجمالي',
     cbmCol: 'م³', listTotal: 'إجمالي القائمة', saving: 'إجمالي الوفر',
     cbmTotal: 'إجمالي الحجم', deposit: 'دفعة مقدمة (30%)', balance: 'الرصيد (70%)',
@@ -781,7 +781,7 @@ const I18N = {
     country: 'Land:', phone: 'Telefon:', email: 'E-Mail:', taxId: 'USt-IdNr.:', freight: 'Fracht:', insurance: 'Versicherung:', containerFee: 'Containergebühr:',
     piNum: 'PI-Nummer:', currency: 'Währung:', priceTerm: 'Lieferbedingung:',
     payment: 'Zahlungsbedingungen:', leadTime: 'Lieferzeit:',
-    noCol: 'Nr', descCol: 'Beschreibung', fabricColPf: 'Stoff', qtyCol: 'Menge',
+    noCol: 'Nr', descCol: 'Beschreibung', fabricColPf: 'Stoff', fabricLegendTitle: 'Stoffübersicht', qtyCol: 'Menge',
     listCol: 'Listenpreis', unitCol: 'Einzelpreis', discCol: 'Rabatt', totalCol: 'Gesamt',
     cbmCol: 'CBM', listTotal: 'Listengesamtbetrag', saving: 'Ersparnis gesamt',
     cbmTotal: 'Gesamtvolumen', deposit: 'Anzahlung (30%)', balance: 'Restbetrag (70%)',
@@ -804,7 +804,7 @@ const I18N = {
     country: 'Ülke:', phone: 'Telefon:', email: 'E-posta:', taxId: 'Vergi No:', freight: 'Navlun:', insurance: 'Sigorta:', containerFee: 'Konteyner Bedeli:',
     piNum: 'Proforma No:', currency: 'Döviz:', priceTerm: 'Teslim Şekli:',
     payment: 'Ödeme Koşulları:', leadTime: 'Teslimat Süresi:',
-    noCol: 'S.No', descCol: 'Ürün Adı', fabricColPf: 'Kumaş', qtyCol: 'Adet',
+    noCol: 'S.No', descCol: 'Ürün Adı', fabricColPf: 'Kumaş', fabricLegendTitle: 'Kumaş Referans Listesi', qtyCol: 'Adet',
     listCol: 'Liste Fiyatı', unitCol: 'Birim Fiyat', discCol: 'İskonto', totalCol: 'Toplam',
     cbmCol: 'CBM', listTotal: 'Liste Toplamı', saving: 'Toplam İndirim',
     cbmTotal: 'Toplam CBM', deposit: 'Peşinat (%30)', balance: 'Kalan (%70)',
@@ -1658,34 +1658,24 @@ function toggleFabricRow(idx) {
   if(orderItems[idx]) orderItems[idx].fabricOpen=!isOpen;
   if(!isOpen) { const sel=row.querySelector('select,input'); if(sel) sel.focus(); }
 }
-function fabricOptionsHtml(selected) {
-  const codes=(typeof FABRIC_MANIFEST==='object'&&FABRIC_MANIFEST)?Object.keys(FABRIC_MANIFEST).sort(function(a,b){return a.localeCompare(b,'tr',{numeric:true,sensitivity:'base'});}):[];
-  let html='<option value="">'+u('fabric_placeholder')+'</option>';
-  codes.forEach(function(code){
-    html+='<option value="'+code+'"'+(code===selected?' selected':'')+'>'+code+'</option>';
-  });
-  return html;
-}
 // Renders one row per fabric slot for bundled sets, plus an "add fabric" button —
 // pieces in a set (3+3+1, 3+2+1, etc.) don't have to share the same fabric.
-function fabricMultiRowsHtml(idx, fabrics) {
+// Each slot shows its piece label (Three Seater / Bergere...) when known, and
+// opens the searchable grid picker instead of a plain <select>.
+function fabricMultiRowsHtml(idx, fabrics, id) {
+  const labels = getSetPieceLabels(id);
   const rows = fabrics.map(function(code,subidx){
+    const label = labels[subidx] || ('Kumaş '+(subidx+1));
     return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
-      +'<div id="fabric-swatch-'+idx+'-'+subidx+'">'+fabricSwatchHtml(code,26)+'</div>'
-      +'<select class="note-inp" data-idx="'+idx+'" data-subidx="'+subidx+'" onchange="selectFabricMulti(this)" style="margin-bottom:0;flex:1;">'+fabricOptionsHtml(code)+'</select>'
+      +'<div id="fabric-swatch-'+idx+'-'+subidx+'">'+fabricSwatchHtml(code,30)+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:8px;color:var(--muted);font-weight:600;margin-bottom:1px;">'+label+'</div>'
+        +'<button type="button" class="note-tmpl-btn" style="width:100%;text-align:left;display:block;" onclick="openFabricPicker('+idx+','+subidx+')">'+(code?code:u('fabric_placeholder'))+'</button>'
+      +'</div>'
       +(fabrics.length>1?'<button type="button" class="rm-btn" onclick="removeFabricSlot('+idx+','+subidx+')" title="Kaldır">×</button>':'')
       +'</div>';
   }).join('');
   return rows+'<button type="button" class="note-tmpl-btn" onclick="addFabricSlot('+idx+')" style="font-size:8.5px;color:var(--gold);border-color:var(--gold);">+ '+u('add_fabric')+'</button>';
-}
-function selectFabricMulti(sel) {
-  const idx=parseInt(sel.dataset.idx), subidx=parseInt(sel.dataset.subidx);
-  if(!orderItems[idx].fabrics) orderItems[idx].fabrics=[];
-  orderItems[idx].fabrics[subidx]=sel.value;
-  const swatchEl=document.getElementById('fabric-swatch-'+idx+'-'+subidx);
-  if(swatchEl) swatchEl.innerHTML=fabricSwatchHtml(sel.value, 26);
-  const toggleBtn=document.querySelector('[onclick="toggleFabricRow('+idx+')"]');
-  if(toggleBtn) toggleBtn.textContent=fabricsToggleLabel(orderItems[idx].fabrics);
 }
 function addFabricSlot(idx) {
   if(!orderItems[idx].fabrics) orderItems[idx].fabrics=[''];
@@ -1700,13 +1690,50 @@ function removeFabricSlot(idx, subidx) {
   orderItems[idx].fabricOpen=true;
   renderOrder();
 }
-function selectFabric(sel) {
-  const idx=parseInt(sel.dataset.idx);
-  orderItems[idx].fabric=sel.value;
-  const swatchEl=document.getElementById('fabric-swatch-'+idx);
-  if(swatchEl) swatchEl.innerHTML=fabricSwatchHtml(orderItems[idx].fabric, 26);
-  const toggleBtn=document.querySelector('[onclick="toggleFabricRow('+idx+')"]');
-  if(toggleBtn) toggleBtn.textContent=fabricToggleLabel(orderItems[idx].fabric);
+// ============================================================
+// FABRIC PICKER — searchable thumbnail grid (replaces the plain <select>)
+// ============================================================
+let fabricPickerTarget = null; // {idx, subidx} — subidx===-1 means single-fabric item
+function openFabricPicker(idx, subidx) {
+  fabricPickerTarget = {idx: idx, subidx: subidx};
+  const overlay = document.getElementById('fabric-picker-overlay');
+  if(!overlay) return;
+  overlay.style.display='flex';
+  const search = document.getElementById('fabric-picker-search');
+  if(search) { search.value=''; setTimeout(function(){search.focus();},50); }
+  renderFabricPickerGrid('');
+}
+function closeFabricPicker() {
+  const overlay = document.getElementById('fabric-picker-overlay');
+  if(overlay) overlay.style.display='none';
+  fabricPickerTarget = null;
+}
+function renderFabricPickerGrid(filter) {
+  const grid = document.getElementById('fabric-picker-grid');
+  if(!grid) return;
+  const q = (filter||'').trim().toUpperCase();
+  const codes = (typeof FABRIC_MANIFEST==='object'&&FABRIC_MANIFEST)?Object.keys(FABRIC_MANIFEST).sort(function(a,b){return a.localeCompare(b,'tr',{numeric:true,sensitivity:'base'});}):[];
+  const filtered = q ? codes.filter(function(c){return c.toUpperCase().indexOf(q)>-1;}) : codes;
+  if(!filtered.length) { grid.innerHTML='<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--muted);font-size:12px;">Sonuç bulunamadı</div>'; return; }
+  grid.innerHTML = filtered.map(function(code){
+    const url=(typeof fabricUrl==='function')?fabricUrl(code):'';
+    return '<div class="fabric-pick-cell" onclick="pickFabricPickerCode(\''+code.replace(/'/g,"\\'")+'\')">'
+      +(url?'<img src="'+url+'" loading="lazy" alt="'+code+'">':'<div class="fabric-pick-noimg">🧵</div>')
+      +'<span>'+code+'</span></div>';
+  }).join('');
+}
+function filterFabricPicker(v) { renderFabricPickerGrid(v); }
+function pickFabricPickerCode(code) {
+  if(!fabricPickerTarget) return;
+  const it = orderItems[fabricPickerTarget.idx];
+  if(it) {
+    if(fabricPickerTarget.subidx===-1) { it.fabric = code; }
+    else { if(!Array.isArray(it.fabrics)) it.fabrics=[]; it.fabrics[fabricPickerTarget.subidx] = code; }
+  }
+  fabricPickerTarget = null;
+  const overlay = document.getElementById('fabric-picker-overlay');
+  if(overlay) overlay.style.display='none';
+  renderOrder();
 }
 
 // ============================================================
@@ -1840,6 +1867,25 @@ function isMultiFabricSetItem(id) {
   }
   return false;
 }
+// Parses a bundled set's name, e.g. "Roma Sofa Set (2×Three Seater+2×Bergere)"
+// or "... (Three Seater+Two Seater+1×Bergere)", into a flat per-piece label
+// list: ['Three Seater','Three Seater','Bergere','Bergere']. Used to label
+// each fabric slot instead of a generic "Fabric 1/2/3" — a real export set
+// listing shows exactly which piece gets which cloth.
+function getSetPieceLabels(id) {
+  const item = findItem(id);
+  if(!item || !item.bundled) return [];
+  const m = item.name.match(/\(([^)]+)\)/);
+  if(!m) return [];
+  const labels = [];
+  m[1].split('+').forEach(function(part){
+    const p = part.trim();
+    const mm = p.match(/^(\d+)\s*[×xX]\s*(.+)$/);
+    if(mm) { const n=parseInt(mm[1],10); for(let k=0;k<n;k++) labels.push(mm[2].trim()); }
+    else if(p) labels.push(p);
+  });
+  return labels;
+}
 // History'den (veya eski taslaklardan) yüklenen kalemler eski tekli 'fabric'
 // alanıyla kaydedilmiş olabilir; set kalemlerini çoklu kumaş dizisine taşır
 // ki "+ Kumaş" butonu ve kartela satırı her zaman görünsün.
@@ -1866,7 +1912,9 @@ function addItem(id) {
   const gd = parseFloat(document.getElementById('discVal')?.value) || 0;
   const up = (gd>0 && !isNoDiscountItem(id)) ? parseFloat((lp*(1-gd/100)).toFixed(2)) : lp;
   const isMultiFab = isMultiFabricSetItem(id);
-  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:'', fabrics: isMultiFab?['']:null, fabricOpen:isFabricCategoryItem(id)});
+  const pieceLabels = isMultiFab ? getSetPieceLabels(id) : [];
+  const initFabrics = isMultiFab ? (pieceLabels.length ? pieceLabels.map(()=>'') : ['']) : null;
+  orderItems.push({id, name:item.name, listPrice:lp, unitPrice:up, qty:1, cbm:autoCbm, bundled:item.bundled||false, fabric:'', fabrics: initFabrics, fabricOpen:isFabricCategoryItem(id)});
   renderOrder();
   showToast('✓ Added: '+item.name.split(' ').slice(0,4).join(' ')+(isNoDiscountItem(id)&&gd>0?' (iskontosuz)':''));
 }
@@ -1949,10 +1997,10 @@ function renderOrder() {
               </div>
             </div>
             <div id="fabric-row-${idx}" style="display:${item.fabricOpen?'block':'none'};margin-top:4px;">
-              ${Array.isArray(item.fabrics) ? fabricMultiRowsHtml(idx, item.fabrics) : (
+              ${Array.isArray(item.fabrics) ? fabricMultiRowsHtml(idx, item.fabrics, item.id) : (
                 '<div style="display:flex;align-items:center;gap:6px;">'
                 +'<div id="fabric-swatch-'+idx+'">'+fabricSwatchHtml(item.fabric, 26)+'</div>'
-                +'<select class="note-inp" data-idx="'+idx+'" onchange="selectFabric(this)" style="margin-bottom:0;flex:1;">'+fabricOptionsHtml(item.fabric)+'</select>'
+                +'<button type="button" class="note-tmpl-btn" style="flex:1;text-align:left;display:block;" onclick="openFabricPicker('+idx+',-1)">'+(item.fabric?item.fabric:u('fabric_placeholder'))+'</button>'
                 +'</div>'
               )}
             </div>
@@ -3107,6 +3155,7 @@ function showPrint() {
 
   let listTotal=0, grandTotal=0, cbm=0;
   let rows='';
+  const fabricLegendMap = new Map(); // code -> {code, uses:[itemName + piece label]}
   orderItems.forEach(function(item,i){
     const lp=item.listPrice, up=item.unitPrice, qty=item.qty;
     const disc=lp>0?((1-up/lp)*100):0;
@@ -3118,19 +3167,29 @@ function showPrint() {
       :'<div style="width:92px;height:74px;background:#F3F4F6;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:26px;">&#128230;</div>';
     const noteLine=item.note?('<div style="font-size:8px;color:#888;margin-top:2px;font-style:italic;">'+item.note+'</div>'):'';
     const endCL=item.endCustomer?('<div style="font-size:8px;font-weight:700;color:#5B21B6;margin-top:2px;">&#128100; '+item.endCustomer+'</div>'):'';
-    const fabricCodesPf = Array.isArray(item.fabrics) ? item.fabrics.filter(Boolean) : (item.fabric?[item.fabric]:[]);
     // Big, clean swatch chips in their own column — large enough to actually judge the
-    // texture/weave by eye, not just a colour hint. Multiple codes (set items) stack.
-    const fabricCell = fabricCodesPf.length ? '<div style="display:flex;flex-direction:column;gap:6px;align-items:center;">'
-      +fabricCodesPf.map(function(code){
-        const furl=(typeof fabricUrl==='function')?fabricUrl(code):'';
+    // texture/weave by eye, not just a colour hint. Set items show each piece's own
+    // label (Three Seater / Bergere...) above its code; single items just show the code.
+    const pieceLabelsPf = Array.isArray(item.fabrics) ? getSetPieceLabels(item.id) : [];
+    const fabricEntriesPf = Array.isArray(item.fabrics)
+      ? item.fabrics.map(function(code,si){ return {code:code, label: pieceLabelsPf[si]||('Kumaş '+(si+1))}; }).filter(function(e){return e.code;})
+      : (item.fabric ? [{code:item.fabric, label:null}] : []);
+    const fabricCodesPf = fabricEntriesPf.map(function(e){return e.code;});
+    const fabricCell = fabricEntriesPf.length ? '<div style="display:flex;flex-direction:column;gap:6px;align-items:center;">'
+      +fabricEntriesPf.map(function(e){
+        const furl=(typeof fabricUrl==='function')?fabricUrl(e.code):'';
         return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">'
           +(furl
             ?('<img src="'+furl+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #D9D2C5;box-shadow:0 1px 2px rgba(0,0,0,.08);">')
             :('<div style="width:60px;height:60px;border-radius:6px;border:1px dashed #D9D2C5;display:flex;align-items:center;justify-content:center;font-size:20px;color:#B0A99A;">&#129525;</div>'))
-          +'<span style="font-size:8px;color:#666;font-weight:600;letter-spacing:.2px;">'+code+'</span></div>';
+          +(e.label?('<span style="font-size:6.5px;color:#999;">'+e.label+'</span>'):'')
+          +'<span style="font-size:8px;color:#666;font-weight:600;letter-spacing:.2px;">'+e.code+'</span></div>';
       }).join('')
       +'</div>' : '<span style="color:#ccc;font-size:9px;">&#8212;</span>';
+    fabricEntriesPf.forEach(function(e){
+      if(!fabricLegendMap.has(e.code)) fabricLegendMap.set(e.code, {code:e.code, uses:[]});
+      fabricLegendMap.get(e.code).uses.push(item.name.split(' ').slice(0,3).join(' ')+(e.label?(' — '+e.label):''));
+    });
     const sd=getStock(); const sv=sd[item.id]||'In Stock';
     const stL=sv!=='In Stock'?('<div style="font-size:7.5px;font-weight:700;color:#B45309;margin-top:1px;">&#9201; '+sv+'</div>'):'';
     const bundleL=item.bundled?'<span style="font-size:7px;background:#FEF3C7;color:#92400E;padding:1px 4px;border-radius:2px;font-weight:700;">SET</span>':'';
@@ -3239,6 +3298,7 @@ function showPrint() {
       +'<div class="pf-bank-row"><span class="pf-bk">'+t.bankSwift+'</span><span>'+bank.swift+'</span></div>'
     +'</div>'
     +'<div class="pf-notes"><strong>'+t.notes+':</strong> '+noteText+'</div>'
+    +buildFabricLegendHtml(fabricLegendMap, t)
     +'<div class="pf-sigs">'
       +'<div class="pf-sig">'+t.buyerSig+'</div>'
       +'<div class="pf-sig">'+t.sellerSig+getSignatureHtml('Morello Mobilya')+'</div>'
@@ -3247,6 +3307,27 @@ function showPrint() {
   setOv('print-overlay', true);
   window.scrollTo(0,0);
   fillQRSlot();
+}
+
+// Siparişte kullanılan tüm kumaşları büyük görselle listeleyen referans/legend
+// sayfası — kartela elde olmasa bile müşteri rengi/dokuyu proformadan teyit edebilsin.
+function buildFabricLegendHtml(fabricLegendMap, t) {
+  if(!fabricLegendMap || !fabricLegendMap.size) return '';
+  const cards = Array.from(fabricLegendMap.values()).map(function(f){
+    const url=(typeof fabricUrl==='function')?fabricUrl(f.code):'';
+    const uses = f.uses.slice(0,4).join(', ')+(f.uses.length>4?'…':'');
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:104px;">'
+      +(url
+        ?('<img src="'+url+'" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #D9D2C5;box-shadow:0 1px 3px rgba(0,0,0,.1);">')
+        :('<div style="width:100px;height:100px;border-radius:8px;border:1px dashed #D9D2C5;display:flex;align-items:center;justify-content:center;font-size:28px;color:#B0A99A;">&#129525;</div>'))
+      +'<div style="font-size:10px;font-weight:700;color:#111;">'+f.code+'</div>'
+      +'<div style="font-size:7.5px;color:#888;text-align:center;line-height:1.3;">'+uses+'</div>'
+      +'</div>';
+  }).join('');
+  return '<div class="pf-fabric-legend" style="margin-top:14px;padding-top:12px;border-top:1px solid #E5E5E5;">'
+    +'<div style="font-size:10.5px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">&#129525; '+(t.fabricLegendTitle||'Fabric Reference')+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:14px;">'+cards+'</div>'
+    +'</div>';
 }
 
 // Belge overlay'lerini açıp kapatan tek nokta — yazdırma sırasında sadece
@@ -4597,6 +4678,15 @@ function renderReceivables(hist) {
     +rows+'</div>';
 }
 
+// Salt-okunur kumaş kataloğu linki — müşteriye WhatsApp/e-posta ile atılabilir,
+// admin ekranına gerek kalmadan tüm kartelaları arayıp inceleyebilirler.
+function shareFabricCatalog() {
+  const link = 'https://brsclk16.github.io/MORELLO-PROFORMA-GENERATOR/fabrics.html';
+  navigator.clipboard.writeText(link).then(function(){
+    showToast('🧵 Kumaş kataloğu linki kopyalandı');
+  }).catch(function(){ prompt('Linki kopyala:', link); });
+}
+
 // ============================================================
 // DEALER PRICE LIST LINK
 // ============================================================
@@ -5348,6 +5438,35 @@ function renderReport(period) {
   const ctm={}; hist.forEach(h=>{ const c=(h.buyer_data?.country)||'Unknown'; if(!ctm[c]) ctm[c]={count:0,total:0}; ctm[c].count++; ctm[c].total+=parseAmount(h.total); });
   const tfc=Object.values(ctm).reduce((s,d)=>s+d.total,0)||1; const tctries=Object.entries(ctm).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
   const cEl=document.getElementById('report-countries'); if(cEl) cEl.innerHTML=tctries.map(([c,d])=>'<tr><td>'+c+'</td><td style="text-align:right;">'+d.count+'</td><td style="text-align:right;">'+sym+d.total.toLocaleString('tr-TR',{maximumFractionDigits:0})+'</td><td style="text-align:right;">'+(d.total/tfc*100).toFixed(1)+'%</td></tr>').join('')||'<tr><td colspan="4" style="color:var(--muted);padding:12px;">Veri yok</td></tr>';
+  renderTopFabrics(hist);
+}
+// Hangi kartela kodları en çok kullanılmış — geçmiş proformalardaki (tekli
+// item.fabric ve çoklu item.fabrics) tüm kayıtları tarar, adet bazlı sıralar.
+function renderTopFabrics(hist) {
+  const el=document.getElementById('report-top-fabrics'); if(!el) return;
+  const fm={};
+  hist.forEach(function(h){
+    (h.items||[]).forEach(function(it){
+      const codes = Array.isArray(it.fabrics) ? it.fabrics.filter(Boolean) : (it.fabric?[it.fabric]:[]);
+      codes.forEach(function(code){
+        if(!fm[code]) fm[code]={count:0};
+        fm[code].count += (it.qty||1);
+      });
+    });
+  });
+  const top = Object.entries(fm).sort((a,b)=>b[1].count-a[1].count).slice(0,12);
+  if(!top.length) { el.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px;">Veri yok</div>'; return; }
+  const maxC = top[0][1].count||1;
+  el.innerHTML = top.map(function(entry){
+    const code=entry[0], cnt=entry[1].count;
+    const url=(typeof fabricUrl==='function')?fabricUrl(code):'';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:72px;">'
+      +(url?'<img src="'+url+'" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">':'<div style="width:56px;height:56px;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted);">🧵</div>')
+      +'<div style="font-size:8.5px;font-weight:700;text-align:center;">'+code+'</div>'
+      +'<div class="report-bar" style="width:'+Math.max(12,(cnt/maxC*56)).toFixed(0)+'px;height:4px;background:#B45309;border-radius:2px;"></div>'
+      +'<div style="font-size:8px;color:var(--muted);">'+cnt+' adet</div>'
+      +'</div>';
+  }).join('');
 }
 
 // ============================================================

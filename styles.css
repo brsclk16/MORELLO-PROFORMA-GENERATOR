@@ -588,6 +588,25 @@ body {
 }
 .rm-btn:hover { opacity: 1; background: var(--danger-bg); }
 
+.fabric-pick-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; padding: 6px; border-radius: 8px; border: 1px solid transparent;
+  transition: all .12s;
+}
+.fabric-pick-cell:hover { background: #FBF8F2; border-color: var(--gold); }
+.fabric-pick-cell img {
+  width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px;
+  border: 1px solid #E5E7EB; display: block;
+}
+.fabric-pick-noimg {
+  width: 100%; aspect-ratio: 1/1; border-radius: 6px; border: 1px dashed #D9D2C5;
+  display: flex; align-items: center; justify-content: center; font-size: 20px; color: #B0A99A;
+}
+.fabric-pick-cell span {
+  font-size: 8.5px; font-weight: 600; color: var(--muted); text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+
 .empty-order { padding: 48px 20px; text-align: center; color: var(--muted); }
 .empty-order .ei { font-size: 36px; margin-bottom: 10px; opacity: .5; }
 .empty-order p { font-size: 13px; }

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="theme-color" content="#1C1C1E">
+<title>Morello — Kumaş Kataloğu</title>
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="fabric-manifest.js?v=1"></script>
+<style>
+  :root{
+    --bg:#F5F3EF; --surface:#FFFFFF; --surface2:#F0EDE7; --border:#DDD8CF;
+    --accent:#1C1C1E; --gold:#A8843A; --gold-light:#F7EFE0;
+    --text:#111111; --text-sec:#4A4540; --muted:#8A8078;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  header { background:var(--accent); color:#fff; padding:22px 16px 20px; text-align:center; }
+  header .brand { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; letter-spacing:.5px; }
+  header .sub { font-size:12px; color:#C9C4BC; margin-top:4px; }
+  .wrap { max-width:960px; margin:0 auto; padding:16px; }
+  .search-bar { position:sticky; top:0; z-index:10; background:var(--bg); padding:12px 16px; border-bottom:1px solid var(--border); }
+  .search-bar input {
+    width:100%; max-width:960px; margin:0 auto; display:block; padding:12px 14px; font-size:15px;
+    border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text);
+  }
+  .search-bar input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-light); }
+  .count-line { font-size:11px; color:var(--muted); margin-top:6px; padding-left:2px; }
+  .series-block { margin-bottom:26px; }
+  .series-hdr {
+    font-size:13px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--gold);
+    border-bottom:2px solid var(--gold-light); padding-bottom:6px; margin-bottom:12px;
+  }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; }
+  .cell {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px;
+    display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;
+    transition:transform .12s, box-shadow .12s;
+  }
+  .cell:active { transform:scale(.97); }
+  .cell img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:7px; border:1px solid #E5E1D8; display:block; }
+  .cell .noimg { width:100%; aspect-ratio:1/1; border-radius:7px; border:1px dashed #D9D2C5; display:flex; align-items:center; justify-content:center; font-size:22px; color:#B0A99A; }
+  .cell .code { font-size:11.5px; font-weight:700; color:var(--text-sec); text-align:center; }
+  .empty { text-align:center; padding:60px 20px; color:var(--muted); font-size:13px; }
+  footer { text-align:center; padding:28px 16px 40px; color:var(--muted); font-size:11px; line-height:1.7; }
+  footer strong { color:var(--text-sec); }
+  /* Lightbox */
+  #lb { display:none; position:fixed; inset:0; background:rgba(10,8,5,.9); z-index:999; align-items:center; justify-content:center; padding:20px; }
+  #lb.open { display:flex; }
+  #lb img { max-width:100%; max-height:78vh; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+  #lb .lb-code { color:#fff; font-size:16px; font-weight:700; margin-top:14px; letter-spacing:.5px; }
+  #lb .lb-close { position:absolute; top:16px; right:20px; color:#fff; font-size:30px; background:none; border:none; cursor:pointer; line-height:1; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MORELLO</div>
+  <div class="sub">Kumaş / Kartela Kataloğu — Fabric Catalogue</div>
+</header>
+<div class="search-bar">
+  <input id="q" type="text" placeholder="Kod ara… (örn: LOFT, Bornova, ADEL-04)" oninput="renderCatalog(this.value)" autocomplete="off">
+  <div class="count-line" id="countLine"></div>
+</div>
+<div class="wrap" id="catalogRoot"></div>
+<footer>
+  Bu sayfa yalnızca görüntüleme amaçlıdır — kodu not alıp ilgili Morello temsilcinize iletebilirsiniz.<br>
+  <strong>Morello Mobilya</strong> · export@morello.com.tr · +90 543 850 14 04
+</footer>
+<div id="lb" onclick="closeLb()">
+  <button class="lb-close" onclick="closeLb()">×</button>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <img id="lbImg" src="" alt="">
+    <div class="lb-code" id="lbCode"></div>
+  </div>
+</div>
+<script>
+function seriesOf(code) {
+  const i = code.indexOf('-');
+  return i>-1 ? code.slice(0,i) : code;
+}
+function renderCatalog(filter) {
+  const root = document.getElementById('catalogRoot');
+  const countLine = document.getElementById('countLine');
+  const q = (filter||'').trim().toUpperCase();
+  const allCodes = Object.keys(FABRIC_MANIFEST||{}).sort(function(a,b){
+    return a.localeCompare(b,'tr',{numeric:true,sensitivity:'base'});
+  });
+  const filtered = q ? allCodes.filter(function(c){ return c.toUpperCase().indexOf(q)>-1; }) : allCodes;
+  countLine.textContent = filtered.length + ' kumaş' + (q?(' — "'+filter+'" için'):'');
+  if(!filtered.length) { root.innerHTML = '<div class="empty">🧵<br><br>Sonuç bulunamadı</div>'; return; }
+  const bySeries = {};
+  filtered.forEach(function(code){
+    const s = seriesOf(code);
+    if(!bySeries[s]) bySeries[s]=[];
+    bySeries[s].push(code);
+  });
+  const seriesNames = Object.keys(bySeries).sort(function(a,b){ return a.localeCompare(b,'tr'); });
+  root.innerHTML = seriesNames.map(function(sn){
+    const cells = bySeries[sn].map(function(code){
+      const url = fabricUrl(code);
+      return '<div class="cell" onclick="openLb(\''+code.replace(/'/g,"\\'")+'\')">'
+        + (url ? '<img src="'+url+'" loading="lazy" alt="'+code+'">' : '<div class="noimg">🧵</div>')
+        + '<div class="code">'+code+'</div></div>';
+    }).join('');
+    return '<div class="series-block"><div class="series-hdr">'+sn+' <span style="color:var(--muted);font-weight:500;">('+bySeries[sn].length+')</span></div><div class="grid">'+cells+'</div></div>';
+  }).join('');
+}
+function openLb(code) {
+  const url = fabricUrl(code);
+  if(!url) return;
+  document.getElementById('lbImg').src = url;
+  document.getElementById('lbCode').textContent = code;
+  document.getElementById('lb').classList.add('open');
+}
+function closeLb() { document.getElementById('lb').classList.remove('open'); }
+renderCatalog('');
+</script>
+</body>
+</html>

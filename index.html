@@ -26,6 +26,7 @@
 </style>
 <!-- Product images loaded from separate file to keep index.html lean -->
 <script src="catalog.js?v=1790157346"></script>
+<script src="fabric-manifest.js?v=1790157346"></script>
 <script>
   // Product images are now lazy-loaded as static files from imgs/<ID>.<ext>
   // (replaced the old ~1MB base64 imgs.js). IMG_MANIFEST maps id -> file extension.
@@ -40,17 +41,6 @@
   const IMGS = new Proxy({}, { get: function(_, id){ return imgUrl(id); }, has: function(_, id){ return !!IMG_MANIFEST[id]; } });
   window.IMGS = IMGS; window.imgUrl = imgUrl;
 
-  // Fabric (kumaş) swatch images — optional per-order-line feature.
-  // Same pattern as IMG_MANIFEST: code -> file extension, files served from imgs/fabrics/<CODE>.<ext>.
-  // Empty until the fabric catalogue (codes + swatch photos) is added — see admin instructions in app.js.
-  const FABRIC_MANIFEST = {'ADEL-02':'jpg','ADEL-04':'jpg','ADEL-07':'jpg','ADEL-09':'jpg','ADEL-19':'jpg','BORNOVA-101':'jpg','BORNOVA-215':'jpg','BORNOVA-303':'jpg','BORNOVA-317':'jpg','BORNOVA-418':'jpg','BORNOVA-504':'jpg','FEZA-06':'jpg','FEZA-07':'jpg','FEZA-14':'jpg','FEZA-15':'jpg','FEZA-17':'jpg','FEZA-20':'jpg','FEZA-21':'jpg','LOFT-01':'jpg','LOFT-02':'jpg','LOFT-03':'jpg','LOFT-04':'jpg','LOFT-05':'jpg','LOFT-06':'jpg','LOFT-07':'jpg','LOFT-08':'jpg','LOFT-09':'jpg','LOFT-10':'jpg','LOFT-11':'jpg','LOFT-12':'jpg','LOFT-13':'jpg','LOFT-14':'jpg','URAS-16':'jpg','URAS-24':'jpg'};
-  const FABRIC_BASE = 'imgs/fabrics/';
-  function fabricUrl(code) {
-    if (!code) return '';
-    const key = String(code).trim().toUpperCase();
-    const ext = FABRIC_MANIFEST[key];
-    return ext ? (FABRIC_BASE + key + '.' + ext) : '';
-  }
   window.FABRIC_MANIFEST = FABRIC_MANIFEST; window.fabricUrl = fabricUrl;
 </script>
 </head>
@@ -493,6 +483,10 @@
             <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🌍 Ülke Bazlı Dağılım</div>
             <table class="report-table"><thead><tr><th>Ülke</th><th>Proforma</th><th>Ciro</th><th>Pay</th></tr></thead><tbody id="report-countries"></tbody></table>
           </div>
+          <div style="margin-top:12px;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">🧵 En Çok Kullanılan Kumaşlar</div>
+            <div id="report-top-fabrics" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -792,18 +786,20 @@
   <div id="img-lightbox-label"></div>
 </div>
 
-<!-- Fabric code autocomplete — populated from FABRIC_MANIFEST -->
-<datalist id="fabricCodes"></datalist>
-<script>
-  (function(){
-    var dl = document.getElementById('fabricCodes');
-    Object.keys(FABRIC_MANIFEST).sort().forEach(function(code){
-      var opt = document.createElement('option');
-      opt.value = code;
-      dl.appendChild(opt);
-    });
-  })();
-</script>
+<!-- FABRIC PICKER — searchable thumbnail grid modal -->
+<div id="fabric-picker-overlay" onclick="closeFabricPicker()" style="display:none;position:fixed;inset:0;background:rgba(20,16,10,.55);z-index:9998;align-items:flex-start;justify-content:center;padding:6vh 16px 16px;overflow-y:auto;">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:10px;width:100%;max-width:640px;box-shadow:0 12px 40px rgba(0,0,0,.35);overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #eee;">
+      <span style="font-size:14px;">🧵</span>
+      <input id="fabric-picker-search" type="text" placeholder="Kod ara… (örn: LOFT, ADEL-04)" oninput="filterFabricPicker(this.value)" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;">
+      <button type="button" id="fabric-picker-close" onclick="closeFabricPicker()" style="border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1;">×</button>
+    </div>
+    <div id="fabric-picker-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:10px;padding:16px;max-height:60vh;overflow-y:auto;"></div>
+    <div style="padding:10px 16px;border-top:1px solid #eee;text-align:center;">
+      <button type="button" onclick="shareFabricCatalog()" style="border:none;background:none;color:var(--gold);font-size:11px;font-weight:600;cursor:pointer;">🔗 Tam kartela kataloğunu müşteriyle paylaş</button>
+    </div>
+  </div>
+</div>
 
 <!-- STICKY BOTTOM BAR -->
 <div id="sticky-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;height:36px;background:var(--accent);color:#fff;align-items:center;padding:0 16px;gap:18px;z-index:800;font-size:11.5px;font-weight:600;box-shadow:0 -2px 12px rgba(0,0,0,.18);">
