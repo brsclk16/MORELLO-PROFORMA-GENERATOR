@@ -2290,6 +2290,14 @@ function countryToCurrency(country, companyName) {
   return 'USD';
 }
 
+// Ülke -> varsayılan proforma dili (listede olmayan her ülke İngilizce)
+const COUNTRY_LANG = {};
+['Fildişi Sahili','Fransa','Senegal','Mali','Gabon','Kamerun','Kongo (DRC)','Kongo','Gine','Benin','Togo','Burkina Faso','Moritanya','Cezayir','Tunus','Fas','Belçika'].forEach(function(c){ COUNTRY_LANG[c]='fr'; });
+['Irak','Libya','Suudi Arabistan','Ürdün','Lübnan','BAE','Bahreyn','Mısır','Katar','Sudan','Kuveyt','Umman','Yemen','Suriye','Filistin'].forEach(function(c){ COUNTRY_LANG[c]='ar'; });
+['Almanya','Avusturya','İsviçre'].forEach(function(c){ COUNTRY_LANG[c]='de'; });
+['Türkiye','KKTC'].forEach(function(c){ COUNTRY_LANG[c]='tr'; });
+function countryToLang(country) { return country ? (COUNTRY_LANG[country] || 'en') : ''; }
+
 function populateCountrySelects() {
   const sorted = COUNTRY_LIST.slice().sort(function(a,b){ return a.localeCompare(b,'tr'); });
   const opts = '<option value="">— seç —</option>' + sorted.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
@@ -2303,6 +2311,8 @@ function onMcCountryChange() {
   const cur = countryToCurrency(country, company);
   const el = document.getElementById('mc-currency');
   if (el) el.value = cur;
+  const lg = document.getElementById('mc-lang');
+  if (lg && country) lg.value = (cur==='TRY') ? 'tr' : countryToLang(country);
 }
 
 function onBuyerCountryChange() {
@@ -2311,6 +2321,7 @@ function onBuyerCountryChange() {
   const cur = countryToCurrency(country, company);
   setCurrency(cur);
   const el = document.getElementById('pfCurrency'); if (el) el.value = cur;
+  const lg = document.getElementById('pfLang'); if (lg && country) lg.value = (cur==='TRY') ? 'tr' : countryToLang(country);
 }
 
 const CUST_MODAL_IDS = ['mc-company','mc-contact','mc-country','mc-phone','mc-email','mc-address','mc-shipaddress','mc-taxid','mc-segment','mc-discount','mc-note','mc-currency','mc-lang','mc-incoterm','mc-payment','mc-leadtime','mc-creditlimit'];
@@ -2485,7 +2496,7 @@ function loadCustomer(i) {
   // Currency
   if(d.currency) { setCurrency(d.currency); applied.push(d.currency); }
   // Language
-  if(d.lang) { const el=document.getElementById('pfLang'); if(el) { el.value=d.lang; applied.push(d.lang.toUpperCase()); } }
+  { const lg = d.lang || countryToLang(c.country); if(lg) { const el=document.getElementById('pfLang'); if(el) { el.value=lg; applied.push(lg.toUpperCase()); } } }
   // Incoterm / price term
   if(d.incoterm) { const el=document.getElementById('pfPriceTerm'); if(el) { el.value=d.incoterm; applied.push(d.incoterm); } }
   updateIncotermFields();
