@@ -13,6 +13,17 @@ const CATALOG = {
       {id:'ROMA-WARD',name:'Roma Wardrobe',eur:720,usd:810},
       {id:'ROMA-BED-SET',name:'Roma Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1500,usd:1590,bundled:true},
     ]},
+    'TOKYO': { badge:'YENİ', items:[
+      {id:'TOKYO-BED',name:'Tokyo Bedstead with Storage 180×200',eur:335,usd:420},
+      {id:'TOKYO-BED-160',name:'Tokyo Bedstead with Storage 160×200',eur:335,usd:420},
+      {id:'TOKYO-NIGHT',name:'Tokyo Nightstand',eur:70,usd:70},
+      {id:'TOKYO-DRESS',name:'Tokyo Dresser with Mirror',eur:205,usd:220},
+      {id:'TOKYO-POUF',name:'Tokyo Pouf',eur:50,usd:45},
+      {id:'TOKYO-CHEST',name:'Tokyo Chest of Drawers',eur:140,usd:140},
+      {id:'TOKYO-BENCH',name:'Tokyo Bench',eur:150,usd:135},
+      {id:'TOKYO-WARD',name:'Tokyo Wardrobe',eur:720,usd:810},
+      {id:'TOKYO-BED-SET',name:'Tokyo Bedroom Set (Bedstead+Wardrobe+2 Nightstands+Dresser)',eur:1500,usd:1590,bundled:true},
+    ]},
     'ISTANBUL': { badge:'SET', items:[
       {id:'IST-BED',name:'Istanbul Bedstead 180×200',eur:335,usd:420},
       {id:'IST-BED-160',name:'Istanbul Bedstead 160×200',eur:335,usd:420},
@@ -91,6 +102,14 @@ const CATALOG = {
       {id:'ROMA-COF',name:'Roma Coffee Table',eur:105,usd:100},
       {id:'ROMA-DIN-SET',name:'Roma Dining Set (Table+6 Chairs+Console)',eur:1235,usd:1220,bundled:true},
     ]},
+    'TOKYO': { badge:'YENİ', items:[
+      {id:'TOKYO-CONS',name:'Tokyo Console with Mirror',eur:350,usd:350},
+      {id:'TOKYO-TV',name:'Tokyo TV Unit',eur:290,usd:290},
+      {id:'TOKYO-TBL',name:'Tokyo Dining Table (170–205 cm)',eur:345,usd:330},
+      {id:'TOKYO-CHR',name:'Tokyo Chair',eur:90,usd:90},
+      {id:'TOKYO-COF',name:'Tokyo Coffee Table',eur:105,usd:100},
+      {id:'TOKYO-DIN-SET',name:'Tokyo Dining Set (Table+6 Chairs+Console)',eur:1235,usd:1220,bundled:true},
+    ]},
     'ISTANBUL': { badge:'SET', items:[
       {id:'IST-CONS',name:'Istanbul Console with Mirror',eur:350,usd:335},
       {id:'IST-TV',name:'Istanbul TV Unit',eur:290,usd:275},
@@ -148,6 +167,15 @@ const CATALOG = {
       {id:'ROMA-SET-331',name:'Roma Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'ROMA-SET-221',name:'Roma Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'ROMA-SET-321',name:'Roma Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
+    ]},
+    'TOKYO': { badge:'YENİ', items:[
+      {id:'TOKYO-3S',name:'Tokyo Three Seater',eur:580,usd:615},
+      {id:'TOKYO-2S',name:'Tokyo Two Seater (190 cm)',eur:580,usd:615},
+      {id:'TOKYO-BRG',name:'Tokyo Bergere',eur:205,usd:180},
+      {id:'TOKYO-SF-SET',name:'Tokyo Sofa Set (2×Three Seater+2×Bergere)',eur:1570,usd:1590,bundled:true},
+      {id:'TOKYO-SET-331',name:'Tokyo Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
+      {id:'TOKYO-SET-221',name:'Tokyo Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
+      {id:'TOKYO-SET-321',name:'Tokyo Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
     ]},
     'ISTANBUL': { badge:'SET', items:[
       {id:'IST-3S',name:'Istanbul Three Seater',eur:550,usd:575},
@@ -311,6 +339,8 @@ const TL_PRICES = {
   'ATINA-CONS': 17700, 'ATINA-CONS-AYNA': 4700, 'ATINA-TBL': 19800,
   'ATINA-CHR': 4534, 'ATINA-DIN-SET': 66200, 'ATINA-TV': 16400, 'ATINA-COF': 6200,
   'ATINA-3S': 28200, 'ATINA-2S': 28200, 'ATINA-BRG': 9925, 'ATINA-SF-SET': 76250, 'ATINA-SET-331': 66325, 'ATINA-SET-321': 66325, 'ATINA-SET-221': 66325,
+  // ═══ TOKYO (Roma ile aynı fiyatlar) ═══
+  'TOKYO-WARD': 39800, 'TOKYO-NIGHT': 3800, 'TOKYO-CHEST': 7600, 'TOKYO-BENCH': 7300, 'TOKYO-DRESS': 11300, 'TOKYO-BED': 17500, 'TOKYO-BED-160': 17500, 'TOKYO-BED-SET': 72600, 'TOKYO-DOOR-CAM1': 11575, 'TOKYO-DOOR-AHSAP1': 10400, 'TOKYO-DOOR-CEK2': 20080, 'TOKYO-DOOR-RAF2': 18200, 'TOKYO-DOOR-UC3': 27300, 'TOKYO-DOOR-KOSE': 13450, 'TOKYO-CONS': 17700, 'TOKYO-CONS-AYNA': 4700, 'TOKYO-TBL': 21000, 'TOKYO-CHR': 4534, 'TOKYO-DIN-SET': 67200, 'TOKYO-TV': 16900, 'TOKYO-COF': 6200, 'TOKYO-3S': 29400, 'TOKYO-2S': 29400, 'TOKYO-BRG': 10300, 'TOKYO-SF-SET': 79400, 'TOKYO-SET-331': 69100, 'TOKYO-SET-321': 69100, 'TOKYO-SET-221': 69100,
 };
 
 // Baza farkı (iskontosuz, ayrı kalem): 160 karyola +3700 ₺, 180 karyola +5250 ₺
