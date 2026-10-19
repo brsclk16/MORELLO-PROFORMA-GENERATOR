@@ -100,6 +100,7 @@ const CATALOG = {
       {id:'ROMA-TBL',name:'Roma Dining Table (170–205 cm)',eur:345,usd:330},
       {id:'ROMA-CHR',name:'Roma Chair',eur:90,usd:90},
       {id:'ROMA-COF',name:'Roma Coffee Table',eur:105,usd:100},
+      {id:'ROMA-SIDE',name:'Roma Side Table',eur:100,usd:100},
       {id:'ROMA-DIN-SET',name:'Roma Dining Set (Table+6 Chairs+Console)',eur:1235,usd:1220,bundled:true},
     ]},
     'TOKYO': { badge:'YENİ', items:[
@@ -310,7 +311,7 @@ const TL_PRICES = {
   'ROMA-DOOR-CAM1': 11575, 'ROMA-DOOR-AHSAP1': 10400, 'ROMA-DOOR-CEK2': 20080,
   'ROMA-DOOR-RAF2': 18200, 'ROMA-DOOR-UC3': 27300, 'ROMA-DOOR-KOSE': 13450,
   // ═══ ROMA YEMEK ODASI ═══
-  'ROMA-CONS': 17700, 'ROMA-CONS-AYNA': 4700, 'ROMA-TBL': 21000,
+  'ROMA-SIDE': 5000, 'ROMA-CONS': 17700, 'ROMA-CONS-AYNA': 4700, 'ROMA-TBL': 21000,
   'ROMA-CHR': 4534, 'ROMA-DIN-SET': 67200, 'ROMA-TV': 16900, 'ROMA-COF': 6200,
   // ═══ ROMA KOLTUK ═══
   'ROMA-3S': 29400, 'ROMA-2S': 29400, 'ROMA-BRG': 10300, 'ROMA-SF-SET': 79400, 'ROMA-SET-331': 69100, 'ROMA-SET-321': 69100, 'ROMA-SET-221': 69100,
