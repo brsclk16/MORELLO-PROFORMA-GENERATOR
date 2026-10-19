@@ -108,6 +108,7 @@ const CATALOG = {
       {id:'TOKYO-TBL',name:'Tokyo Dining Table (170–205 cm)',eur:345,usd:330},
       {id:'TOKYO-CHR',name:'Tokyo Chair',eur:90,usd:90},
       {id:'TOKYO-COF',name:'Tokyo Coffee Table',eur:105,usd:100},
+      {id:'TOKYO-SIDE',name:'Tokyo Side Table',eur:null,usd:null},
       {id:'TOKYO-DIN-SET',name:'Tokyo Dining Set (Table+6 Chairs+Console)',eur:1235,usd:1220,bundled:true},
     ]},
     'ISTANBUL': { badge:'SET', items:[
