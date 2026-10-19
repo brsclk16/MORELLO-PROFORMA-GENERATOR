@@ -174,6 +174,7 @@ const CATALOG = {
       {id:'ROMA-SET-331',name:'Roma Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'ROMA-SET-221',name:'Roma Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'ROMA-SET-321',name:'Roma Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
+      {id:'ROMA-SET-311',name:'Roma Sofa Set (Three Seater+2×Bergere)',eur:990,usd:975,bundled:true},
     ]},
     'OSAKA': { badge:'YENİ', items:[
       {id:'OSAKA-3S',name:'Osaka Three Seater',eur:580,usd:615},
@@ -183,6 +184,7 @@ const CATALOG = {
       {id:'OSAKA-SET-331',name:'Osaka Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'OSAKA-SET-221',name:'Osaka Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'OSAKA-SET-321',name:'Osaka Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
+      {id:'OSAKA-SET-311',name:'Osaka Sofa Set (Three Seater+2×Bergere)',eur:990,usd:975,bundled:true},
     ]},
     'TOKYO': { badge:'YENİ', items:[
       {id:'TOKYO-3S',name:'Tokyo Three Seater',eur:580,usd:615},
@@ -192,6 +194,7 @@ const CATALOG = {
       {id:'TOKYO-SET-331',name:'Tokyo Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'TOKYO-SET-221',name:'Tokyo Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'TOKYO-SET-321',name:'Tokyo Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
+      {id:'TOKYO-SET-311',name:'Tokyo Sofa Set (Three Seater+2×Bergere)',eur:990,usd:975,bundled:true},
     ]},
     'ISTANBUL': { badge:'SET', items:[
       {id:'IST-3S',name:'Istanbul Three Seater',eur:550,usd:575},
@@ -202,6 +205,7 @@ const CATALOG = {
       {id:'IST-SET-331',name:'Istanbul Sofa Set (2×Three Seater+1×Bergere)',eur:1510,usd:1500,bundled:true},
       {id:'IST-SET-221',name:'Istanbul Sofa Set (2×Two Seater+1×Bergere)',eur:1510,usd:1500,bundled:true},
       {id:'IST-SET-321',name:'Istanbul Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1510,usd:1500,bundled:true},
+      {id:'IST-SET-311',name:'Istanbul Sofa Set (Three Seater+2×Bergere)',eur:960,usd:925,bundled:true},
     ]},
     'LION': { badge:'HOT', items:[
       {id:'LION-3S',name:'Lion Three Seater',eur:580,usd:575},
@@ -212,6 +216,7 @@ const CATALOG = {
       {id:'LION-SET-331',name:'Lion Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
       {id:'LION-SET-221',name:'Lion Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
       {id:'LION-SET-321',name:'Lion Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
+      {id:'LION-SET-311',name:'Lion Sofa Set (Three Seater+2×Bergere)',eur:990,usd:925,bundled:true},
     ]},
     'MIRAY': { badge:'SET', items:[
       {id:'MIRAY-3S',name:'Miray Three Seater',eur:505,usd:480},
@@ -222,6 +227,7 @@ const CATALOG = {
       {id:'MIRAY-SET-331',name:'Miray Sofa Set (2×Three Seater+1×Bergere)',eur:1360,usd:1290,bundled:true},
       {id:'MIRAY-SET-221',name:'Miray Sofa Set (2×Two Seater+1×Bergere)',eur:1360,usd:1290,bundled:true},
       {id:'MIRAY-SET-321',name:'Miray Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1360,usd:1290,bundled:true},
+      {id:'MIRAY-SET-311',name:'Miray Sofa Set (Three Seater+2×Bergere)',eur:855,usd:810,bundled:true},
     ]},
     'VERONA': { badge:'EUR', items:[
       {id:'VER-3S',name:'Verona Three Seater',eur:580,usd:525},
@@ -231,6 +237,7 @@ const CATALOG = {
       {id:'VER-SET-331',name:'Verona Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
       {id:'VER-SET-221',name:'Verona Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
       {id:'VER-SET-321',name:'Verona Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1570,usd:1500,bundled:true},
+      {id:'VER-SET-311',name:'Verona Sofa Set (Three Seater+2×Bergere)',eur:990,usd:875,bundled:true},
       {id:'VER-SEHPA',name:'Verona İlave Kollu Sehpa (isteğe bağlı)',eur:55,usd:60},
     ]},
     'ZENA': { badge:'POP', items:[
@@ -241,6 +248,7 @@ const CATALOG = {
       {id:'ZENA-SET-331',name:'Zena Sofa Set (2×Three Seater+1×Bergere)',eur:1200,usd:1290,bundled:true},
       {id:'ZENA-SET-221',name:'Zena Sofa Set (2×Two Seater+1×Bergere)',eur:1200,usd:1290,bundled:true},
       {id:'ZENA-SET-321',name:'Zena Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1200,usd:1290,bundled:true},
+      {id:'ZENA-SET-311',name:'Zena Sofa Set (Three Seater+2×Bergere)',eur:750,usd:810,bundled:true},
     ]},
     'DIVA': { badge:'USD', items:[
       {id:'DIVA-3S',name:'Diva Three Seater',eur:null,usd:480},
@@ -250,6 +258,7 @@ const CATALOG = {
       {id:'DIVA-SET-331',name:'Diva Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
       {id:'DIVA-SET-221',name:'Diva Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
       {id:'DIVA-SET-321',name:'Diva Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
+      {id:'DIVA-SET-311',name:'Diva Sofa Set (Three Seater+2×Bergere)',eur:null,usd:810,bundled:true},
     ]},
     'LUNA': { badge:'USD', items:[
       {id:'LUNA-3S',name:'Luna Three Seater',eur:null,usd:480},
@@ -259,6 +268,7 @@ const CATALOG = {
       {id:'LUNA-SET-331',name:'Luna Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
       {id:'LUNA-SET-221',name:'Luna Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
       {id:'LUNA-SET-321',name:'Luna Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
+      {id:'LUNA-SET-311',name:'Luna Sofa Set (Three Seater+2×Bergere)',eur:null,usd:810,bundled:true},
     ]},
     'BEYZA': { badge:'USD', items:[
       {id:'BEYZA-3S',name:'Beyza Three Seater',eur:null,usd:480},
@@ -268,6 +278,7 @@ const CATALOG = {
       {id:'BEYZA-SET-331',name:'Beyza Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
       {id:'BEYZA-SET-221',name:'Beyza Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
       {id:'BEYZA-SET-321',name:'Beyza Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1290,bundled:true},
+      {id:'BEYZA-SET-311',name:'Beyza Sofa Set (Three Seater+2×Bergere)',eur:null,usd:810,bundled:true},
     ]},
     'SIDE': { badge:'USD', items:[
       {id:'SIDE-3S',name:'Side Three Seater',eur:null,usd:525},
@@ -277,6 +288,7 @@ const CATALOG = {
       {id:'SIDE-SET-331',name:'Side Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1400,bundled:true},
       {id:'SIDE-SET-221',name:'Side Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1400,bundled:true},
       {id:'SIDE-SET-321',name:'Side Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1400,bundled:true},
+      {id:'SIDE-SET-311',name:'Side Sofa Set (Three Seater+2×Bergere)',eur:null,usd:875,bundled:true},
     ]},
     'EFES': { badge:'USD', items:[
       {id:'EFES-3S',name:'Efes Three Seater',eur:null,usd:515},
@@ -286,6 +298,7 @@ const CATALOG = {
       {id:'EFES-SET-331',name:'Efes Sofa Set (2×Three Seater+1×Bergere)',eur:null,usd:1360,bundled:true},
       {id:'EFES-SET-221',name:'Efes Sofa Set (2×Two Seater+1×Bergere)',eur:null,usd:1360,bundled:true},
       {id:'EFES-SET-321',name:'Efes Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:null,usd:1360,bundled:true},
+      {id:'EFES-SET-311',name:'Efes Sofa Set (Three Seater+2×Bergere)',eur:null,usd:845,bundled:true},
     ]},
     'NAPOLİ': { badge:'YENİ', items:[
       {id:'NAPOLI-3S',name:'Napoli Three Seater',eur:532,usd:613},
@@ -295,6 +308,7 @@ const CATALOG = {
       {id:'NAPOLI-SET-331',name:'Napoli Sofa Set (2×Three Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
       {id:'NAPOLI-SET-221',name:'Napoli Sofa Set (2×Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
       {id:'NAPOLI-SET-321',name:'Napoli Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
+      {id:'NAPOLI-SET-311',name:'Napoli Sofa Set (Three Seater+2×Bergere)',eur:906,usd:1045,bundled:true},
     ]},
     'ATİNA': { badge:'YENİ', items:[
       {id:'ATINA-3S',name:'Atina Three Seater',eur:532,usd:613},
@@ -304,6 +318,7 @@ const CATALOG = {
       {id:'ATINA-SET-331',name:'Atina Sofa Set (2×Three Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
       {id:'ATINA-SET-221',name:'Atina Sofa Set (2×Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
       {id:'ATINA-SET-321',name:'Atina Sofa Set (Three Seater+Two Seater+1×Bergere)',eur:1439,usd:1658,bundled:true},
+      {id:'ATINA-SET-311',name:'Atina Sofa Set (Three Seater+2×Bergere)',eur:906,usd:1045,bundled:true},
     ]},
   }
 }};
@@ -361,6 +376,8 @@ const TL_PRICES = {
   'OSAKA-3S': 29400, 'OSAKA-2S': 29400, 'OSAKA-BRG': 10300, 'OSAKA-SF-SET': 79400, 'OSAKA-SET-331': 69100, 'OSAKA-SET-321': 69100, 'OSAKA-SET-221': 69100,
   // ═══ ROMA MODÜLER KÖŞE (EUR liste × 55.62, yukarı yuvarlandı) ═══
   'ROMA-MOD-2S': 17799, 'ROMA-MOD-CRN': 8343, 'ROMA-MOD-80': 8900, 'ROMA-MOD-90': 8900, 'ROMA-MOD-POUF': 2225,
+  // ═══ 3+1+1 SET (3'lü + 2 berjer, birim fiyat toplamı) ═══
+  'ROMA-SET-311': 50000, 'OSAKA-SET-311': 50000, 'TOKYO-SET-311': 50000, 'IST-SET-311': 48050, 'LION-SET-311': 48050, 'MIRAY-SET-311': 43000, 'VER-SET-311': 50000, 'DIVA-SET-311': 43000, 'NAPOLI-SET-311': 48050, 'ATINA-SET-311': 48050,
 };
 
 // Baza farkı (iskontosuz, ayrı kalem): 160 karyola +3700 ₺, 180 karyola +5250 ₺
