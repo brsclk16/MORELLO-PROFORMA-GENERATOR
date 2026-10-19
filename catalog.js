@@ -165,6 +165,11 @@ const CATALOG = {
       {id:'ROMA-3S',name:'Roma Three Seater',eur:580,usd:615},
       {id:'ROMA-2S',name:'Roma Two Seater (190 cm)',eur:580,usd:615},
       {id:'ROMA-BRG',name:'Roma Bergere',eur:205,usd:180},
+      {id:'ROMA-MOD-2S',name:'Roma Modular – Two Seater Module',eur:320,usd:359},
+      {id:'ROMA-MOD-CRN',name:'Roma Modular – Corner Module',eur:150,usd:169},
+      {id:'ROMA-MOD-80',name:'Roma Modular – 80 cm Module',eur:160,usd:180},
+      {id:'ROMA-MOD-90',name:'Roma Modular – 90 cm Module',eur:160,usd:180},
+      {id:'ROMA-MOD-POUF',name:'Roma Modular – Pouf',eur:40,usd:45},
       {id:'ROMA-SF-SET',name:'Roma Sofa Set (2×Three Seater+2×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'ROMA-SET-331',name:'Roma Sofa Set (2×Three Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
       {id:'ROMA-SET-221',name:'Roma Sofa Set (2×Two Seater+1×Bergere)',eur:1570,usd:1590,bundled:true},
@@ -354,6 +359,8 @@ const TL_PRICES = {
   'TOKYO-WARD': 39800, 'TOKYO-NIGHT': 3800, 'TOKYO-CHEST': 7600, 'TOKYO-BENCH': 7300, 'TOKYO-DRESS': 11300, 'TOKYO-BED': 17500, 'TOKYO-BED-160': 17500, 'TOKYO-BED-SET': 72600, 'TOKYO-DOOR-CAM1': 11575, 'TOKYO-DOOR-AHSAP1': 10400, 'TOKYO-DOOR-CEK2': 20080, 'TOKYO-DOOR-RAF2': 18200, 'TOKYO-DOOR-UC3': 27300, 'TOKYO-DOOR-KOSE': 13450, 'TOKYO-CONS': 17700, 'TOKYO-CONS-AYNA': 4700, 'TOKYO-TBL': 21000, 'TOKYO-CHR': 4534, 'TOKYO-DIN-SET': 67200, 'TOKYO-TV': 16900, 'TOKYO-COF': 6200, 'TOKYO-3S': 29400, 'TOKYO-2S': 29400, 'TOKYO-BRG': 10300, 'TOKYO-SF-SET': 79400, 'TOKYO-SET-331': 69100, 'TOKYO-SET-321': 69100, 'TOKYO-SET-221': 69100, 'TOKYO-SIDE': 5000,
   // ═══ OSAKA KOLTUK (Roma ile aynı fiyatlar) ═══
   'OSAKA-3S': 29400, 'OSAKA-2S': 29400, 'OSAKA-BRG': 10300, 'OSAKA-SF-SET': 79400, 'OSAKA-SET-331': 69100, 'OSAKA-SET-321': 69100, 'OSAKA-SET-221': 69100,
+  // ═══ ROMA MODÜLER KÖŞE (EUR liste × 55.62, yukarı yuvarlandı) ═══
+  'ROMA-MOD-2S': 17799, 'ROMA-MOD-CRN': 8343, 'ROMA-MOD-80': 8900, 'ROMA-MOD-90': 8900, 'ROMA-MOD-POUF': 2225,
 };
 
 // Baza farkı (iskontosuz, ayrı kalem): 160 karyola +3700 ₺, 180 karyola +5250 ₺
