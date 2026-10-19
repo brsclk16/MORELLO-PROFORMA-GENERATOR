@@ -2189,8 +2189,9 @@ function renderCustomers() {
   let all = [];
   if(filter!=='saved') {
     PIPELINE_COMPANIES.forEach((c,i) => {
-      const isSaved = saved.some(s=>s.company.toUpperCase().includes(c.name.split('/')[0].trim().toUpperCase().slice(0,10)));
-      all.push({...c, source:'pipeline', pipelineIdx:i, isSaved});
+      const savedMatch = saved.find(s=>s.company.toUpperCase().includes(c.name.split('/')[0].trim().toUpperCase().slice(0,10)));
+      const isSaved = !!savedMatch;
+      all.push({...c, source:'pipeline', pipelineIdx:i, isSaved, savedMatch});
     });
   }
   if(filter!=='pipeline') {
@@ -2205,7 +2206,7 @@ function renderCustomers() {
 
   if(!all.length){list.innerHTML='<div class="empty-cust"><span class="ei">👥</span>Hiç firma bulunamadı.</div>';return;}
 
-  const langLabels={en:'EN',fr:'FR',ar:'AR',de:'DE'};
+  const langNames={en:['🇬🇧','English'],fr:['🇫🇷','Français'],ar:['🇸🇦','العربية'],de:['🇩🇪','Deutsch'],tr:['🇹🇷','Türkçe']};
   const grid = document.createElement('div'); grid.className='cust-grid';
 
   all.forEach((c,i)=>{
@@ -2228,6 +2229,10 @@ function renderCustomers() {
       else if(days<=90){laClass='la-medium';laTxt=days+'d ago';}
       else{laClass='la-old';laTxt=days+'d ago';}
     }
+    const langRec = c.source==='saved' ? getCustomers()[c.savedIdx] : c.savedMatch;
+    const effLang = langRec?.defaults?.lang || langRec?.lang || c.lang || countryToLang(c.country) || 'en';
+    const effCur = langRec?.defaults?.currency || langRec?.currency || c.currency || 'USD';
+    const ln = langNames[effLang] || ['🌐', String(effLang).toUpperCase()];
     const noteVal=c.note||'';
     const noteDisplay=noteVal?`<div class="cust-note-row">📝 ${noteVal.slice(0,40)}${noteVal.length>40?'…':''}</div>`:'';
     const defaultsBadge = c.source==='saved' && (getCustomers()[c.savedIdx]?.defaults) 
@@ -2246,12 +2251,16 @@ function renderCustomers() {
           <div class="cust-country">${c.country||''} ${c.email?'· '+c.email:''}</div>
           ${noteDisplay}
         </div>
+        <div class="cust-lang-col" title="Proforma dili">
+          <div class="cust-lang-lbl">DİL</div>
+          <div class="cust-lang-val"><span>${ln[0]}</span> ${ln[1]}</div>
+        </div>
       </div>
       <div class="cust-card-actions">
         <button class="cust-load-btn" onclick="event.stopPropagation();${loadFn}">⚡ Load</button>
         <button class="cust-load-btn" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);" onclick="event.stopPropagation();showCustDetail('${c.name}')">📊</button>
         <span class="last-activity ${laClass}">${laTxt}</span>
-        <span class="cust-lang-badge">${langLabels[c.lang]||'EN'} · ${c.currency||'USD'}</span>
+        <span class="cust-lang-badge">${effCur}</span>
         ${c.discount>0?`<span class="disc-profile-badge">%${c.discount}</span>`:''}
         ${defaultsBadge}
         ${segBadge}
