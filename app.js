@@ -2657,7 +2657,7 @@ function calcFX() {
   const usdTry = parseFloat(document.getElementById('fx-usd-try')?.value)||46;
   const total = orderItems.reduce((s,i)=>s+i.unitPrice*i.qty, 0);
   if(!total || !orderItems.length) { const el=document.getElementById('fx-order-try'); if(el) el.textContent='—'; return; }
-  const cur = document.getElementById('pfCurrency')?.value || currency;
+  const cur = currency;
   const rate = cur==='EUR' ? eurTry : cur==='USD' ? usdTry : 1;
   const tryTotal = cur==='TRY' ? total : total * rate;
   const el = document.getElementById('fx-order-try');
@@ -2689,7 +2689,7 @@ async function fetchLiveRates() {
 // ============================================================
 function showSummary() {
   if(!orderItems.length) { showToast('Add products first'); return; }
-  const cur = document.getElementById('pfCurrency')?.value || currency;
+  const cur = currency;
   const sym = cur==='TRY'?'₺':cur==='EUR'?'€':'$';
   const total = orderItems.reduce((s,i)=>s+i.unitPrice*i.qty,0);
   const listTotal = orderItems.reduce((s,i)=>s+i.listPrice*i.qty,0);
@@ -2848,7 +2848,7 @@ function loadHistory(i) {
   migrateFabricsField(orderItems);
   // Refresh CBM from current CBM_DATA so old records pick up recalibrated volumes
   orderItems.forEach(function(it){ if(CBM_DATA[it.id]!=null) it.cbm = CBM_DATA[it.id]; });
-  currency=h.currency;
+  currency=h.currency; { const _pc=document.getElementById('pfCurrency'); if(_pc) _pc.value=currency; }
   document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.textContent===currency));
   document.getElementById('buyerCompany').value=h.buyer_data?.company||'';
   document.getElementById('buyerContact').value=h.buyer_data?.contact||'';
@@ -2881,7 +2881,7 @@ function reorderFromHistory(i) {
     }
     it.cbm = CBM_DATA[it.id] || it.cbm || 0;
   });
-  currency=h.currency;
+  currency=h.currency; { const _pc=document.getElementById('pfCurrency'); if(_pc) _pc.value=currency; }
   document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.textContent===currency));
   document.getElementById('buyerCompany').value=h.buyer_data?.company||'';
   document.getElementById('buyerContact').value=h.buyer_data?.contact||'';
@@ -3157,7 +3157,7 @@ function showPrint() {
   if(!orderItems.length) { showToast('Add products first'); return; }
   const pfLang = document.getElementById('pfLang')?.value||'en';
   const t = I18N[pfLang] || I18N.en;
-  const cur = document.getElementById('pfCurrency')?.value || currency;
+  const cur = currency;
   const sym = cur==='TRY'?'\u20ba':cur==='EUR'?'\u20ac':'$';
   const isRTL = pfLang==='ar';
   const pi = document.getElementById('piNumber')?.value||'—';
@@ -5014,7 +5014,7 @@ function getDocTotals() {
 }
 function getINVNo() { const pi=document.getElementById('piNumber')?.value||''; const yr=new Date().getFullYear(); const num=pi.replace('PI-'+yr+'-','').replace('PI-',''); return 'MOR'+yr+String(num).padStart(9,'0'); }
 function getPriceTerm() { return document.getElementById('pfPriceTerm')?.value||'EXW'; }
-function getCurrency() { return document.getElementById('pfCurrency')?.value||currency; }
+function getCurrency() { return currency; }
 function getCurrencySym() { const c=getCurrency(); return c==='TRY'?'\u20ba':c==='EUR'?'\u20ac':'$'; }
 function infoRow(key,val) { return val?'<div class="doc-footer-row"><span class="doc-footer-key">'+key+'</span><span>'+val+'</span></div>':''; }
 function buildDocRows(withPrice) {
