@@ -679,6 +679,13 @@
             <div class="frow" id="pf-freight-row" style="display:none;"><label>Navlun / Freight</label><input type="number" id="pfFreight" placeholder="0.00" min="0" step="0.01" oninput="refreshDepositMini()"></div>
             <div class="frow" id="pf-insurance-row" style="display:none;"><label>Sigorta / Insurance</label><input type="number" id="pfInsurance" placeholder="0.00" min="0" step="0.01" oninput="refreshDepositMini()"></div>
             <div class="frow"><label>Konteyner Bedeli / Container Fee</label><input type="number" id="pfContainerFee" placeholder="0.00 (denizaşırı — Somali, Gine vb.)" min="0" step="0.01" oninput="refreshDepositMini()"></div>
+            <div class="frow"><label>Özel İndirim / Special Discount <span style="font-weight:400;color:var(--muted);">(toplam fiyattan)</span></label>
+              <div style="display:flex;gap:6px;">
+                <input type="number" id="pfSpecDisc" placeholder="0" min="0" step="0.01" style="flex:1;" oninput="onSpecDiscChange()">
+                <select id="pfSpecDiscType" style="width:92px;" onchange="onSpecDiscChange()"><option value="pct">% yüzde</option><option value="amt">tutar</option></select>
+              </div>
+              <div id="pfSpecDiscInfo" style="font-size:10.5px;color:var(--muted);margin-top:4px;"></div>
+            </div>
             <div class="frow"><label>Payment Terms</label>
               <select id="pfPayment">
                 <option value="30% ADVANCE PAYMENT / 70% BEFORE LOADING">30% Advance / 70% Before Loading</option>
@@ -1016,5 +1023,5 @@ Snejana Raleva - 1 adet Istanbul Gardolap"></textarea>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="app.js?v=1792562592"></script></body>
+<script src="app.js?v=1792648932"></script></body>
 </html>

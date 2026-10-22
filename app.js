@@ -2042,9 +2042,10 @@ function setQty(idx,v) { orderItems[idx].qty=Math.max(1,parseInt(v)||1); renderO
 function rmItem(idx) { orderItems.splice(idx,1); renderOrder(); }
 
 function updateTotals() {
-  const total=orderItems.reduce((s,i)=>s+i.unitPrice*i.qty,0);
+  const goodsSum=orderItems.reduce((s,i)=>s+i.unitPrice*i.qty,0);
+  const total=goodsSum-getSpecialDiscount(goodsSum).amount;
   const listTotal=orderItems.reduce((s,i)=>s+i.listPrice*i.qty,0);
-  const saving=listTotal-total;
+  const saving=listTotal-goodsSum;
   const cbm=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
   const sym=currency==='TRY'?'₺':currency==='EUR'?'€':'$';
   document.getElementById('grandTotal').textContent=sym+total.toFixed(2);
@@ -2071,7 +2072,7 @@ function updateTotals() {
   updateStickyBar();
 }
 
-function clearOrder() { if(!confirm('Clear all order lines?')) return; orderItems=[]; loadedFxLock=null; renderOrder(); showToast('Order cleared'); }
+function clearOrder() { if(!confirm('Clear all order lines?')) return; orderItems=[]; loadedFxLock=null; { const d=document.getElementById('pfSpecDisc'); if(d) d.value=''; } renderOrder(); onSpecDiscChange(); showToast('Order cleared'); }
 
 // ============================================================
 // DISCOUNT
@@ -2431,6 +2432,26 @@ function getFreightInsurance() {
   return { freight, insurance, containerFee };
 }
 
+// Toplam mal bedelinden yapılan özel indirim (yüzde veya sabit tutar).
+function getSpecialDiscount(goods) {
+  const v = parseFloat(document.getElementById('pfSpecDisc')?.value)||0;
+  const type = document.getElementById('pfSpecDiscType')?.value || 'pct';
+  let amount = type==='pct' ? goods*Math.min(v,100)/100 : v;
+  amount = Math.max(0, Math.min(amount, goods));
+  amount = Math.round(amount*100)/100;
+  return { amount, value:v, type };
+}
+function onSpecDiscChange() {
+  const goods = orderItems.reduce((s,i)=>s+i.unitPrice*i.qty,0);
+  const sd = getSpecialDiscount(goods);
+  const sym = currency==='TRY'?'₺':currency==='EUR'?'€':'$';
+  const info = document.getElementById('pfSpecDiscInfo');
+  if(info) info.textContent = sd.amount>0 ? ('İndirim: − '+sym+sd.amount.toFixed(2)+' → Net toplam: '+sym+(goods-sd.amount).toFixed(2)) : '';
+  updateTotals();
+}
+const SPEC_DISC_LABEL = { en:'Special Discount', tr:'Özel İndirim', fr:'Remise spéciale', de:'Sonderrabatt', ar:'خصم خاص' };
+const NET_TOTAL_LABEL = { en:'NET TOTAL', tr:'NET TOPLAM', fr:'TOTAL NET', de:'NETTOBETRAG', ar:'الصافي' };
+
 function segmentDefaultDiscount(sel) {
   const map = { new: 0, standard: 3, gold: 5, platinum: 8 };
   const discEl = document.getElementById('mc-discount');
@@ -2635,11 +2656,12 @@ function saveToHistory() {
   if(!orderItems.length) { showToast('Add products first'); return; }
   const pi = document.getElementById('piNumber').value;
   const buyer = document.getElementById('buyerCompany').value||'Unknown Buyer';
-  const total = orderItems.reduce((s,i)=>s+i.unitPrice*i.qty,0);
+  const goodsSum0 = orderItems.reduce((s,i)=>s+i.unitPrice*i.qty,0);
+  const total = goodsSum0 - getSpecialDiscount(goodsSum0).amount;
   const sym = currency==='EUR'?'€':'$';
   const hist = getHistory();
   const cbmTotal=orderItems.reduce((s,i)=>s+(i.cbm||0)*i.qty,0);
-  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value, freight:parseFloat(document.getElementById('pfFreight')?.value)||0, insurance:parseFloat(document.getElementById('pfInsurance')?.value)||0, containerFee:parseFloat(document.getElementById('pfContainerFee')?.value)||0 }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
+  hist.unshift({ pi, buyer, total:sym+total.toFixed(2), currency, date:new Date().toLocaleDateString('en-GB'), cbm:cbmTotal.toFixed(2), status:'Draft', items:JSON.parse(JSON.stringify(orderItems)), buyer_data:{ company:document.getElementById('buyerCompany').value, contact:document.getElementById('buyerContact').value, country:document.getElementById('buyerCountry').value, phone:document.getElementById('buyerPhone').value, email:document.getElementById('buyerEmail').value, address:document.getElementById('buyerAddress').value, shipAddress:document.getElementById('buyerShipAddress')?.value||'', taxId:document.getElementById('buyerTaxId')?.value||'' }, settings:{ piNumber:pi, priceTerm:document.getElementById('pfPriceTerm').value, payment:document.getElementById('pfPayment').value, leadTime:document.getElementById('pfLeadTime').value, validity:document.getElementById('pfValidity').value, date:document.getElementById('pfDate').value, freight:parseFloat(document.getElementById('pfFreight')?.value)||0, insurance:parseFloat(document.getElementById('pfInsurance')?.value)||0, containerFee:parseFloat(document.getElementById('pfContainerFee')?.value)||0, specDisc:parseFloat(document.getElementById('pfSpecDisc')?.value)||0, specDiscType:document.getElementById('pfSpecDiscType')?.value||'pct' }, shipment:getShipBlock(), fx: (loadedFxLock || { eurTry: parseFloat(document.getElementById('fx-eur-try')?.value)||53, usdTry: parseFloat(document.getElementById('fx-usd-try')?.value)||46, lockedAt: new Date().toISOString() }) });
   if(hist.length>50) hist.splice(50);
   loadedFxLock = hist[0].fx;
   saveHistory(hist);
@@ -2858,7 +2880,7 @@ function loadHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
-  if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; document.getElementById('pfContainerFee').value=h.settings.containerFee||''; }
+  if(h.settings) { document.getElementById('piNumber').value=h.settings.piNumber||''; document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfDate').value=h.settings.date||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; document.getElementById('pfContainerFee').value=h.settings.containerFee||''; document.getElementById('pfSpecDisc').value=h.settings.specDisc||''; document.getElementById('pfSpecDiscType').value=h.settings.specDiscType||'pct'; }
   updateIncotermFields();
   refreshDepositMini();
   loadShipDraft(h.shipment || {});
@@ -2891,7 +2913,7 @@ function reorderFromHistory(i) {
   document.getElementById('buyerAddress').value=h.buyer_data?.address||'';
   document.getElementById('buyerShipAddress').value=h.buyer_data?.shipAddress||'';
   document.getElementById('buyerTaxId').value=h.buyer_data?.taxId||'';
-  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; document.getElementById('pfContainerFee').value=h.settings.containerFee||''; }
+  if(h.settings) { document.getElementById('pfPriceTerm').value=h.settings.priceTerm||'EXW'; document.getElementById('pfPayment').value=h.settings.payment||''; document.getElementById('pfLeadTime').value=h.settings.leadTime||''; document.getElementById('pfValidity').value=h.settings.validity||''; document.getElementById('pfFreight').value=h.settings.freight||''; document.getElementById('pfInsurance').value=h.settings.insurance||''; document.getElementById('pfContainerFee').value=h.settings.containerFee||''; document.getElementById('pfSpecDisc').value=h.settings.specDisc||''; document.getElementById('pfSpecDiscType').value=h.settings.specDiscType||'pct'; }
   updateIncotermFields();
   document.getElementById('piNumber').value = getNextPI();
   document.getElementById('pfDate').value = new Date().toISOString().split('T')[0];
@@ -3229,10 +3251,12 @@ function showPrint() {
       +'</tr>';
   });
   const saving=listTotal-grandTotal;
-  const deposit=grandTotal*0.3;
-  const balance=grandTotal*0.7;
+  const specD = getSpecialDiscount(grandTotal);
+  const goodsNet = grandTotal - specD.amount;
+  const deposit=goodsNet*0.3;
+  const balance=goodsNet*0.7;
   const { freight, insurance, containerFee } = getFreightInsurance();
-  const grandTotalWithShip = grandTotal + freight + insurance + containerFee;
+  const grandTotalWithShip = goodsNet + freight + insurance + containerFee;
   const depositWS = grandTotalWithShip*0.3;
   const balanceWS = grandTotalWithShip*0.7;
   // Gerçek ödeme durumu: bu PI numarasıyla kayıtlı geçmiş varsa ve ödeme girilmişse,
@@ -3300,6 +3324,8 @@ function showPrint() {
       +'<div class="pf-tot-row"><span>'+t.listTotal+'</span><span>'+sym+listTotal.toFixed(2)+'</span></div>'
       +(saving>0?'<div class="pf-tot-row pf-saving"><span>'+t.saving+'</span><span>− '+sym+saving.toFixed(2)+'</span></div>':'')
       +'<div class="pf-tot-row pf-grand"><span>'+t.grandTotal+'</span><span>'+sym+grandTotal.toFixed(2)+'</span></div>'
+      +(specD.amount>0?'<div class="pf-tot-row pf-saving"><span>'+(SPEC_DISC_LABEL[pfLang]||SPEC_DISC_LABEL.en)+(specD.type==='pct'?' ('+specD.value+'%)':'')+'</span><span>− '+sym+specD.amount.toFixed(2)+'</span></div>'
+        +'<div class="pf-tot-row pf-grand"><span>'+(NET_TOTAL_LABEL[pfLang]||NET_TOTAL_LABEL.en)+'</span><span>'+sym+goodsNet.toFixed(2)+'</span></div>':'')
       +(freight>0?'<div class="pf-tot-row"><span>'+(t.freight||'Freight:')+'</span><span>'+sym+freight.toFixed(2)+'</span></div>':'')
       +(insurance>0?'<div class="pf-tot-row"><span>'+(t.insurance||'Insurance:')+'</span><span>'+sym+insurance.toFixed(2)+'</span></div>':'')
       +(containerFee>0?'<div class="pf-tot-row"><span>'+(t.containerFee||'Container Fee:')+'</span><span>'+sym+containerFee.toFixed(2)+'</span></div>':'')
